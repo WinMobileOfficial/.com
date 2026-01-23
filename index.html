@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional POS System</title>
+    <title>Professional POS | Custom Settings</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @media print { .no-print { display: none !important; } #receipt { display: block !important; width: 80mm; } }
@@ -12,10 +12,10 @@
 </head>
 <body class="bg-slate-100 flex h-screen overflow-hidden font-sans">
 
-    <div class="w-72 bg-slate-900 text-white flex flex-col no-print">
+    <div class="w-64 bg-slate-900 text-white flex flex-col no-print">
         <div class="p-6 bg-slate-800 border-b border-slate-700">
-            <h2 id="dispName" class="text-xl font-black text-blue-400 uppercase tracking-tight">STORE NAME</h2>
-            <p id="dispPhone" class="text-xs text-slate-400 font-bold mt-1"></p>
+            <h2 id="dispName" class="text-xl font-black text-blue-400 uppercase">STORE NAME</h2>
+            <p id="dispPhone" class="text-xs text-slate-400 font-bold mt-1 tracking-widest"></p>
         </div>
         <nav class="p-4 flex-1 space-y-2">
             <button onclick="switchTab('billing')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition">🛒 POS Billing</button>
@@ -23,8 +23,8 @@
             <button onclick="switchTab('customers')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition">👥 Customer Khata</button>
             <button onclick="switchTab('settings')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition">⚙️ Store Settings</button>
         </nav>
-        <div class="p-4 bg-slate-800 text-[10px] text-yellow-500 font-bold border-t border-slate-700">
-            NEXT INV: <span id="nextInv"></span>
+        <div class="p-4 bg-slate-800 text-[10px] text-yellow-500 font-bold border-t border-slate-700 text-center uppercase">
+            Invoice: <span id="nextInv"></span>
         </div>
     </div>
 
@@ -41,15 +41,21 @@
         <div id="billingTab" class="flex-1 flex flex-col overflow-hidden">
             <main class="flex-1 p-6 flex gap-6 overflow-hidden no-print">
                 <div class="w-80 bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
-                    <h3 class="font-bold text-slate-700 mb-6 text-lg border-b pb-2 italic">Add Items</h3>
+                    <h3 class="font-bold text-slate-700 mb-6 text-lg border-b pb-2 italic uppercase">Quick Billing</h3>
                     <div class="space-y-4">
-                        <div class="relative">
-                            <input id="pName" oninput="suggestProd(this.value)" type="text" placeholder="Product Name" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-400 outline-none">
-                            <div id="stockNotice" class="text-[10px] mt-1 font-bold"></div>
-                        </div>
+                        <label class="text-xs font-bold text-slate-500">Select Product</label>
+                        <select id="pSelect" onchange="autoFillPrice()" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-400 outline-none">
+                            <option value="">-- Choose Item --</option>
+                        </select>
                         <div class="grid grid-cols-2 gap-3">
-                            <input id="pPrice" type="number" placeholder="Price" class="border-2 border-slate-100 p-3 rounded-xl outline-none">
-                            <input id="pQty" type="number" value="1" class="border-2 border-slate-100 p-3 rounded-xl outline-none">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">Unit Price</label>
+                                <input id="pPrice" type="number" readonly class="w-full border-2 border-slate-50 bg-slate-50 p-3 rounded-xl outline-none font-bold text-blue-600">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">Qty</label>
+                                <input id="pQty" type="number" value="1" class="w-full border-2 border-slate-100 p-3 rounded-xl outline-none font-bold">
+                            </div>
                         </div>
                         <button onclick="addToCart()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg transition active:scale-95">Add to Bill</button>
                     </div>
@@ -65,7 +71,7 @@
                             <input id="paidAmt" oninput="calcBal()" type="number" placeholder="Paid Amount" class="bg-slate-800 p-3 rounded-xl text-green-400 font-bold border-none outline-none">
                             <input id="balAmt" type="number" readonly placeholder="Balance" class="bg-slate-800 p-3 rounded-xl text-red-400 font-bold border-none outline-none">
                         </div>
-                        <button onclick="saveAndPrint()" class="w-full bg-green-500 py-4 rounded-2xl font-black text-xl hover:bg-green-600 transition shadow-2xl">PRINT & SAVE BILL</button>
+                        <button onclick="saveAndPrint()" class="w-full bg-green-500 py-4 rounded-2xl font-black text-xl hover:bg-green-600 transition shadow-2xl uppercase">Print & Save</button>
                     </div>
                 </div>
             </main>
@@ -73,42 +79,38 @@
 
         <div id="productsTab" class="flex-1 p-8 overflow-y-auto hidden-tab bg-white no-print">
             <div class="bg-blue-600 p-6 rounded-2xl text-white mb-8 shadow-lg">
-                <h3 class="text-xl font-bold mb-4">Add New Product to List</h3>
+                <h3 class="text-xl font-bold mb-4">Add New Item to Inventory</h3>
                 <div class="grid grid-cols-3 gap-4">
-                    <input id="listPName" type="text" placeholder="Product Name" class="p-2 rounded text-slate-900 outline-none">
+                    <input id="listPName" type="text" placeholder="Item Name" class="p-2 rounded text-slate-900 outline-none">
                     <input id="listPPrice" type="number" placeholder="Sale Price" class="p-2 rounded text-slate-900 outline-none">
-                    <button onclick="addProductToList()" class="bg-yellow-400 text-slate-900 font-black rounded px-4">Save Product</button>
+                    <button onclick="addProductToList()" class="bg-yellow-400 text-slate-900 font-black rounded px-4">Add Product</button>
                 </div>
             </div>
-            <h2 class="text-2xl font-black mb-4 italic uppercase">Items Inventory</h2>
-            <table class="w-full text-left"><thead class="bg-slate-100 uppercase text-xs"><tr><th class="p-3">Product Name</th><th class="p-3">Price</th><th class="p-3">Action</th></tr></thead><tbody id="prodListBody"></tbody></table>
+            <table class="w-full text-left">
+                <thead class="bg-slate-100 uppercase text-xs"><tr><th class="p-3">Product Name</th><th class="p-3">Price</th><th class="p-3">Action</th></tr></thead>
+                <tbody id="prodListBody"></tbody>
+            </table>
         </div>
 
         <div id="settingsTab" class="flex-1 p-12 hidden-tab bg-white no-print">
-            <h2 class="text-3xl font-black mb-8 italic">Store Profile Settings</h2>
+            <h2 class="text-3xl font-black mb-8 italic border-b-4 border-blue-600 inline-block">Traders Settings</h2>
             <div class="max-w-md space-y-6">
                 <div>
-                    <label class="font-bold text-slate-500 text-sm">Store / Trader Name</label>
-                    <input id="setStore" type="text" class="w-full border-2 p-3 rounded-xl outline-none focus:border-blue-500">
+                    <label class="font-bold text-slate-500 text-sm">Owner/Business Name</label>
+                    <input id="setStore" type="text" placeholder="e.g. Al Hafiz Traders" class="w-full border-2 p-3 rounded-xl outline-none focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="font-bold text-slate-500 text-sm">Contact Number</label>
-                    <input id="setPhone" type="text" class="w-full border-2 p-3 rounded-xl outline-none focus:border-blue-500">
+                    <label class="font-bold text-slate-500 text-sm">Phone Number</label>
+                    <input id="setPhone" type="text" placeholder="03xx-xxxxxxx" class="w-full border-2 p-3 rounded-xl outline-none focus:border-blue-500">
                 </div>
-                <button onclick="updateSettings()" class="bg-blue-600 text-white w-full py-4 rounded-xl font-black text-lg shadow-xl hover:bg-blue-700">SAVE ALL CHANGES</button>
+                <button onclick="updateSettings()" class="bg-blue-600 text-white w-full py-4 rounded-xl font-black text-lg shadow-xl hover:bg-blue-700">UPDATE STORE PROFILE</button>
             </div>
         </div>
-
-        <div id="customersTab" class="flex-1 p-8 hidden-tab bg-white no-print">
-            <h2 class="text-2xl font-black mb-6 italic">Customer Udhaar Khata</h2>
-            <table class="w-full text-left border-collapse"><thead class="bg-slate-800 text-white text-xs"><tr><th class="p-4">Customer</th><th class="p-4">Total Orders</th><th class="p-4">Balance (Udhaar)</th></tr></thead><tbody id="custListBody"></tbody></table>
-        </div>
-
     </div>
 
     <div id="receipt" class="hidden p-4 text-black bg-white font-mono">
         <center>
-            <h2 id="rStore" style="margin:0; text-transform:uppercase;"></h2>
+            <h2 id="rStore" style="margin:0; text-transform:uppercase; font-size: 18px;"></h2>
             <p id="rPhone" style="font-size:10px; margin:2px 0;"></p>
             <p id="rDate" style="font-size:10px; margin:0;"></p>
             <p id="rInv" style="font-size:11px; font-weight:bold; margin:5px 0;"></p>
@@ -119,22 +121,24 @@
         <div style="font-size:12px">
             <div style="display:flex; justify-content:space-between"><span>TOTAL:</span><span id="rTotal"></span></div>
             <div style="display:flex; justify-content:space-between"><span>PAID:</span><span id="rPaid"></span></div>
-            <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>BALANCE:</span><span id="rBal"></span></div>
+            <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>BAL:</span><span id="rBal"></span></div>
         </div>
-        <center style="margin-top:15px; font-size:10px italic">Shukriya! Visit Again</center>
+        <center style="margin-top:15px; font-size:10px;">Powered by WinMobile POS</center>
     </div>
 
     <script>
         let cart = [];
         let prods = JSON.parse(localStorage.getItem('pos_prods')) || [];
-        let customers = JSON.parse(localStorage.getItem('pos_cust_data')) || {};
         let invNum = parseInt(localStorage.getItem('pos_inv_num')) || 1001;
 
         function switchTab(t) {
-            ['billingTab', 'productsTab', 'settingsTab', 'customersTab'].forEach(id => document.getElementById(id).classList.add('hidden-tab'));
+            ['billingTab', 'productsTab', 'settingsTab', 'customersTab'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.add('hidden-tab');
+            });
             document.getElementById(t + 'Tab').classList.remove('hidden-tab');
             if(t === 'products') renderProductList();
-            if(t === 'customers') renderCustomers();
+            if(t === 'billing') updateProductDropdown();
         }
 
         function addProductToList() {
@@ -144,6 +148,7 @@
                 prods.push({name:n, price:p});
                 localStorage.setItem('pos_prods', JSON.stringify(prods));
                 renderProductList();
+                updateProductDropdown();
                 document.getElementById('listPName').value=""; document.getElementById('listPPrice').value="";
             }
         }
@@ -158,19 +163,32 @@
             `).join('');
         }
 
-        function suggestProd(q) {
-            let p = prods.find(x => x.name.toLowerCase() === q.toLowerCase());
-            if(p) document.getElementById('pPrice').value = p.price;
+        function updateProductDropdown() {
+            const select = document.getElementById('pSelect');
+            select.innerHTML = '<option value="">-- Choose Item --</option>' + 
+                prods.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+        }
+
+        function autoFillPrice() {
+            const selectedName = document.getElementById('pSelect').value;
+            const p = prods.find(x => x.name === selectedName);
+            if(p) {
+                document.getElementById('pPrice').value = p.price;
+            } else {
+                document.getElementById('pPrice').value = "";
+            }
         }
 
         function addToCart() {
-            const n = document.getElementById('pName').value;
+            const n = document.getElementById('pSelect').value;
             const p = parseFloat(document.getElementById('pPrice').value);
             const q = parseInt(document.getElementById('pQty').value);
             if(n && p) {
                 cart.push({name:n, price:p, qty:q});
                 renderCart();
-                document.getElementById('pName').value=""; document.getElementById('pPrice').value="";
+                document.getElementById('pSelect').value = "";
+                document.getElementById('pPrice').value = "";
+                document.getElementById('pQty').value = "1";
             }
         }
 
@@ -192,22 +210,14 @@
 
         function saveAndPrint() {
             if(cart.length === 0) return;
-            const total = parseFloat(document.getElementById('totalDisplay').innerText);
-            const paid = parseFloat(document.getElementById('paidAmt').value) || 0;
-            const bal = total - paid;
-            const name = document.getElementById('cName').value || "Cash Customer";
-            const phone = document.getElementById('cMob').value || "";
+            const total = document.getElementById('totalDisplay').innerText;
+            const paid = document.getElementById('paidAmt').value || 0;
+            const bal = document.getElementById('balAmt').value || 0;
 
-            if(!customers[name]) customers[name] = { total: 0, bal: 0, orders: 0 };
-            customers[name].total += total;
-            customers[name].bal += bal;
-            customers[name].orders += 1;
-            localStorage.setItem('pos_cust_data', JSON.stringify(customers));
-
-            document.getElementById('rStore').innerText = localStorage.getItem('pos_store_name') || "STORE NAME";
-            document.getElementById('rPhone').innerText = "Phone: " + (localStorage.getItem('pos_store_phone') || "");
+            document.getElementById('rStore').innerText = localStorage.getItem('pos_store_name') || "Store Name";
+            document.getElementById('rPhone').innerText = "PH: " + (localStorage.getItem('pos_store_phone') || "");
             document.getElementById('rDate').innerText = new Date().toLocaleString();
-            document.getElementById('rInv').innerText = "INVOICE: INV-" + invNum;
+            document.getElementById('rInv').innerText = "INV-" + invNum;
             document.getElementById('rTotal').innerText = total;
             document.getElementById('rPaid').innerText = paid;
             document.getElementById('rBal').innerText = bal;
@@ -218,6 +228,8 @@
             invNum++; localStorage.setItem('pos_inv_num', invNum);
             document.getElementById('nextInv').innerText = "INV-" + invNum;
             cart = []; renderCart();
+            document.getElementById('paidAmt').value = "";
+            document.getElementById('balAmt').value = "";
         }
 
         function updateSettings() {
@@ -226,14 +238,15 @@
             location.reload();
         }
 
-        function deleteProd(idx) { prods.splice(idx,1); localStorage.setItem('pos_prods', JSON.stringify(prods)); renderProductList(); }
+        function deleteProd(idx) { prods.splice(idx,1); localStorage.setItem('pos_prods', JSON.stringify(prods)); renderProductList(); updateProductDropdown(); }
 
-        // Init
-        document.getElementById('dispName').innerText = localStorage.getItem('pos_store_name') || "SET STORE NAME";
+        // Init Load
+        document.getElementById('dispName').innerText = localStorage.getItem('pos_store_name') || "WinMobile POS";
         document.getElementById('dispPhone').innerText = localStorage.getItem('pos_store_phone') || "";
         document.getElementById('setStore').value = localStorage.getItem('pos_store_name') || "";
         document.getElementById('setPhone').value = localStorage.getItem('pos_store_phone') || "";
         document.getElementById('nextInv').innerText = "INV-" + invNum;
+        updateProductDropdown();
         setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
     </script>
 </body>
