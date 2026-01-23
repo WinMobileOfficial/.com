@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenPOS Pro | Sales & History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print { .no-print { display: none !important; } #receipt { display: block !important; width: 80mm; } }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .hidden-tab { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100 flex h-screen overflow-hidden font-sans">
+
+    <div class="w-64 bg-slate-900 text-white flex flex-col no-print">
+        <div class="p-6 border-b border-slate-700 bg-slate-800">
+            <input id="storeName" oninput="saveStore(this.value)" type="text" placeholder="Enter Store Name" class="bg-transparent border-none text-xl font-black w-full focus:outline-none text-blue-400">
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Official Dashboard</p>
+        </div>
+        <nav class="p-4 flex-1 space-y-2">
+            <button onclick="switchTab('billing')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition"><span class="mr-3">🛒</span> POS Billing</button>
+            <button onclick="switchTab('history')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition"><span class="mr-3">📜</span> Sales History</button>
+            <button onclick="showProfit()" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition"><span class="mr-3">💰</span> Today's Profit</button>
+        </nav>
+        <div class="p-4 bg-slate-800 text-xs font-mono text-yellow-500 border-t border-slate-700">
+            System ID: POS-2024 <br> Next Inv: <span id="nextInv"></span>
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        
+        <div id="billingTab" class="flex flex-col h-full overflow-hidden">
+            <header class="h-16 bg-white border-b px-8 flex items-center justify-between no-print">
+                <div class="flex gap-4 items-center">
+                    <input id="cName" oninput="suggestCust(this.value)" type="text" placeholder="Customer Name" class="border p-2 rounded-lg text-sm w-48">
+                    <input id="cMob" type="text" placeholder="Mobile Number" class="border p-2 rounded-lg text-sm w-40">
+                </div>
+                <div id="clock" class="text-slate-400 font-mono text-sm"></div>
+            </header>
+
+            <main class="flex-1 p-6 flex gap-6 overflow-hidden no-print">
+                <div class="w-1/3 bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+                    <h3 class="font-bold text-slate-700 mb-6 flex items-center text-lg">🛍️ Add Items</h3>
+                    <div class="space-y-4">
+                        <input id="pName" oninput="suggestProd(this.value)" type="text" placeholder="Item Name" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-400 outline-none">
+                        <div class="grid grid-cols-2 gap-3">
+                            <input id="pPrice" type="number" placeholder="Sale Price" class="border-2 border-green-50 p-3 rounded-xl outline-none">
+                            <input id="pCost" type="number" placeholder="Cost Price" class="border-2 border-red-50 p-3 rounded-xl outline-none">
+                        </div>
+                        <input id="pQty" type="number" value="1" class="w-full border-2 border-slate-50 p-3 rounded-xl outline-none">
+                        <button onclick="addToCart()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg active:scale-95 transition">Add to Cart</button>
+                    </div>
+                </div>
+
+                <div class="flex-1 bg-white rounded-2xl shadow-xl border flex flex-col overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b flex justify-between font-bold text-slate-500 italic">
+                        <span>Invoice: <span id="curInv"></span></span>
+                        <span>Item List</span>
+                    </div>
+                    <div id="cartBody" class="flex-1 p-4 overflow-y-auto custom-scroll"></div>
+                    <div class="p-6 bg-slate-900">
+                        <div class="flex justify-between text-white mb-4">
+                            <span class="text-3xl font-black italic">TOTAL</span>
+                            <span class="text-4xl font-black">Rs <span id="totalDisplay">0</span></span>
+                        </div>
+                        <button onclick="saveAndPrint()" class="w-full bg-green-500 text-white py-4 rounded-2xl font-black text-2xl shadow-2xl hover:bg-green-600 transition">PRINT & SAVE BILL</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div id="historyTab" class="flex-1 p-8 overflow-y-auto hidden-tab bg-white no-print">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-black text-slate-800 uppercase tracking-tighter italic">Sales Record History</h2>
+                <input type="text" oninput="searchHistory(this.value)" placeholder="Search Invoice, Customer or Date..." class="border-2 border-blue-100 p-3 rounded-xl w-80 outline-none focus:border-blue-500">
+            </div>
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-bold">
+                    <tr>
+                        <th class="p-4 rounded-l-xl">Inv #</th>
+                        <th class="p-4">Date</th>
+                        <th class="p-4">Customer</th>
+                        <th class="p-4">Amount</th>
+                        <th class="p-4 rounded-r-xl text-green-600">Profit</th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody" class="text-sm"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="receipt" class="hidden p-4 text-black bg-white">
+        <center>
+            <h1 id="rStore" style="font-size: 22px; margin:0">STORE</h1>
+            <p id="rInv" style="font-size: 12px; margin:2px 0"></p>
+            <div style="border-top:1px dashed #000; margin:10px 0"></div>
+        </center>
+        <table style="width:100%; font-size:12px; margin-bottom:10px">
+            <tr><td><b>Cust:</b> <span id="rCust"></span></td><td align="right" id="rMob"></td></tr>
+            <tr><td><b>Date:</b></td><td align="right" id="rDate"></td></tr>
+        </table>
+        <table style="width:100%; font-size:12px; border-collapse:collapse">
+            <thead style="border-bottom:1px solid #000">
+                <tr><th align="left">Item</th><th align="center">Qty</th><th align="right">Total</th></tr>
+            </thead>
+            <tbody id="rItems"></tbody>
+        </table>
+        <div style="border-top:1px dashed #000; margin:10px 0"></div>
+        <div style="display:flex; justify-content:between; font-weight:bold; font-size:16px">
+            <span>TOTAL:</span><span id="rTotal"></span>
+        </div>
+        <center style="margin-top:20px; font-size:10px">*** Thank You! ***</center>
+    </div>
+
+    <script>
+        // Init Storage
+        let sales = JSON.parse(localStorage.getItem('pos_sales')) || [];
+        let prods = JSON.parse(localStorage.getItem('pos_prods')) || [];
+        let custs = JSON.parse(localStorage.getItem('pos_custs')) || [];
+        let inv = parseInt(localStorage.getItem('pos_inv_num')) || 1001;
+        let cart = [];
+
+        // Auto-load Trader Name
+        const savedStore = localStorage.getItem('pos_store_name') || "MERA TRADERS";
+        document.getElementById('storeName').value = savedStore;
+        updateInvLabels();
+
+        function saveStore(v) { localStorage.setItem('pos_store_name', v); }
+        function updateInvLabels() {
+            document.getElementById('nextInv').innerText = "INV-" + inv;
+            document.getElementById('curInv').innerText = "INV-" + inv;
+        }
+
+        function switchTab(t) {
+            document.getElementById('billingTab').classList.toggle('hidden-tab', t !== 'billing');
+            document.getElementById('historyTab').classList.toggle('hidden-tab', t !== 'history');
+            if(t === 'history') loadHistory();
+        }
+
+        // Search Suggestion logic
+        function suggestProd(q) {
+            let p = prods.find(x => x.name.toLowerCase() === q.toLowerCase());
+            if(p) { document.getElementById('pPrice').value = p.price; document.getElementById('pCost').value = p.cost; }
+        }
+        function suggestCust(q) {
+            let c = custs.find(x => x.name.toLowerCase() === q.toLowerCase());
+            if(c) document.getElementById('cMob').value = c.mobile;
+        }
+
+        function addToCart() {
+            const n = document.getElementById('pName').value;
+            const p = parseFloat(document.getElementById('pPrice').value);
+            const c = parseFloat(document.getElementById('pCost').value) || 0;
+            const q = parseInt(document.getElementById('pQty').value);
+            if(!n || !p) return;
+
+            if(!prods.find(x => x.name === n)) { prods.push({name:n, price:p, cost:c}); localStorage.setItem('pos_prods', JSON.stringify(prods)); }
+            
+            cart.push({name:n, price:p, cost:c, qty:q});
+            renderCart();
+            document.getElementById('pName').value = ""; document.getElementById('pPrice').value = ""; document.getElementById('pCost').value = "";
+        }
+
+        function renderCart() {
+            let total = 0;
+            document.getElementById('cartBody').innerHTML = cart.map(i => {
+                total += i.price * i.qty;
+                return `<div class="flex justify-between p-3 border-b"><span>${i.name} (x${i.qty})</span><b>${i.price*i.qty}</b></div>`;
+            }).join('');
+            document.getElementById('totalDisplay').innerText = total;
+        }
+
+        function saveAndPrint() {
+            if(cart.length === 0) return;
+            const total = parseFloat(document.getElementById('totalDisplay').innerText);
+            const cn = document.getElementById('cName').value || "Cash Customer";
+            const cm = document.getElementById('cMob').value || "N/A";
+            const cost = cart.reduce((a, b) => a + (b.cost * b.qty), 0);
+
+            // Record Sale
+            sales.push({inv:inv, date:new Date().toLocaleDateString(), customer:cn, mob:cm, total:total, profit:total-cost});
+            localStorage.setItem('pos_sales', JSON.stringify(sales));
+
+            // Setup Receipt
+            document.getElementById('rStore').innerText = document.getElementById('storeName').value;
+            document.getElementById('rInv').innerText = "INV-" + inv;
+            document.getElementById('rCust').innerText = cn; document.getElementById('rMob').innerText = cm;
+            document.getElementById('rDate').innerText = new Date().toLocaleString();
+            document.getElementById('rTotal').innerText = "Rs " + total;
+            document.getElementById('rItems').innerHTML = cart.map(i => `<tr><td>${i.name}</td><td align="center">${i.qty}</td><td align="right">${i.price*i.qty}</td></tr>`).join('');
+
+            window.print();
+
+            inv++;
+            localStorage.setItem('pos_inv_num', inv);
+            updateInvLabels();
+            cart = []; renderCart();
+        }
+
+        function loadHistory(filtered = null) {
+            const data = filtered || sales;
+            document.getElementById('historyBody').innerHTML = data.slice().reverse().map(s => `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="p-4 font-bold">INV-${s.inv}</td>
+                    <td class="p-4 text-slate-500">${s.date}</td>
+                    <td class="p-4"><b>${s.customer}</b><br><small>${s.mob}</small></td>
+                    <td class="p-4 font-bold">Rs ${s.total}</td>
+                    <td class="p-4 text-green-600 font-bold">+${s.profit}</td>
+                </tr>
+            `).join('');
+        }
+
+        function searchHistory(q) {
+            const filtered = sales.filter(s => 
+                s.customer.toLowerCase().includes(q.toLowerCase()) || 
+                s.inv.toString().includes(q) || 
+                s.date.includes(q)
+            );
+            loadHistory(filtered);
+        }
+
+        function showProfit() {
+            const today = new Date().toLocaleDateString();
+            const todaySales = sales.filter(s => s.date === today);
+            const p = todaySales.reduce((a, b) => a + b.profit, 0);
+            alert("Today's Net Profit: Rs " + p);
+        }
+
+        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
+    </script>
+</body>
+</html>
