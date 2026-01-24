@@ -296,4 +296,87 @@
         function editProduct(idx) {
             const p = prods[idx];
             document.getElementById('listPName').value = p.name;
-            document.getElementById('list
+            document.getElementById('listPCost').value = p.cost;
+            document.getElementById('listPPrice').value = p.price;
+            document.getElementById('listPStock').value = p.stock;
+            document.getElementById('editIdx').value = idx;
+            document.getElementById('saveBtn').innerText = "Update Item";
+        }
+
+        function renderProductList() {
+            document.getElementById('prodListBody').innerHTML = prods.map((p, idx) => `
+                <tr class="${p.stock <= 5 ? 'low-stock' : ''}">
+                    <td class="p-4 font-bold">${p.name}</td>
+                    <td class="p-4">Rs ${p.cost}</td>
+                    <td class="p-4">Rs ${p.price}</td>
+                    <td class="p-4 font-black">${p.stock}</td>
+                    <td class="p-4 space-x-2">
+                        <button onclick="editProduct(${idx})" class="text-blue-600 font-bold underline">Edit</button>
+                        <button onclick="prods.splice(${idx},1);localStorage.setItem('pos_prods_pro',JSON.stringify(prods));renderProductList()" class="text-red-500">Del</button>
+                    </td>
+                </tr>`).join('');
+        }
+
+        // --- Expense Manager ---
+        function addExpense() {
+            const d = document.getElementById('expDesc').value;
+            const a = parseFloat(document.getElementById('expAmt').value);
+            if(!d || !a) return;
+            expenses.push({ desc: d, amt: a, date: new Date().toISOString().split('T')[0], month: new Date().toISOString().substring(0,7) });
+            localStorage.setItem('pos_exp_pro', JSON.stringify(expenses));
+            document.getElementById('expDesc').value = ""; document.getElementById('expAmt').value = "";
+            renderExpenseList();
+        }
+
+        function renderExpenseList() {
+            document.getElementById('expenseList').innerHTML = expenses.map((e, idx) => `
+                <div class="flex justify-between p-3 bg-rose-50 border border-rose-100 rounded-lg font-bold text-rose-800">
+                    <span>${e.desc} (${e.date})</span>
+                    <b>Rs ${e.amt} <button onclick="expenses.splice(${idx},1);localStorage.setItem('pos_exp_pro',JSON.stringify(expenses));renderExpenseList()" class="ml-2 text-rose-900 font-black">×</button></b>
+                </div>`).join('');
+        }
+
+        // --- Reports (P&L with Expenses) ---
+        function renderReports() {
+            const dVal = document.getElementById('reportDate').value;
+            const mVal = document.getElementById('reportMonth').value;
+            
+            let filteredSales = sales.filter(s => mVal ? s.month === mVal : s.date === dVal);
+            let filteredExp = expenses.filter(e => mVal ? e.month === mVal : e.date === dVal);
+
+            let sSum = filteredSales.reduce((s, i) => s + i.total, 0);
+            let pSum = filteredSales.reduce((s, i) => s + i.profit, 0);
+            let eSum = filteredExp.reduce((s, i) => s + i.amt, 0);
+            let cSum = filteredSales.reduce((s, i) => s + i.paid, 0);
+
+            document.getElementById('repTotal').innerText = "Rs " + sSum;
+            document.getElementById('repExp').innerText = "Rs " + eSum;
+            document.getElementById('repProfit').innerText = "Rs " + (pSum - eSum);
+            document.getElementById('repCash').innerText = "Rs " + (cSum - eSum);
+        }
+
+        function initShop() {
+            const n = localStorage.getItem('pos_store_name') || "AL-HAFIZ TRADERS";
+            const m = localStorage.getItem('pos_store_mob') || "03066442004";
+            document.getElementById('dispName').innerText = n;
+            document.getElementById('dispMob').innerText = "PH: " + m;
+            document.getElementById('setShopName').value = n;
+            document.getElementById('setShopMob').value = m;
+        }
+
+        function updateShopDetails() {
+            localStorage.setItem('pos_store_name', document.getElementById('setShopName').value);
+            localStorage.setItem('pos_store_mob', document.getElementById('setShopMob').value);
+            initShop(); alert("Success!");
+        }
+
+        function exportSalesCSV() {
+            let csv = "ID,Date,Customer,Total,Paid,Udhaar,Profit\n";
+            sales.forEach((s, idx) => csv += `${idx+1},${s.date},${s.customer},${s.total},${s.paid},${s.bal},${s.profit}\n`);
+            const b = new Blob([csv], { type: 'text/csv' });
+            const u = window.URL.createObjectURL(b);
+            const a = document.createElement('a'); a.href = u; a.download = "sales_report.csv"; a.click();
+        }
+    </script>
+</body>
+</html>
