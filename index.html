@@ -298,5 +298,74 @@
             }
         }
 
-        function addProductToList() {
-            const name = document.get
+                function addProductToList() {
+            const name = document.getElementById('listPName').value;
+            const price = parseFloat(document.getElementById('listPPrice').value);
+            const stock = parseInt(document.getElementById('listPStock').value);
+            
+            if(name && price && !isNaN(stock)) {
+                prods.push({name, price, stock});
+                localStorage.setItem('pos_prods', JSON.stringify(prods));
+                renderProductList();
+                // Inputs clear karne ke liye
+                document.getElementById('listPName').value = ""; 
+                document.getElementById('listPPrice').value = ""; 
+                document.getElementById('listPStock').value = "";
+            } else {
+                alert("Please fill all product details!");
+            }
+        }
+
+        function renderReports() {
+            document.getElementById('repTotal').innerText = "Rs " + (sales.total || 0);
+            document.getElementById('repCash').innerText = "Rs " + (sales.cash || 0);
+            document.getElementById('repUdhaar').innerText = "Rs " + (sales.udhaar || 0);
+        }
+
+        function clearReports() { 
+            if(confirm("Clear Today's Sales?")) { 
+                sales = {total: 0, cash: 0, udhaar: 0}; 
+                localStorage.setItem('pos_daily_sales', JSON.stringify(sales)); 
+                renderReports(); 
+            } 
+        }
+
+        function deleteProd(idx) { 
+            if(confirm("Delete this item?")) { 
+                prods.splice(idx, 1); 
+                localStorage.setItem('pos_prods', JSON.stringify(prods)); 
+                renderProductList(); 
+            } 
+        }
+        
+        function updateShopDetails() {
+            const sName = document.getElementById('setShopName').value;
+            const sMob = document.getElementById('setShopMob').value;
+            localStorage.setItem('pos_store_name', sName);
+            localStorage.setItem('pos_store_mob', sMob);
+            initShop(); 
+            alert("Settings Saved!");
+        }
+
+        function updatePayment(name) {
+            let amt = parseFloat(prompt(`Payment from ${name}:`, "0"));
+            if (amt > 0) { 
+                customers[name].paid += amt; 
+                customers[name].bal -= amt; 
+                sales.cash += amt; 
+                sales.udhaar -= amt;
+                localStorage.setItem('pos_cust_data', JSON.stringify(customers)); 
+                localStorage.setItem('pos_daily_sales', JSON.stringify(sales));
+                renderCustomers(); 
+            }
+        }
+
+        // Initialize App
+        initShop();
+        setInterval(() => { 
+            const clockEl = document.getElementById('clock');
+            if(clockEl) clockEl.innerText = new Date().toLocaleString(); 
+        }, 1000);
+    </script>
+</body>
+</html>
