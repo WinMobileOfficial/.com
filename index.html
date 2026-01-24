@@ -204,9 +204,11 @@
         }
 
         // --- Bill History & Update Payment ---
-        function renderHistory() {
+function renderHistory() {
     const hist = document.getElementById('historyList');
-    hist.innerHTML = sales.slice().reverse().map((s, idx) => `
+    // .slice().reverse() ki wajah se index ka masla hota hai, isliye original index pass karenge
+    hist.innerHTML = sales.map((s, idx) => {
+        return `
         <div class="bg-white p-5 border-2 border-slate-100 rounded-3xl flex items-center justify-between mb-4 shadow-sm">
             <div>
                 <h4 class="font-black uppercase italic text-blue-800">${s.customer}</h4>
@@ -218,14 +220,47 @@
                 <div class="flex gap-2">
                     <input type="number" id="updatePaid_${idx}" placeholder="0.00" 
                            class="border-2 border-blue-400 p-2 rounded-xl w-32 text-center font-black text-blue-600 outline-none">
-                    <button onclick="updatePayment(${sales.length - 1 - idx})" 
+                    <button onclick="updatePayment(${idx})" 
                             class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-black shadow-md transition">
                         PAY
                     </button>
                 </div>
             </div>
-        </div>`).join('');
-                                                       }
+        </div>`;
+    }).reverse().join(''); // Reverse yahan karein taake ID sahi rahay
+}
+
+function updatePayment(idx) {
+    const inputField = document.getElementById(`updatePaid_${idx}`);
+    let extra = parseFloat(inputField.value) || 0;
+
+    if (extra <= 0) {
+        alert("Pehle amount likhen!");
+        return;
+    }
+    
+    let s = sales[idx];
+    
+    // Calculation
+    s.paid = (parseFloat(s.paid) || 0) + extra;
+    s.bal = (parseFloat(s.total) || 0) - s.paid;
+    
+    // Customer Master Record Update
+    if(customers[s.mob]) {
+        customers[s.mob].bal = (parseFloat(customers[s.mob].bal) || 0) - extra;
+    }
+    
+    // Save to Memory
+    localStorage.setItem('pos_sales_pro', JSON.stringify(sales));
+    localStorage.setItem('pos_cust_pro', JSON.stringify(customers));
+    
+    alert("Rs " + extra + " Jama ho gaye hain!");
+    
+    // Refresh lists
+    renderHistory();
+    renderCustomerDirectory();
+}
+
         function updatePayment(originalIdx) {
             let s = sales[originalIdx];
             let extra = parseFloat(document.getElementById(`updatePaid_${originalIdx}`).value) || 0;
