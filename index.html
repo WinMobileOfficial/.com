@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinMobile POS | Inventory & Settings</title>
+    <title>WinMobile POS | Ultimate Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @media print { .no-print { display: none !important; } #receipt { display: block !important; width: 80mm; } }
@@ -26,7 +26,8 @@
             <button onclick="switchTab('billing')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition font-bold">🛒 POS Billing</button>
             <button onclick="switchTab('customers')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition font-bold">👥 Customer Khata</button>
             <button onclick="switchTab('products')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition font-bold">📦 Inventory</button>
-            <button onclick="switchTab('settings')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition font-bold">⚙️ Shop Settings</button>
+            <button onclick="switchTab('reports')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition font-bold">📊 Daily Report</button>
+            <button onclick="switchTab('settings')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition font-bold text-slate-400">⚙️ Settings</button>
         </nav>
     </div>
 
@@ -42,57 +43,86 @@
         <div id="billingTab" class="flex-1 flex flex-col overflow-hidden">
             <main class="flex-1 p-6 flex gap-6 overflow-hidden no-print">
                 <div class="w-80 bg-white p-6 rounded-2xl shadow-xl border">
-                    <h3 class="font-bold text-slate-700 mb-4 uppercase italic border-b pb-2 text-sm">Add Items</h3>
+                    <h3 class="font-bold text-slate-700 mb-4 uppercase italic border-b pb-2 text-sm text-blue-600">Items Selection</h3>
                     <div class="space-y-4 relative">
-                        <input id="pSearch" oninput="filterProducts(this.value)" autocomplete="off" type="text" placeholder="Search Product..." class="w-full border-2 p-3 rounded-xl outline-none font-bold">
+                        <input id="pSearch" oninput="filterProducts(this.value)" autocomplete="off" type="text" placeholder="Search Product..." class="w-full border-2 p-3 rounded-xl outline-none font-bold focus:border-blue-500">
                         <div id="searchList" class="search-results hidden shadow-2xl"></div>
                         <div id="stockAlert" class="hidden text-[10px] bg-red-100 text-red-600 p-2 rounded-lg font-black uppercase text-center"></div>
                         <div class="grid grid-cols-2 gap-3">
                             <input id="pPrice" type="number" placeholder="Price" class="w-full border-2 p-3 rounded-xl font-bold text-blue-600">
                             <input id="pQty" type="number" value="1" class="w-full border-2 p-3 rounded-xl font-bold">
                         </div>
-                        <button onclick="addToCart()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black hover:bg-blue-700 uppercase">Add To Bill</button>
+                        <button onclick="addToCart()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black hover:bg-blue-700 uppercase shadow-lg">Add To Bill</button>
                     </div>
                 </div>
                 <div class="flex-1 bg-white rounded-2xl shadow-xl border flex flex-col overflow-hidden">
                     <div id="cartBody" class="flex-1 p-4 overflow-y-auto"></div>
                     <div class="p-6 bg-slate-900 text-white">
-                        <div class="flex justify-between text-2xl font-black mb-4 uppercase"><span>Total:</span><span>Rs <span id="totalDisplay">0</span></span></div>
+                        <div class="flex justify-between text-2xl font-black mb-4 uppercase text-blue-400"><span>Grand Total:</span><span>Rs <span id="totalDisplay">0</span></span></div>
                         <div class="grid grid-cols-2 gap-4 mb-4">
                             <input id="paidAmt" oninput="calcBal()" type="number" placeholder="Paid Now" class="bg-slate-800 p-3 rounded-xl text-green-400 font-bold outline-none border border-slate-700">
                             <input id="balAmt" type="number" readonly placeholder="Pending" class="bg-slate-800 p-3 rounded-xl text-red-400 font-bold outline-none border border-slate-700">
                         </div>
-                        <button onclick="saveAndPrint()" class="w-full bg-green-500 py-4 rounded-2xl font-black text-xl hover:bg-green-600 uppercase">Save & Print Bill</button>
+                        <button onclick="saveAndPrint()" class="w-full bg-green-500 py-4 rounded-2xl font-black text-xl hover:bg-green-600 uppercase transition shadow-lg">Save & Print Bill</button>
                     </div>
                 </div>
             </main>
         </div>
 
-        <div id="settingsTab" class="flex-1 p-8 overflow-y-auto hidden-tab bg-white no-print">
-            <h2 class="text-2xl font-black mb-6 border-l-4 border-blue-500 pl-4 uppercase italic">Shop Settings</h2>
-            <div class="max-w-md space-y-4 bg-slate-50 p-6 rounded-2xl border">
-                <div>
-                    <label class="block text-xs font-black text-slate-500 uppercase mb-1">Shop / Traders Name</label>
-                    <input id="setShopName" type="text" class="w-full border-2 p-3 rounded-xl font-bold outline-none border-blue-100">
-                </div>
-                <div>
-                    <label class="block text-xs font-black text-slate-500 uppercase mb-1">Shop Phone Number</label>
-                    <input id="setShopMob" type="text" class="w-full border-2 p-3 rounded-xl font-bold outline-none border-blue-100">
-                </div>
-                <button onclick="updateShopDetails()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black uppercase shadow-lg">Save Settings</button>
-            </div>
-        </div>
-
         <div id="customersTab" class="flex-1 p-8 overflow-y-auto hidden-tab bg-white no-print">
-            <h2 class="text-2xl font-black mb-6 border-l-4 border-blue-500 pl-4 uppercase">Customer Ledger</h2>
-            <table class="w-full text-left border rounded-xl"><thead class="bg-slate-900 text-white text-[10px]"><tr><th class="p-4">Name</th><th class="p-4">Mobile</th><th class="p-4 text-red-400">Udhaar</th><th class="p-4 text-right">Action</th></tr></thead><tbody id="custListBody"></tbody></table>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-black border-l-4 border-blue-500 pl-4 uppercase italic">Customer Ledger</h2>
+                <input id="custSearch" oninput="renderCustomers(this.value)" type="text" placeholder="Search by Name or Mob..." class="border-2 p-2 rounded-xl text-sm w-64 outline-none border-blue-100 font-bold">
+            </div>
+            <table class="w-full text-left border rounded-xl overflow-hidden shadow-sm">
+                <thead class="bg-slate-900 text-white text-[10px] uppercase">
+                    <tr><th class="p-4">Customer Name (Click to Bill)</th><th class="p-4">Mobile</th><th class="p-4 text-red-400">Udhaar</th><th class="p-4 text-right">Action</th></tr>
+                </thead>
+                <tbody id="custListBody"></tbody>
+            </table>
         </div>
 
         <div id="productsTab" class="flex-1 p-8 overflow-y-auto hidden-tab bg-white no-print">
-             <div class="bg-blue-600 p-6 rounded-2xl text-white mb-8 grid grid-cols-4 gap-4">
-                <input id="listPName" type="text" placeholder="Product Name" class="p-3 rounded-xl text-slate-900 font-bold"><input id="listPPrice" type="number" placeholder="Price" class="p-3 rounded-xl text-slate-900 font-bold"><input id="listPStock" type="number" placeholder="Stock" class="p-3 rounded-xl text-slate-900 font-bold"><button onclick="addProductToList()" class="bg-yellow-400 text-slate-900 font-black rounded-xl uppercase">Add</button>
+            <div class="bg-blue-600 p-6 rounded-2xl text-white mb-8 grid grid-cols-4 gap-4 shadow-lg">
+                <input id="listPName" type="text" placeholder="Product Name" class="p-3 rounded-xl text-slate-900 font-bold outline-none">
+                <input id="listPPrice" type="number" placeholder="Price" class="p-3 rounded-xl text-slate-900 font-bold outline-none">
+                <input id="listPStock" type="number" placeholder="Stock" class="p-3 rounded-xl text-slate-900 font-bold outline-none">
+                <button onclick="addProductToList()" class="bg-yellow-400 text-slate-900 font-black rounded-xl hover:bg-yellow-300 uppercase">Save Item</button>
             </div>
-            <table class="w-full text-left border rounded-xl"><thead class="bg-slate-900 text-white text-[10px]"><tr><th class="p-4">Item</th><th class="p-4">Price</th><th class="p-4">Stock</th><th class="p-4 text-right">Action</th></tr></thead><tbody id="prodListBody"></tbody></table>
+            <table class="w-full text-left border rounded-xl shadow-sm overflow-hidden">
+                <thead class="bg-slate-900 text-white text-[10px] uppercase">
+                    <tr><th class="p-4">Item Name</th><th class="p-4">Sale Price</th><th class="p-4">Stock Left</th><th class="p-4 text-right">Action</th></tr>
+                </thead>
+                <tbody id="prodListBody"></tbody>
+            </table>
+        </div>
+
+        <div id="reportsTab" class="flex-1 p-8 overflow-y-auto hidden-tab bg-white no-print">
+            <h2 class="text-2xl font-black mb-6 border-l-4 border-blue-500 pl-4 uppercase italic">Daily Sales Summary</h2>
+            <div class="grid grid-cols-3 gap-6 mb-8 text-center">
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-200">
+                    <p class="text-xs font-bold text-blue-600 uppercase">Total Sales Today</p>
+                    <h3 id="repTotal" class="text-3xl font-black text-slate-800">Rs 0</h3>
+                </div>
+                <div class="bg-green-50 p-6 rounded-2xl border border-green-200">
+                    <p class="text-xs font-bold text-green-600 uppercase">Cash Collected</p>
+                    <h3 id="repCash" class="text-3xl font-black text-slate-800">Rs 0</h3>
+                </div>
+                <div class="bg-red-50 p-6 rounded-2xl border border-red-200">
+                    <p class="text-xs font-bold text-red-600 uppercase">Udhaar (Pending)</p>
+                    <h3 id="repUdhaar" class="text-3xl font-black text-slate-800">Rs 0</h3>
+                </div>
+            </div>
+            <button onclick="clearReports()" class="text-xs text-red-500 font-bold underline">Reset Daily Report</button>
+        </div>
+
+        <div id="settingsTab" class="flex-1 p-8 overflow-y-auto hidden-tab bg-white no-print">
+            <h2 class="text-2xl font-black mb-6 border-l-4 border-blue-500 pl-4 uppercase italic">Shop Configuration</h2>
+            <div class="max-w-md space-y-4 bg-slate-50 p-6 rounded-2xl border">
+                <div><label class="block text-xs font-black text-slate-500 uppercase">Shop Name</label><input id="setShopName" type="text" class="w-full border-2 p-3 rounded-xl font-bold"></div>
+                <div><label class="block text-xs font-black text-slate-500 uppercase">Phone Number</label><input id="setShopMob" type="text" class="w-full border-2 p-3 rounded-xl font-bold"></div>
+                <button onclick="updateShopDetails()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black uppercase">Update Shop Details</button>
+            </div>
         </div>
     </div>
 
@@ -112,35 +142,22 @@
             <div style="display:flex; justify-content:space-between"><span>PAID:</span><span id="rPaid"></span></div>
             <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>UDHAAR:</span><span id="rBal"></span></div>
         </div>
-        <center style="margin-top:10px; font-size:9px;">Shukriya! Wapis tashreef layein.</center>
+        <center style="margin-top:10px; font-size:9px;">Shukriya! WinMobile POS.</center>
     </div>
 
     <script>
         let cart = [];
         let prods = JSON.parse(localStorage.getItem('pos_prods')) || [];
         let customers = JSON.parse(localStorage.getItem('pos_cust_data')) || {};
+        let sales = JSON.parse(localStorage.getItem('pos_daily_sales')) || { total: 0, cash: 0, udhaar: 0 };
         let invNum = parseInt(localStorage.getItem('pos_inv_num')) || 1001;
 
         function switchTab(t) {
-            ['billingTab', 'productsTab', 'customersTab', 'settingsTab'].forEach(id => document.getElementById(id).classList.add('hidden-tab'));
+            ['billingTab', 'productsTab', 'customersTab', 'settingsTab', 'reportsTab'].forEach(id => document.getElementById(id).classList.add('hidden-tab'));
             document.getElementById(t + 'Tab').classList.remove('hidden-tab');
             if(t === 'customers') renderCustomers();
             if(t === 'products') renderProductList();
-            if(t === 'settings') loadSettings();
-        }
-
-        function loadSettings() {
-            document.getElementById('setShopName').value = localStorage.getItem('pos_store_name') || "AL-HAFIZ TRADERS";
-            document.getElementById('setShopMob').value = localStorage.getItem('pos_store_mob') || "03066442004";
-        }
-
-        function updateShopDetails() {
-            const name = document.getElementById('setShopName').value;
-            const mob = document.getElementById('setShopMob').value;
-            localStorage.setItem('pos_store_name', name);
-            localStorage.setItem('pos_store_mob', mob);
-            initShop();
-            alert("Settings Saved Successfully!");
+            if(t === 'reports') renderReports();
         }
 
         function initShop() {
@@ -152,13 +169,13 @@
             document.getElementById('rShopMob').innerText = "PH: " + mob;
         }
 
-        // --- Standard POS Logic ---
+        // --- PRODUCT SEARCH & BILLING ---
         function filterProducts(q) {
             const list = document.getElementById('searchList');
             if(!q) { list.classList.add('hidden'); return; }
             const filtered = prods.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
             if(filtered.length > 0) {
-                list.innerHTML = filtered.map(p => `<div class="search-item" onclick="selectProduct('${p.name}', ${p.price}, ${p.stock})">${p.name} <span class="float-right text-[10px] ${p.stock <= 5 ? 'text-red-500':'text-green-500'}">S: ${p.stock}</span></div>`).join('');
+                list.innerHTML = filtered.map(p => `<div class="search-item" onclick="selectProduct('${p.name}', ${p.price}, ${p.stock})">${p.name} <span class="float-right text-[10px] ${p.stock <= 5 ? 'text-red-600 font-black':'text-green-600'}">Stock: ${p.stock}</span></div>`).join('');
                 list.classList.remove('hidden');
             } else { list.classList.add('hidden'); }
         }
@@ -167,9 +184,8 @@
             document.getElementById('pSearch').value = name;
             document.getElementById('pPrice').value = price;
             document.getElementById('searchList').classList.add('hidden');
-            const alertBox = document.getElementById('stockAlert');
-            if(stock <= 5) { alertBox.classList.remove('hidden'); alertBox.innerText = `⚠️ Low Stock: Only ${stock} left!`; }
-            else { alertBox.classList.add('hidden'); }
+            if(stock <= 5) { document.getElementById('stockAlert').classList.remove('hidden'); document.getElementById('stockAlert').innerText = `⚠️ Low Stock: Only ${stock} left!`; }
+            else { document.getElementById('stockAlert').classList.add('hidden'); }
         }
 
         function addToCart() {
@@ -187,7 +203,7 @@
             let total = 0;
             document.getElementById('cartBody').innerHTML = cart.map(i => {
                 total += i.price * i.qty;
-                return `<div class="flex justify-between p-3 border-b bg-slate-50 mb-2 rounded-lg font-bold text-sm"><span>${i.name} x${i.qty}</span><b>${i.price*i.qty}</b></div>`;
+                return `<div class="flex justify-between p-3 border-b bg-slate-50 mb-2 rounded-lg font-bold text-sm"><span>${i.name} x${i.qty}</span><b>Rs ${i.price*i.qty}</b></div>`;
             }).join('');
             document.getElementById('totalDisplay').innerText = total;
             calcBal();
@@ -207,16 +223,23 @@
             const cName = document.getElementById('cName').value.trim() || "Walk-in Customer";
             const cMob = document.getElementById('cMob').value.trim() || "N/A";
 
+            // Update Stock
             cart.forEach(item => {
                 const pIdx = prods.findIndex(p => p.name === item.name);
                 if(pIdx !== -1) prods[pIdx].stock -= item.qty;
             });
             localStorage.setItem('pos_prods', JSON.stringify(prods));
 
+            // Save Khata
             if(!customers[cName]) customers[cName] = { total: 0, bal: 0, paid: 0, phone: cMob };
             customers[cName].total += total; customers[cName].paid += paid; customers[cName].bal += bal;
             localStorage.setItem('pos_cust_data', JSON.stringify(customers));
 
+            // Daily Report
+            sales.total += total; sales.cash += paid; sales.udhaar += bal;
+            localStorage.setItem('pos_daily_sales', JSON.stringify(sales));
+
+            // Receipt
             document.getElementById('rInv').innerText = "INVOICE #" + invNum;
             document.getElementById('rCustomerInfo').innerText = "CUST: " + cName + " (" + cMob + ")";
             document.getElementById('rItems').innerHTML = cart.map(i => `<div style="display:flex; justify-content:space-between"><span>${i.name} x${i.qty}</span><span>${i.price*i.qty}</span></div>`).join('');
@@ -228,31 +251,50 @@
             document.getElementById('paidAmt').value = ""; document.getElementById('cName').value=""; document.getElementById('cMob').value="";
         }
 
-        function renderCustomers() {
-            document.getElementById('custListBody').innerHTML = Object.keys(customers).map(k => `
-                <tr class="border-b text-sm"><td class="p-4 font-bold text-blue-600">${k}</td><td class="p-4">${customers[k].phone}</td><td class="p-4 font-black text-red-600">Rs ${customers[k].bal}</td><td class="p-4 text-right"><button onclick="updatePayment('${k}')" class="bg-green-500 text-white px-3 py-1 rounded text-xs">Pay Now</button></td></tr>
-            `).join('');
+        // --- CUSTOMER FEATURES ---
+        function renderCustomers(query = '') {
+            const body = document.getElementById('custListBody');
+            body.innerHTML = '';
+            Object.keys(customers).forEach(k => {
+                if(k.toLowerCase().includes(query.toLowerCase()) || customers[k].phone.includes(query)) {
+                    body.innerHTML += `
+                        <tr class="border-b text-sm">
+                            <td class="p-4 font-bold text-blue-600 cursor-pointer hover:underline" onclick="loadCustToBill('${k}', '${customers[k].phone}')">${k}</td>
+                            <td class="p-4 font-mono">${customers[k].phone}</td>
+                            <td class="p-4 font-black text-red-600">Rs ${customers[k].bal}</td>
+                            <td class="p-4 text-right">
+                                <button onclick="updatePayment('${k}')" class="bg-green-500 text-white px-3 py-1 rounded text-xs">Receive Payment</button>
+                            </td>
+                        </tr>`;
+                }
+            });
         }
 
-        function updatePayment(name) {
-            let amount = parseFloat(prompt(`Amount paid by ${name}:`, "0"));
-            if (amount > 0) { customers[name].paid += amount; customers[name].bal -= amount; localStorage.setItem('pos_cust_data', JSON.stringify(customers)); renderCustomers(); }
+        function loadCustToBill(name, phone) {
+            document.getElementById('cName').value = name;
+            document.getElementById('cMob').value = phone;
+            switchTab('billing');
         }
 
-        function addProductToList() {
-            const name = document.getElementById('listPName').value;
-            const price = parseFloat(document.getElementById('listPPrice').value);
-            const stock = parseInt(document.getElementById('listPStock').value);
-            if(name && price && !isNaN(stock)) { prods.push({name, price, stock}); localStorage.setItem('pos_prods', JSON.stringify(prods)); renderProductList(); }
-        }
-
+        // --- INVENTORY FEATURES ---
         function renderProductList() {
-            document.getElementById('prodListBody').innerHTML = prods.map((p, idx) => `<tr class="border-b"><td class="p-4 font-bold uppercase">${p.name}</td><td class="p-4">Rs ${p.price}</td><td class="p-4 font-bold">${p.stock}</td><td class="p-4 text-right"><button onclick="deleteProd(${idx})" class="text-red-500 text-xs">Delete</button></td></tr>`).join('');
+            document.getElementById('prodListBody').innerHTML = prods.map((p, idx) => `
+                <tr class="border-b">
+                    <td class="p-4 font-bold uppercase">${p.name}</td>
+                    <td class="p-4 text-blue-600 font-bold">Rs ${p.price}</td>
+                    <td class="p-4 ${p.stock <= 5 ? 'low-stock' : 'font-bold'}">${p.stock}</td>
+                    <td class="p-4 text-right space-x-2">
+                        <button onclick="editProd(${idx})" class="text-blue-500 text-xs font-bold uppercase">Edit</button>
+                        <button onclick="deleteProd(${idx})" class="text-red-500 text-xs font-bold uppercase">Del</button>
+                    </td>
+                </tr>`).join('');
         }
-        function deleteProd(idx) { prods.splice(idx,1); localStorage.setItem('pos_prods', JSON.stringify(prods)); renderProductList(); }
 
-        initShop();
-        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
-    </script>
-</body>
-</html>
+        function editProd(idx) {
+            const p = prods[idx];
+            const nPrice = prompt(`Update Sale Price for ${p.name}:`, p.price);
+            const nStock = prompt(`Update Total Stock for ${p.name}:`, p.stock);
+            if(nPrice !== null && nStock !== null) {
+                prods[idx].price = parseFloat(nPrice);
+                prods[idx].stock = parseInt(nStock);
+                localStorag
