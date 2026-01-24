@@ -3,132 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinMobile POS | Hybrid Edition</title>
+    <title>WinMobile POS | Inventory & Udhaar</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         @media print { .no-print { display: none !important; } #receipt { display: block !important; width: 80mm; } }
         .hidden-tab { display: none; }
-        .search-results { position: absolute; width: 100%; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ddd; z-index: 50; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .search-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; }
-        .search-item:hover { background-color: #eff6ff; color: #2563eb; }
+        .search-results { position: absolute; width: 100%; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ddd; z-index: 50; border-radius: 8px; }
+        .search-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; font-weight: bold; }
+        .search-item:hover { background-color: #f0f9ff; }
+        .low-stock { color: #ef4444; font-weight: 800; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body class="bg-slate-100 flex h-screen overflow-hidden font-sans">
 
     <div class="w-64 bg-slate-900 text-white flex flex-col no-print">
-        <div class="p-6 bg-slate-800 border-b border-slate-700">
-            <h2 id="dispName" class="text-xl font-black text-blue-400 uppercase tracking-tighter">STORE NAME</h2>
-            <p id="dispPhone" class="text-[10px] text-slate-500 font-bold mt-1 italic"></p>
+        <div class="p-6 bg-slate-800 border-b border-slate-700 text-center">
+            <h2 id="dispName" class="text-xl font-black text-blue-400 uppercase italic">STORE NAME</h2>
         </div>
         <nav class="p-4 flex-1 space-y-1">
-            <button onclick="switchTab('billing')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition">🛒 POS Billing</button>
-            <button onclick="switchTab('products')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition">📦 Products List</button>
-            <button onclick="switchTab('customers')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition">👥 Customer Khata</button>
-            <button onclick="switchTab('settings')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition">⚙️ Store Settings</button>
+            <button onclick="switchTab('billing')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition font-bold">🛒 POS Billing</button>
+            <button onclick="switchTab('customers')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition font-bold">👥 Customer Khata</button>
+            <button onclick="switchTab('products')" class="w-full text-left p-3 hover:bg-slate-700 rounded-xl flex items-center transition font-bold">📦 Inventory / Products</button>
         </nav>
-        <div class="p-4 bg-slate-900 text-[10px] text-yellow-500 font-bold border-t border-slate-800 text-center">
-            INV-NUM: <span id="nextInv"></span>
-        </div>
     </div>
 
     <div class="flex-1 flex flex-col overflow-hidden">
-        
         <header class="h-16 bg-white border-b px-8 flex items-center justify-between no-print shadow-sm">
             <div class="flex gap-4">
-                <input id="cName" type="text" placeholder="Customer Name" class="border p-2 rounded-lg text-sm w-48 outline-none focus:ring-2 focus:ring-blue-400">
-                <input id="cMob" type="text" placeholder="WhatsApp (92...)" class="border p-2 rounded-lg text-sm w-40 outline-none focus:ring-2 focus:ring-blue-400">
+                <input id="cName" type="text" placeholder="Customer Name" class="border p-2 rounded-lg text-sm w-48 font-bold outline-none">
+                <input id="cMob" type="text" placeholder="Mobile Number" class="border p-2 rounded-lg text-sm w-40 font-bold outline-none">
             </div>
-            <div id="clock" class="text-slate-500 font-mono text-xs font-bold bg-slate-100 px-4 py-1 rounded-full"></div>
+            <div id="clock" class="text-slate-500 font-mono text-xs font-bold"></div>
         </header>
 
         <div id="billingTab" class="flex-1 flex flex-col overflow-hidden">
             <main class="flex-1 p-6 flex gap-6 overflow-hidden no-print">
-                <div class="w-80 bg-white p-6 rounded-2xl shadow-xl border border-slate-200">
-                    <h3 class="font-bold text-slate-700 mb-4 text-lg border-b pb-2 uppercase italic">Quick Bill</h3>
-                    
-                    <div id="scannerSection" class="hidden mb-4">
-                        <div id="reader" class="overflow-hidden rounded-lg border-2 border-blue-400"></div>
-                        <button onclick="stopScanner()" class="w-full mt-2 bg-red-100 text-red-600 py-1 rounded text-[10px] font-bold">CLOSE CAMERA</button>
-                    </div>
-                    <button id="scanBtn" onclick="startScanner()" class="w-full mb-4 bg-slate-100 text-slate-600 py-2 rounded-lg text-xs font-bold hover:bg-slate-200 transition flex items-center justify-center border border-dashed border-slate-300">
-                        <span class="mr-2">📷</span> USE SCANNER (OPTIONAL)
-                    </button>
-
+                <div class="w-80 bg-white p-6 rounded-2xl shadow-xl border">
+                    <h3 class="font-bold text-slate-700 mb-4 uppercase italic border-b pb-2">Create Bill</h3>
                     <div class="space-y-4 relative">
                         <div>
-                            <label class="text-[10px] font-bold text-slate-400 uppercase">Search or Type Item</label>
-                            <input id="pSearch" oninput="filterProducts(this.value)" autocomplete="off" type="text" placeholder="Start typing..." class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-400 outline-none font-bold">
+                            <label class="text-[10px] font-bold text-slate-400">PRODUCT SEARCH</label>
+                            <input id="pSearch" oninput="filterProducts(this.value)" autocomplete="off" type="text" placeholder="Type name..." class="w-full border-2 p-3 rounded-xl outline-none font-bold">
                             <div id="searchList" class="search-results hidden shadow-2xl"></div>
                         </div>
-                        
+                        <div id="stockAlert" class="hidden text-[10px] bg-red-100 text-red-600 p-2 rounded-lg font-black uppercase text-center">⚠️ Low Stock! Re-order soon</div>
                         <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase">Price</label>
-                                <input id="pPrice" type="number" class="w-full border-2 bg-slate-50 p-3 rounded-xl font-bold text-blue-600">
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase">Qty</label>
-                                <input id="pQty" type="number" value="1" class="w-full border-2 border-slate-100 p-3 rounded-xl font-bold">
-                            </div>
+                            <input id="pPrice" type="number" placeholder="Price" class="w-full border-2 p-3 rounded-xl font-bold text-blue-600">
+                            <input id="pQty" type="number" value="1" class="w-full border-2 p-3 rounded-xl font-bold">
                         </div>
-                        <button onclick="addToCart()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg transition active:scale-95">Add to Bill</button>
+                        <button onclick="addToCart()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black hover:bg-blue-700 uppercase">Add To Bill</button>
                     </div>
                 </div>
 
                 <div class="flex-1 bg-white rounded-2xl shadow-xl border flex flex-col overflow-hidden">
                     <div id="cartBody" class="flex-1 p-4 overflow-y-auto"></div>
                     <div class="p-6 bg-slate-900 text-white">
-                        <div class="flex justify-between text-2xl font-black mb-4"><span>TOTAL:</span><span>Rs <span id="totalDisplay">0</span></span></div>
+                        <div class="flex justify-between text-2xl font-black mb-4 uppercase"><span>Total Bill:</span><span>Rs <span id="totalDisplay">0</span></span></div>
                         <div class="grid grid-cols-2 gap-4 mb-4">
-                            <input id="paidAmt" oninput="calcBal()" type="number" placeholder="Paid Amount" class="bg-slate-800 p-3 rounded-xl text-green-400 font-bold outline-none border border-slate-700">
-                            <input id="balAmt" type="number" readonly placeholder="Balance" class="bg-slate-800 p-3 rounded-xl text-red-400 font-bold outline-none border border-slate-700">
+                            <input id="paidAmt" oninput="calcBal()" type="number" placeholder="Paid Now" class="bg-slate-800 p-3 rounded-xl text-green-400 font-bold outline-none border border-slate-700">
+                            <input id="balAmt" type="number" readonly placeholder="Pending" class="bg-slate-800 p-3 rounded-xl text-red-400 font-bold outline-none border border-slate-700">
                         </div>
-                        <button onclick="saveAndPrint()" class="w-full bg-green-500 py-4 rounded-2xl font-black text-xl hover:bg-green-600 shadow-2xl uppercase">Print & Save Bill</button>
+                        <button onclick="saveAndPrint()" class="w-full bg-green-500 py-4 rounded-2xl font-black text-xl hover:bg-green-600 uppercase">Save & Print Bill</button>
                     </div>
                 </div>
             </main>
         </div>
 
-        <div id="customersTab" class="flex-1 p-8 overflow-y-auto hidden-tab bg-white no-print">
-            <h2 class="text-2xl font-black mb-6 border-l-4 border-green-500 pl-4 uppercase">Customer Ledger (Udhaar)</h2>
-            <div class="rounded-xl border border-slate-200 overflow-hidden">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-900 text-white text-xs uppercase">
-                        <tr><th class="p-4">Customer Name</th><th class="p-4">Total Purchases</th><th class="p-4">Paid</th><th class="p-4">Balance</th><th class="p-4">Action</th></tr>
-                    </thead>
-                    <tbody id="custListBody"></tbody>
-                </table>
-            </div>
-        </div>
-
         <div id="productsTab" class="flex-1 p-8 overflow-y-auto hidden-tab bg-white no-print">
-            <div class="bg-blue-600 p-6 rounded-2xl text-white mb-8 shadow-lg flex justify-between items-center">
-                <div class="flex-1 grid grid-cols-2 gap-4 mr-4">
-                    <input id="listPName" type="text" placeholder="Item Name (e.g. Nimko)" class="p-3 rounded-xl text-slate-900 outline-none">
-                    <input id="listPPrice" type="number" placeholder="Price (e.g. 50)" class="p-3 rounded-xl text-slate-900 outline-none">
-                </div>
-                <button onclick="addProductToList()" class="bg-yellow-400 text-slate-900 font-black rounded-xl px-8 py-3 hover:bg-yellow-300 transition">Save Product</button>
+             <div class="bg-blue-600 p-6 rounded-2xl text-white mb-8 shadow-lg grid grid-cols-4 gap-4">
+                <input id="listPName" type="text" placeholder="Product Name" class="p-3 rounded-xl text-slate-900 font-bold outline-none">
+                <input id="listPPrice" type="number" placeholder="Sale Price" class="p-3 rounded-xl text-slate-900 font-bold outline-none">
+                <input id="listPStock" type="number" placeholder="Opening Stock" class="p-3 rounded-xl text-slate-900 font-bold outline-none">
+                <button onclick="addProductToList()" class="bg-yellow-400 text-slate-900 font-black rounded-xl hover:bg-yellow-300 uppercase">Save Product</button>
             </div>
-            <table class="w-full text-left border rounded-xl overflow-hidden"><thead class="bg-slate-100 uppercase text-[10px] font-bold text-slate-500"><tr><th class="p-4">Item Name</th><th class="p-4">Price</th><th class="p-4 text-right">Action</th></tr></thead><tbody id="prodListBody"></tbody></table>
+            <table class="w-full text-left border rounded-xl overflow-hidden">
+                <thead class="bg-slate-900 text-white text-[10px] uppercase">
+                    <tr><th class="p-4">Item Name</th><th class="p-4">Price</th><th class="p-4">Stock Left</th><th class="p-4 text-right">Action</th></tr>
+                </thead>
+                <tbody id="prodListBody"></tbody>
+            </table>
         </div>
 
-        <div id="settingsTab" class="flex-1 p-12 hidden-tab bg-white no-print">
-            <h2 class="text-3xl font-black mb-8 border-b-4 border-blue-600 inline-block uppercase italic">Store Profile</h2>
-            <div class="max-w-md space-y-6 bg-slate-50 p-8 rounded-3xl border">
-                <div><label class="font-bold text-slate-500 text-xs uppercase">Owner/Dukan Name</label><input id="setStore" type="text" class="w-full border-2 p-3 rounded-xl outline-none focus:border-blue-500 font-bold"></div>
-                <div><label class="font-bold text-slate-500 text-xs uppercase">Phone Number</label><input id="setPhone" type="text" class="w-full border-2 p-3 rounded-xl outline-none focus:border-blue-500 font-bold"></div>
-                <button onclick="updateSettings()" class="bg-blue-600 text-white w-full py-4 rounded-xl font-black shadow-xl hover:bg-blue-700">UPDATE SETTINGS</button>
-            </div>
+        <div id="customersTab" class="flex-1 p-8 overflow-y-auto hidden-tab bg-white no-print">
+            <h2 class="text-2xl font-black mb-6 border-l-4 border-blue-500 pl-4 uppercase italic">Customer Ledger</h2>
+            <table class="w-full text-left border rounded-xl shadow-sm">
+                <thead class="bg-slate-900 text-white text-[10px] uppercase">
+                    <tr><th class="p-4">Customer</th><th class="p-4">Purchases</th><th class="p-4">Paid</th><th class="p-4 text-red-400">Udhaar</th><th class="p-4">Action</th></tr>
+                </thead>
+                <tbody id="custListBody"></tbody>
+            </table>
         </div>
     </div>
 
-    <div id="receipt" class="hidden p-4 text-black bg-white font-mono">
+    <div id="receipt" class="hidden text-black bg-white font-mono" style="padding: 10px;">
         <center>
-            <h2 id="rStore" style="margin:0; text-transform:uppercase; font-size: 18px;"></h2>
-            <p id="rPhone" style="font-size:10px; margin:2px 0;"></p>
-            <p id="rDate" style="font-size:10px; margin:0;"></p>
-            <p id="rInv" style="font-size:11px; font-weight:bold; margin:5px 0;"></p>
+            <h2 id="rStore" style="margin:0; text-transform:uppercase; font-size: 16px;"></h2>
+            <div style="border-top:1px dashed #000; margin:5px 0"></div>
+            <p id="rInv" style="font-size:11px; font-weight:bold;"></p>
+            <div id="rCustomerInfo" style="font-size:10px; font-weight:bold; background:#eee;"></div>
             <div style="border-top:1px dashed #000; margin:5px 0"></div>
         </center>
         <div id="rItems" style="font-size:11px;"></div>
@@ -145,160 +118,155 @@
         let prods = JSON.parse(localStorage.getItem('pos_prods')) || [];
         let customers = JSON.parse(localStorage.getItem('pos_cust_data')) || {};
         let invNum = parseInt(localStorage.getItem('pos_inv_num')) || 1001;
-        let html5QrCode = null;
 
         function switchTab(t) {
-            ['billingTab', 'productsTab', 'settingsTab', 'customersTab'].forEach(id => document.getElementById(id).classList.add('hidden-tab'));
+            ['billingTab', 'productsTab', 'customersTab'].forEach(id => document.getElementById(id).classList.add('hidden-tab'));
             document.getElementById(t + 'Tab').classList.remove('hidden-tab');
-            if(t === 'products') renderProductList();
             if(t === 'customers') renderCustomers();
-            stopScanner();
+            if(t === 'products') renderProductList();
         }
 
-        // --- SEARCHABLE DROPDOWN ---
+        // --- INVENTORY LOGIC ---
         function filterProducts(q) {
             const list = document.getElementById('searchList');
             if(!q) { list.classList.add('hidden'); return; }
             const filtered = prods.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
             if(filtered.length > 0) {
-                list.innerHTML = filtered.map(p => `<div class="search-item font-bold" onclick="selectProduct('${p.name}', ${p.price})">${p.name} <span class="text-blue-500 float-right">Rs ${p.price}</span></div>`).join('');
+                list.innerHTML = filtered.map(p => {
+                    let stockClass = p.stock <= 5 ? 'text-red-600 font-black' : 'text-green-600';
+                    return `<div class="search-item" onclick="selectProduct('${p.name}', ${p.price}, ${p.stock})">
+                        ${p.name} <span class="float-right text-[10px] ${stockClass}">Stock: ${p.stock}</span>
+                    </div>`;
+                }).join('');
                 list.classList.remove('hidden');
             } else { list.classList.add('hidden'); }
         }
 
-        function selectProduct(name, price) {
+        function selectProduct(name, price, stock) {
             document.getElementById('pSearch').value = name;
             document.getElementById('pPrice').value = price;
             document.getElementById('searchList').classList.add('hidden');
+            const alertBox = document.getElementById('stockAlert');
+            if(stock <= 5) { alertBox.classList.remove('hidden'); alertBox.innerText = `⚠️ Only ${stock} left in stock!`; }
+            else { alertBox.classList.add('hidden'); }
         }
 
-        // --- SCANNER (OPTIONAL) ---
-        function startScanner() {
-            document.getElementById('scannerSection').classList.remove('hidden');
-            document.getElementById('scanBtn').classList.add('hidden');
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
-                (decodedText) => {
-                    const p = prods.find(x => x.name === decodedText);
-                    if(p) { selectProduct(p.name, p.price); stopScanner(); }
-                }
-            ).catch(() => alert("Camera error or permission denied!"));
-        }
-
-        function stopScanner() {
-            if(html5QrCode) { html5QrCode.stop().then(() => { html5QrCode = null; document.getElementById('reader').innerHTML = ""; }); }
-            document.getElementById('scannerSection').classList.add('hidden');
-            document.getElementById('scanBtn').classList.remove('hidden');
-        }
-
-        // --- PRODUCT MANAGEMENT ---
-        function addProductToList() {
-            const n = document.getElementById('listPName').value;
-            const p = parseFloat(document.getElementById('listPPrice').value);
-            if(n && p) {
-                prods.push({name:n, price:p});
-                localStorage.setItem('pos_prods', JSON.stringify(prods));
-                renderProductList();
-                document.getElementById('listPName').value=""; document.getElementById('listPPrice').value="";
-            }
-        }
-
-        function renderProductList() {
-            document.getElementById('prodListBody').innerHTML = prods.map((p, idx) => `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-bold text-slate-700 uppercase text-sm">${p.name}</td>
-                    <td class="p-4 font-bold text-blue-600 italic">Rs ${p.price}</td>
-                    <td class="p-4 text-right"><button onclick="deleteProd(${idx})" class="text-red-500 font-black text-xs uppercase">Delete</button></td>
-                </tr>
-            `).join('');
-        }
-
-        function deleteProd(idx) { if(confirm('Remove this product?')) { prods.splice(idx,1); localStorage.setItem('pos_prods', JSON.stringify(prods)); renderProductList(); } }
-
-        // --- BILLING LOGIC ---
         function addToCart() {
-            const n = document.getElementById('pSearch').value;
-            const p = parseFloat(document.getElementById('pPrice').value);
-            const q = parseInt(document.getElementById('pQty').value);
-            if(n && p) {
-                cart.push({name:n, price:p, qty:q});
-                renderCart();
-                document.getElementById('pSearch').value = ""; document.getElementById('pPrice').value = ""; document.getElementById('pQty').value = "1";
-            }
+            const name = document.getElementById('pSearch').value;
+            const price = parseFloat(document.getElementById('pPrice').value);
+            const qty = parseInt(document.getElementById('pQty').value);
+            const product = prods.find(p => p.name === name);
+
+            if(!product) { alert("Product not found!"); return; }
+            if(product.stock < qty) { alert(`Not enough stock! Only ${product.stock} available.`); return; }
+
+            cart.push({name, price, qty});
+            renderCart();
+            document.getElementById('pSearch').value = ""; document.getElementById('pPrice').value = ""; document.getElementById('pQty').value = "1";
+            document.getElementById('stockAlert').classList.add('hidden');
         }
 
         function renderCart() {
             let total = 0;
-            document.getElementById('cartBody').innerHTML = cart.map(i => {
+            document.getElementById('cartBody').innerHTML = cart.map((i, idx) => {
                 total += i.price * i.qty;
-                return `<div class="flex justify-between p-3 border-b bg-slate-50 mb-2 rounded-lg font-bold text-slate-700"><span>${i.name} x${i.qty}</span><b>${i.price*i.qty}</b></div>`;
+                return `<div class="flex justify-between p-3 border-b bg-slate-50 mb-2 rounded-lg font-bold"><span>${i.name} x${i.qty}</span><b>${i.price*i.qty}</b></div>`;
             }).join('');
             document.getElementById('totalDisplay').innerText = total;
             calcBal();
         }
-
-        function calcBal() {
-            let total = parseFloat(document.getElementById('totalDisplay').innerText);
-            let paid = parseFloat(document.getElementById('paidAmt').value) || 0;
-            document.getElementById('balAmt').value = total - paid;
-        }
-
-        function renderCustomers() {
-            document.getElementById('custListBody').innerHTML = Object.keys(customers).map(k => `
-                <tr class="border-b">
-                    <td class="p-4 font-bold text-slate-700">${k}</td>
-                    <td class="p-4">Rs ${customers[k].total}</td>
-                    <td class="p-4 text-green-600 font-bold">Rs ${customers[k].paid || 0}</td>
-                    <td class="p-4 font-black text-red-600">Rs ${customers[k].bal}</td>
-                    <td class="p-4"><button onclick="clearKhata('${k}')" class="bg-red-50 text-red-600 px-3 py-1 rounded text-xs font-bold">Reset</button></td>
-                </tr>
-            `).join('');
-        }
-
-        function clearKhata(name) { if(confirm('Clear all history for '+name+'?')) { delete customers[name]; localStorage.setItem('pos_cust_data', JSON.stringify(customers)); renderCustomers(); } }
 
         function saveAndPrint() {
             if(cart.length === 0) return;
             const total = parseFloat(document.getElementById('totalDisplay').innerText);
             const paid = parseFloat(document.getElementById('paidAmt').value) || 0;
             const bal = total - paid;
-            const name = document.getElementById('cName').value || "Cash Customer";
+            const cName = document.getElementById('cName').value || "Cash Customer";
 
-            if(!customers[name]) customers[name] = { total: 0, bal: 0, paid: 0 };
-            customers[name].total += total;
-            customers[name].paid += paid;
-            customers[name].bal += bal;
+            // Update Stock
+            cart.forEach(item => {
+                const pIndex = prods.findIndex(p => p.name === item.name);
+                if(pIndex !== -1) prods[pIndex].stock -= item.qty;
+            });
+            localStorage.setItem('pos_prods', JSON.stringify(prods));
+
+            // Save Khata
+            if(!customers[cName]) customers[cName] = { total: 0, bal: 0, paid: 0 };
+            customers[cName].total += total;
+            customers[cName].paid += paid;
+            customers[cName].bal += bal;
             localStorage.setItem('pos_cust_data', JSON.stringify(customers));
 
-            document.getElementById('rStore').innerText = localStorage.getItem('pos_store_name') || "Store Name";
-            document.getElementById('rPhone').innerText = "PH: " + (localStorage.getItem('pos_store_phone') || "");
-            document.getElementById('rDate').innerText = new Date().toLocaleString();
-            document.getElementById('rInv').innerText = "INVOICE: INV-" + invNum;
+            // Receipt populate and Print
+            document.getElementById('rStore').innerText = localStorage.getItem('pos_store_name') || "WinMobile POS";
+            document.getElementById('rInv').innerText = "INV-" + invNum;
+            document.getElementById('rCustomerInfo').innerText = `CUST: ${cName}`;
+            document.getElementById('rItems').innerHTML = cart.map(i => `<div style="display:flex; justify-content:space-between"><span>${i.name} x${i.qty}</span><span>${i.price*i.qty}</span></div>`).join('');
             document.getElementById('rTotal').innerText = total;
             document.getElementById('rPaid').innerText = paid;
             document.getElementById('rBal').innerText = bal;
-            document.getElementById('rItems').innerHTML = cart.map(i => `<div style="display:flex; justify-content:space-between"><span>${i.name} x${i.qty}</span><span>${i.price*i.qty}</span></div>`).join('');
-            
+
             window.print();
             invNum++; localStorage.setItem('pos_inv_num', invNum);
-            document.getElementById('nextInv').innerText = invNum;
-            cart = []; renderCart(); document.getElementById('paidAmt').value = ""; document.getElementById('cName').value=""; document.getElementById('cMob').value="";
+            cart = []; renderCart(); 
+            document.getElementById('paidAmt').value = ""; document.getElementById('cName').value=""; document.getElementById('cMob').value="";
         }
 
-        function updateSettings() {
-            localStorage.setItem('pos_store_name', document.getElementById('setStore').value);
-            localStorage.setItem('pos_store_phone', document.getElementById('setPhone').value);
-            document.getElementById('dispName').innerText = document.getElementById('setStore').value;
-            document.getElementById('dispPhone').innerText = document.getElementById('setPhone').value;
-            alert("Dukan Profile Updated!");
+        // --- UI RENDER ---
+        function addProductToList() {
+            const name = document.getElementById('listPName').value;
+            const price = parseFloat(document.getElementById('listPPrice').value);
+            const stock = parseInt(document.getElementById('listPStock').value);
+            if(name && price && !isNaN(stock)) {
+                prods.push({name, price, stock});
+                localStorage.setItem('pos_prods', JSON.stringify(prods));
+                renderProductList();
+                document.getElementById('listPName').value=""; document.getElementById('listPPrice').value=""; document.getElementById('listPStock').value="";
+            }
         }
 
-        // Initialize
+        function renderProductList() {
+            document.getElementById('prodListBody').innerHTML = prods.map((p, idx) => `
+                <tr class="border-b">
+                    <td class="p-4 font-bold uppercase">${p.name}</td>
+                    <td class="p-4 text-blue-600 font-bold">Rs ${p.price}</td>
+                    <td class="p-4 ${p.stock <= 5 ? 'low-stock' : 'font-bold text-slate-600'}">${p.stock} Units</td>
+                    <td class="p-4 text-right"><button onclick="deleteProd(${idx})" class="text-red-500 font-bold text-xs">Delete</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function renderCustomers() {
+            document.getElementById('custListBody').innerHTML = Object.keys(customers).map(k => `
+                <tr class="border-b">
+                    <td class="p-4 font-bold text-blue-600">${k}</td>
+                    <td class="p-4">Rs ${customers[k].total}</td>
+                    <td class="p-4 text-green-600 font-bold">Rs ${customers[k].paid}</td>
+                    <td class="p-4 font-black text-red-600 italic">Rs ${customers[k].bal}</td>
+                    <td class="p-4"><button onclick="updatePayment('${k}')" class="bg-green-100 text-green-700 px-3 py-1 rounded font-bold text-xs">Pay Now</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function updatePayment(name) {
+            let amount = parseFloat(prompt(`Amount paid by ${name}:`, "0"));
+            if (amount > 0) {
+                customers[name].paid += amount;
+                customers[name].bal -= amount;
+                localStorage.setItem('pos_cust_data', JSON.stringify(customers));
+                renderCustomers();
+            }
+        }
+
+        function deleteProd(idx) { prods.splice(idx,1); localStorage.setItem('pos_prods', JSON.stringify(prods)); renderProductList(); }
+        function calcBal() {
+            let total = parseFloat(document.getElementById('totalDisplay').innerText);
+            let paid = parseFloat(document.getElementById('paidAmt').value) || 0;
+            document.getElementById('balAmt').value = total - paid;
+        }
+
+        // Init
         document.getElementById('dispName').innerText = localStorage.getItem('pos_store_name') || "WinMobile POS";
-        document.getElementById('dispPhone').innerText = localStorage.getItem('pos_store_phone') || "";
-        document.getElementById('setStore').value = localStorage.getItem('pos_store_name') || "";
-        document.getElementById('setPhone').value = localStorage.getItem('pos_store_phone') || "";
-        document.getElementById('nextInv').innerText = invNum;
         setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleString(); }, 1000);
     </script>
 </body>
