@@ -153,7 +153,10 @@
         let invNum = parseInt(localStorage.getItem('pos_inv_num')) || 1001;
 
         function switchTab(t) {
-            ['billingTab', 'productsTab', 'customersTab', 'settingsTab', 'reportsTab'].forEach(id => document.getElementById(id).classList.add('hidden-tab'));
+            ['billingTab', 'productsTab', 'customersTab', 'settingsTab', 'reportsTab'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden-tab');
+            });
             document.getElementById(t + 'Tab').classList.remove('hidden-tab');
             if(t === 'customers') renderCustomers();
             if(t === 'products') renderProductList();
@@ -169,7 +172,6 @@
             document.getElementById('rShopMob').innerText = "PH: " + mob;
         }
 
-        // --- PRODUCT SEARCH & BILLING ---
         function filterProducts(q) {
             const list = document.getElementById('searchList');
             if(!q) { list.classList.add('hidden'); return; }
@@ -223,23 +225,19 @@
             const cName = document.getElementById('cName').value.trim() || "Walk-in Customer";
             const cMob = document.getElementById('cMob').value.trim() || "N/A";
 
-            // Update Stock
             cart.forEach(item => {
                 const pIdx = prods.findIndex(p => p.name === item.name);
                 if(pIdx !== -1) prods[pIdx].stock -= item.qty;
             });
             localStorage.setItem('pos_prods', JSON.stringify(prods));
 
-            // Save Khata
             if(!customers[cName]) customers[cName] = { total: 0, bal: 0, paid: 0, phone: cMob };
             customers[cName].total += total; customers[cName].paid += paid; customers[cName].bal += bal;
             localStorage.setItem('pos_cust_data', JSON.stringify(customers));
 
-            // Daily Report
             sales.total += total; sales.cash += paid; sales.udhaar += bal;
             localStorage.setItem('pos_daily_sales', JSON.stringify(sales));
 
-            // Receipt
             document.getElementById('rInv').innerText = "INVOICE #" + invNum;
             document.getElementById('rCustomerInfo').innerText = "CUST: " + cName + " (" + cMob + ")";
             document.getElementById('rItems').innerHTML = cart.map(i => `<div style="display:flex; justify-content:space-between"><span>${i.name} x${i.qty}</span><span>${i.price*i.qty}</span></div>`).join('');
@@ -251,7 +249,6 @@
             document.getElementById('paidAmt').value = ""; document.getElementById('cName').value=""; document.getElementById('cMob').value="";
         }
 
-        // --- CUSTOMER FEATURES ---
         function renderCustomers(query = '') {
             const body = document.getElementById('custListBody');
             body.innerHTML = '';
@@ -263,7 +260,7 @@
                             <td class="p-4 font-mono">${customers[k].phone}</td>
                             <td class="p-4 font-black text-red-600">Rs ${customers[k].bal}</td>
                             <td class="p-4 text-right">
-                                <button onclick="updatePayment('${k}')" class="bg-green-500 text-white px-3 py-1 rounded text-xs">Receive Payment</button>
+                                <button onclick="updatePayment('${k}')" class="bg-green-500 text-white px-3 py-1 rounded text-xs">Pay</button>
                             </td>
                         </tr>`;
                 }
@@ -276,7 +273,6 @@
             switchTab('billing');
         }
 
-        // --- INVENTORY FEATURES ---
         function renderProductList() {
             document.getElementById('prodListBody').innerHTML = prods.map((p, idx) => `
                 <tr class="border-b">
@@ -284,8 +280,8 @@
                     <td class="p-4 text-blue-600 font-bold">Rs ${p.price}</td>
                     <td class="p-4 ${p.stock <= 5 ? 'low-stock' : 'font-bold'}">${p.stock}</td>
                     <td class="p-4 text-right space-x-2">
-                        <button onclick="editProd(${idx})" class="text-blue-500 text-xs font-bold uppercase">Edit</button>
-                        <button onclick="deleteProd(${idx})" class="text-red-500 text-xs font-bold uppercase">Del</button>
+                        <button onclick="editProd(${idx})" class="text-blue-500 text-xs font-bold">Edit</button>
+                        <button onclick="deleteProd(${idx})" class="text-red-500 text-xs font-bold">Del</button>
                     </td>
                 </tr>`).join('');
         }
@@ -297,4 +293,10 @@
             if(nPrice !== null && nStock !== null) {
                 prods[idx].price = parseFloat(nPrice);
                 prods[idx].stock = parseInt(nStock);
-                localStorag
+                localStorage.setItem('pos_prods', JSON.stringify(prods));
+                renderProductList();
+            }
+        }
+
+        function addProductToList() {
+            const name = document.get
