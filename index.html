@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Al-Hafiz Traders | POS V17 Ultimate</title>
+    <title>Al-Hafiz Traders | POS V18 Premium</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -13,6 +13,7 @@
         #lockScreen { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
         .owner-only { display: none; }
         .logo-box { width: 70px; height: 70px; object-fit: contain; border-radius: 10px; background: white; padding: 5px; margin-bottom: 10px; }
+        .history-item { font-size: 11px; border-bottom: 1px solid #eee; padding: 4px 0; }
     </style>
 </head>
 <body class="bg-gray-100 flex h-screen overflow-hidden font-sans text-slate-800">
@@ -23,7 +24,6 @@
             <h1 id="lockStoreName" class="text-3xl font-black mb-2 text-blue-400 italic uppercase">AL-HAFIZ TRADERS</h1>
             <input id="accessCode" type="password" placeholder="PIN" class="w-48 p-4 rounded-2xl text-black text-center text-3xl font-black mb-6 outline-none">
             <button onclick="checkAccess()" class="w-full bg-blue-600 py-4 rounded-2xl font-black text-xl hover:bg-blue-500 uppercase">Unlock</button>
-            <div class="pt-4 border-t border-slate-700 mt-4 text-emerald-400 font-bold">Contact: 03023313131</div>
         </div>
     </div>
 
@@ -34,19 +34,18 @@
             <div id="userBadge" class="mt-2 text-[10px] bg-slate-600 px-3 py-1 rounded-full inline-block font-black">Staff Mode</div>
         </div>
         <nav class="p-4 flex-1 space-y-1 font-bold text-xs overflow-y-auto uppercase">
-            <button onclick="switchTab('billing')" class="w-full text-left p-3 hover:bg-blue-700 rounded-lg transition">🛒 Billing POS</button>
-            <button onclick="switchTab('cust')" class="w-full text-left p-3 hover:bg-blue-700 rounded-lg transition">👥 Ledger Book</button>
-            <button onclick="switchTab('expenses')" class="w-full text-left p-3 hover:bg-rose-700 rounded-lg transition">💸 Daily Expenses</button>
+            <button onclick="switchTab('billing')" class="w-full text-left p-3 hover:bg-blue-700 rounded-lg">🛒 Billing POS</button>
+            <button onclick="switchTab('cust')" class="w-full text-left p-3 hover:bg-blue-700 rounded-lg">👥 Ledger & Payments</button>
+            <button onclick="switchTab('expenses')" class="w-full text-left p-3 hover:bg-rose-700 rounded-lg">💸 Daily Expenses</button>
             <div class="owner-only pt-4 mt-4 border-t border-slate-700 space-y-1">
-                <p class="text-[9px] text-amber-500 px-3 mb-2 font-black">Owner Controls</p>
-                <button onclick="switchTab('reports')" class="w-full text-left p-3 hover:bg-emerald-600 rounded-lg">📈 Advanced Reports</button>
+                <button onclick="switchTab('reports')" class="w-full text-left p-3 hover:bg-emerald-600 rounded-lg">📈 Date-Wise Reports</button>
                 <button onclick="switchTab('history')" class="w-full text-left p-3 hover:bg-amber-600 rounded-lg">📄 Sale History</button>
-                <button onclick="switchTab('products')" class="w-full text-left p-3 hover:bg-slate-700 rounded-lg">📦 Inventory</button>
+                <button onclick="switchTab('products')" class="w-full text-left p-3 hover:bg-slate-700 rounded-lg">📦 Inventory Editor</button>
             </div>
         </nav>
         <div class="p-4 space-y-2">
             <button onclick="toggleOwner()" class="w-full p-3 bg-amber-600 text-[10px] rounded-xl font-black uppercase shadow-lg">Owner Login</button>
-            <button onclick="switchTab('settings')" class="owner-only w-full p-3 bg-slate-700 text-[10px] rounded-xl font-black uppercase">⚙️ Settings</button>
+            <button onclick="switchTab('settings')" class="owner-only w-full p-3 bg-slate-700 text-[10px] rounded-xl font-black uppercase">⚙️ Shop Settings</button>
             <button onclick="lockSystem()" class="w-full p-3 bg-red-900 text-[10px] rounded-xl font-black uppercase">🔒 Lock</button>
         </div>
     </div>
@@ -56,35 +55,36 @@
         <div id="billingTab" class="flex-1 p-6 flex gap-6 overflow-hidden">
             <div class="w-80 space-y-4 no-print">
                 <div class="bg-white p-6 rounded-3xl border-2 shadow-sm">
-                    <label class="text-[10px] font-black text-gray-400 uppercase italic">Customer</label>
-                    <input id="cName" oninput="filterCustomers(this.value)" placeholder="Name" class="w-full border-2 p-3 rounded-xl mb-2 font-bold outline-none focus:border-blue-500">
+                    <label class="text-[10px] font-black text-gray-400 uppercase">Customer Info</label>
+                    <input id="cName" oninput="filterCustomers(this.value)" placeholder="Search Name..." class="w-full border-2 p-3 rounded-xl mb-2 font-bold outline-none">
                     <div id="custNameList" class="search-results hidden"></div>
                     <input id="cMob" placeholder="WhatsApp No" class="w-full border-2 p-3 rounded-xl mb-2 font-bold outline-none">
-                    <div id="prevBalShow" class="bg-rose-50 text-rose-600 p-3 rounded-xl border border-rose-100 mb-4 hidden font-black text-center text-sm italic">OLD UDHAAR: Rs <span id="prevBalVal">0</span></div>
+                    <div id="prevBalShow" class="bg-rose-50 text-rose-600 p-3 rounded-xl border border-rose-100 mb-4 hidden font-black text-center text-sm italic">OLD BALANCE: Rs <span id="prevBalVal">0</span></div>
+                    
                     <hr class="my-4">
-                    <label class="text-[10px] font-black text-gray-400 uppercase italic">Items Search</label>
-                    <input id="pSearch" oninput="filterProducts(this.value)" placeholder="Search Product..." class="w-full border-2 p-4 rounded-2xl font-black bg-slate-50 mb-2 outline-none">
+                    <label class="text-[10px] font-black text-gray-400 uppercase">Items Search</label>
+                    <input id="pSearch" oninput="filterProducts(this.value)" placeholder="Product Name..." class="w-full border-2 p-4 rounded-2xl font-black bg-slate-50 mb-2 outline-none">
                     <div id="searchList" class="search-results hidden"></div>
                     <div class="grid grid-cols-2 gap-2 mb-4">
                         <input id="pPrice" type="number" placeholder="Price" class="border-2 p-3 rounded-xl font-bold text-center">
                         <input id="pQty" type="number" value="1" class="border-2 p-3 rounded-xl font-bold text-center">
                     </div>
-                    <button onclick="addToCart()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-lg">Add To Bill</button>
+                    <button onclick="addToCart()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase">Add To List</button>
                 </div>
             </div>
 
             <div class="flex-1 bg-slate-900 rounded-[2.5rem] flex flex-col text-white shadow-2xl overflow-hidden">
-                <div class="p-6 border-b border-slate-800 flex justify-between items-center"><span class="text-blue-400 font-black italic uppercase">Live Cart View</span></div>
+                <div class="p-6 border-b border-slate-800 flex justify-between items-center"><span class="text-blue-400 font-black italic uppercase">Billing Cart</span><span class="text-xs bg-red-600 px-2 py-1 rounded">+ Rs 5 Service Charge</span></div>
                 <div id="cartBody" class="flex-1 p-6 overflow-y-auto font-bold space-y-2"></div>
                 <div class="p-8 bg-slate-800 border-t border-slate-700">
                     <div class="flex justify-between text-4xl font-black text-blue-400 mb-6 italic underline"><span>Total:</span><span>Rs <span id="totalDisplay">0</span></span></div>
                     <div class="grid grid-cols-2 gap-4 mb-4">
-                        <input id="paidAmt" oninput="calcTotal()" type="number" placeholder="CASH PAID" class="w-full bg-slate-700 p-5 rounded-2xl text-emerald-400 font-black text-3xl outline-none border-2 border-emerald-500/20">
-                        <input id="balAmt" readonly placeholder="BALANCE" class="w-full bg-slate-700 p-5 rounded-2xl text-rose-400 font-black text-3xl outline-none border-2 border-rose-500/20">
+                        <input id="paidAmt" oninput="calcTotal()" type="number" placeholder="CASH RECEIVED" class="w-full bg-slate-700 p-5 rounded-2xl text-emerald-400 font-black text-3xl outline-none">
+                        <input id="balAmt" readonly placeholder="NEW BALANCE" class="w-full bg-slate-700 p-5 rounded-2xl text-rose-400 font-black text-3xl outline-none">
                     </div>
                     <div class="flex gap-4">
-                        <button onclick="processBill('print')" class="flex-1 bg-emerald-500 py-5 rounded-3xl font-black text-lg uppercase shadow-xl hover:bg-emerald-400">Save & Print</button>
-                        <button onclick="processBill('whatsapp')" class="flex-1 bg-green-600 py-5 rounded-3xl font-black text-lg uppercase shadow-xl hover:bg-green-500">Save & WhatsApp</button>
+                        <button onclick="processBill('print')" class="flex-1 bg-emerald-500 py-5 rounded-3xl font-black text-lg uppercase">Save & Print</button>
+                        <button onclick="processBill('whatsapp')" class="flex-1 bg-green-600 py-5 rounded-3xl font-black text-lg uppercase">Save & WhatsApp</button>
                     </div>
                 </div>
             </div>
@@ -95,9 +95,8 @@
             <div class="bg-white p-6 rounded-3xl border-2 mb-8 flex flex-wrap gap-4 items-end shadow-sm">
                 <div><label class="text-[10px] font-bold">START DATE</label><br><input type="date" id="repStart" class="border-2 p-2 rounded-xl font-bold"></div>
                 <div><label class="text-[10px] font-bold">END DATE</label><br><input type="date" id="repEnd" class="border-2 p-2 rounded-xl font-bold"></div>
-                <button onclick="generateReport('daily')" class="bg-blue-600 text-white px-5 py-2 rounded-xl font-black text-xs uppercase">Daily Report</button>
-                <button onclick="generateReport('range')" class="bg-slate-800 text-white px-5 py-2 rounded-xl font-black text-xs uppercase">Custom Range</button>
-                <button onclick="renderAllTimeReports()" class="bg-gray-400 text-white px-5 py-2 rounded-xl font-black text-xs uppercase">All Time</button>
+                <button onclick="generateReport('daily')" class="bg-blue-600 text-white px-5 py-2 rounded-xl font-black text-xs uppercase">Filter Data</button>
+                <button onclick="renderAllTimeReports()" class="bg-gray-400 text-white px-5 py-2 rounded-xl font-black text-xs uppercase">Show All</button>
             </div>
             <div id="repStats" class="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
         </div>
@@ -105,36 +104,20 @@
         <div id="settingsTab" class="flex-1 p-8 hidden-tab overflow-y-auto">
             <div class="max-w-md mx-auto bg-white p-10 rounded-3xl border-2 shadow-2xl space-y-4">
                 <h3 class="font-black text-center text-xl uppercase italic">Shop Configuration</h3>
-                <input id="setStoreName" placeholder="Shop Name" class="w-full border-2 p-3 rounded-xl font-bold">
-                <input id="setPin" type="password" placeholder="Admin PIN" class="w-full border-2 p-3 rounded-xl font-bold text-center text-2xl">
-                <div class="p-2 bg-gray-50 rounded-xl">
-                    <label class="text-[10px] font-bold">UPLOAD LOGO</label>
-                    <input type="file" id="logoUpload" accept="image/*" class="w-full text-xs mt-1">
-                </div>
+                <div><label class="text-[10px] font-black">SHOP NAME</label><input id="setStoreName" class="w-full border-2 p-3 rounded-xl font-bold"></div>
+                <div><label class="text-[10px] font-black">TRADER/OWNER NUMBER</label><input id="setTraderNo" placeholder="e.g. 03023313131" class="w-full border-2 p-3 rounded-xl font-bold"></div>
+                <div><label class="text-[10px] font-black">ADMIN PIN</label><input id="setPin" type="password" class="w-full border-2 p-3 rounded-xl font-bold text-center text-2xl"></div>
+                <div><label class="text-[10px] font-black">UPLOAD LOGO</label><input type="file" id="logoUpload" accept="image/*" class="w-full text-xs mt-1"></div>
                 <button onclick="updateSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase">Update & Save</button>
                 <hr>
-                <button onclick="exportFullBackup()" class="w-full bg-emerald-600 text-white py-4 rounded-xl font-black uppercase shadow-lg">📥 Download Excel Backup</button>
-                <p class="text-[9px] text-center text-gray-400">Backup includes: Sales, Stock, Ledger & Expenses</p>
+                <button onclick="exportFullBackup()" class="w-full bg-emerald-600 text-white py-4 rounded-xl font-black uppercase">📥 Download Excel Backup</button>
             </div>
         </div>
 
         <div id="custTab" class="flex-1 p-8 hidden-tab overflow-y-auto"><div id="custLedgerList" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div></div>
         <div id="historyTab" class="flex-1 p-8 hidden-tab overflow-y-auto"><div id="historyList" class="space-y-3"></div></div>
-        <div id="expensesTab" class="flex-1 p-8 hidden-tab overflow-y-auto">
-             <div class="bg-white p-6 rounded-3xl border-2 shadow-sm max-w-lg mb-4 flex gap-2">
-                 <input id="expNote" placeholder="Expense Description" class="flex-1 border-2 p-3 rounded-xl font-bold">
-                 <input id="expAmt" type="number" placeholder="Amt" class="w-24 border-2 p-3 rounded-xl font-bold">
-                 <button onclick="addExpense()" class="bg-rose-600 text-white px-6 rounded-xl font-black">Add</button>
-             </div>
-             <div id="expenseList" class="space-y-2"></div>
-        </div>
-        <div id="productsTab" class="flex-1 p-8 hidden-tab overflow-y-auto">
-            <div class="bg-slate-800 p-6 rounded-2xl text-white grid grid-cols-4 gap-4 mb-4">
-                <input id="listPName" placeholder="Name" class="p-3 rounded text-black font-bold"><input id="listPStock" type="number" placeholder="Qty" class="p-3 rounded text-black font-bold"><input id="listPCost" type="number" placeholder="Cost" class="p-3 rounded text-black font-bold"><input id="listPPrice" type="number" placeholder="Sale" class="p-3 rounded text-black font-bold">
-                <button onclick="saveProduct()" class="bg-blue-600 p-3 rounded font-black uppercase col-span-4">Add to Stock</button>
-            </div>
-            <table class="w-full bg-white text-center rounded-xl overflow-hidden shadow"><thead class="bg-gray-100 font-bold"><tr><th class="p-4">Item</th><th class="p-4">Stock</th><th class="p-4">Cost</th><th class="p-4">Price</th><th class="p-4">Del</th></tr></thead><tbody id="prodListBody"></tbody></table>
-        </div>
+        <div id="expensesTab" class="flex-1 p-8 hidden-tab overflow-y-auto"><div id="expenseList" class="space-y-2"></div></div>
+        <div id="productsTab" class="flex-1 p-8 hidden-tab overflow-y-auto"><tbody id="prodListBody"></tbody></div>
     </div>
 
     <div id="receipt" class="hidden p-4 font-bold uppercase">
@@ -143,19 +126,19 @@
     </div>
 
     <script>
-        let prods = JSON.parse(localStorage.getItem('hfz_v17_prods')) || [];
-        let sales = JSON.parse(localStorage.getItem('hfz_v17_sales')) || [];
-        let expenses = JSON.parse(localStorage.getItem('hfz_v17_exps')) || [];
-        let customers = JSON.parse(localStorage.getItem('hfz_v17_cust')) || {};
-        let config = JSON.parse(localStorage.getItem('hfz_v17_cfg')) || { name: "AL-HAFIZ TRADERS", logo: "", pin: "0770" };
+        let prods = JSON.parse(localStorage.getItem('hfz_v18_prods')) || [];
+        let sales = JSON.parse(localStorage.getItem('hfz_v18_sales')) || [];
+        let expenses = JSON.parse(localStorage.getItem('hfz_v18_exps')) || [];
+        let customers = JSON.parse(localStorage.getItem('hfz_v18_cust')) || {};
+        let config = JSON.parse(localStorage.getItem('hfz_v18_cfg')) || { name: "AL-HAFIZ TRADERS", traderNo: "03023313131", logo: "", pin: "0770" };
         let cart = [];
         let isOwner = false;
 
         function checkAccess() { if(document.getElementById('accessCode').value === config.pin) { document.getElementById('lockScreen').style.display = 'none'; sessionStorage.setItem('unlocked', 'true'); } else { alert("WRONG PIN!"); } }
         function toggleOwner() { if(!isOwner) { let p = prompt("OWNER PIN:"); if(p === config.pin) { isOwner = true; document.querySelectorAll('.owner-only').forEach(el => el.style.display = 'block'); document.getElementById('userBadge').innerText = "OWNER MODE"; document.getElementById('userBadge').classList.replace('bg-slate-600', 'bg-amber-600'); } } else { location.reload(); } }
-        function switchTab(t) { document.querySelectorAll('.flex-1.p-6, .flex-1.p-8').forEach(el => el.classList.add('hidden-tab')); document.getElementById(t+'Tab').classList.remove('hidden-tab'); if(t==='reports') renderAllTimeReports(); if(t==='expenses') renderExpenses(); if(t==='cust') renderCustLedger(); if(t==='products') renderProductList(); if(t==='history') renderHistory(); }
+        function switchTab(t) { document.querySelectorAll('.flex-1.p-6, .flex-1.p-8').forEach(el => el.classList.add('hidden-tab')); document.getElementById(t+'Tab').classList.remove('hidden-tab'); if(t==='reports') renderAllTimeReports(); if(t==='cust') renderCustLedger(); }
 
-        // --- BILLING LOGIC ---
+        // --- BILLING LOGIC WITH RS 5 CHARGE ---
         function filterCustomers(q) {
             const list = document.getElementById('custNameList');
             if(!q) { list.classList.add('hidden'); return; }
@@ -174,83 +157,105 @@
         function selectProduct(n, p) { document.getElementById('pSearch').value = n; document.getElementById('pPrice').value = p; document.getElementById('searchList').classList.add('hidden'); }
         function addToCart() { let n = document.getElementById('pSearch').value, p = parseFloat(document.getElementById('pPrice').value), q = parseInt(document.getElementById('pQty').value); if(n && p) { cart.push({ name: n, price: p, qty: q, subtotal: p*q }); renderCart(); document.getElementById('pSearch').value = ''; } }
         function renderCart() { document.getElementById('cartBody').innerHTML = cart.map((i, idx) => `<div class="flex justify-between p-3 bg-slate-800 rounded-xl border border-slate-700"><span>${i.name} x${i.qty}</span><span>Rs ${i.subtotal} <button onclick="cart.splice(${idx},1);renderCart()" class="text-red-500 ml-3">✕</button></span></div>`).join(''); calcTotal(); }
-        function calcTotal() { let sum = cart.reduce((s, i) => s + i.subtotal, 0), prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0; let grand = sum + prev; document.getElementById('totalDisplay').innerText = grand; let paid = parseFloat(document.getElementById('paidAmt').value) || 0; document.getElementById('balAmt').value = grand - paid; }
+        
+        function calcTotal() { 
+            let itemsSum = cart.reduce((s, i) => s + i.subtotal, 0);
+            let prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0;
+            // RS 5 CHARGE ADDED HERE
+            let grand = itemsSum + prev + (cart.length > 0 ? 5 : 0); 
+            document.getElementById('totalDisplay').innerText = grand; 
+            let paid = parseFloat(document.getElementById('paidAmt').value) || 0; 
+            document.getElementById('balAmt').value = grand - paid; 
+        }
 
         function processBill(type) {
             if(!cart.length) return;
             let mob = document.getElementById('cMob').value || "WALK-IN", cName = document.getElementById('cName').value || "Customer";
-            let sum = cart.reduce((s,i)=>s+i.subtotal, 0), prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0, paid = parseFloat(document.getElementById('paidAmt').value) || 0;
-            let sale = { id: Date.now(), date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), customer: cName, mob: mob, items: [...cart], itemsSum: sum, prevBal: prev, grandTotal: sum + prev, paid: paid, finalBal: (sum + prev) - paid };
-            sales.push(sale); localStorage.setItem('hfz_v17_sales', JSON.stringify(sales));
-            if(mob !== "WALK-IN") { if(!customers[mob]) customers[mob] = { name: cName, balance: 0, payments: [] }; customers[mob].balance = sale.finalBal; localStorage.setItem('hfz_v17_cust', JSON.stringify(customers)); }
-            cart.forEach(c => { let p = prods.find(x => x.name === c.name); if(p) p.stock -= c.qty; }); localStorage.setItem('hfz_v17_prods', JSON.stringify(prods));
+            let itemsSum = cart.reduce((s,i)=>s+i.subtotal, 0), prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0, paid = parseFloat(document.getElementById('paidAmt').value) || 0;
+            let finalGrand = itemsSum + prev + 5;
+            let sale = { id: Date.now(), date: new Date().toLocaleDateString(), customer: cName, mob: mob, items: [...cart], itemsSum: itemsSum, serviceCharge: 5, prevBal: prev, grandTotal: finalGrand, paid: paid, finalBal: finalGrand - paid };
+            
+            sales.push(sale); localStorage.setItem('hfz_v18_sales', JSON.stringify(sales));
+            if(mob !== "WALK-IN") { 
+                if(!customers[mob]) customers[mob] = { name: cName, balance: 0, payments: [] }; 
+                customers[mob].balance = sale.finalBal;
+                localStorage.setItem('hfz_v18_cust', JSON.stringify(customers));
+            }
+            cart.forEach(c => { let p = prods.find(x => x.name === c.name); if(p) p.stock -= c.qty; }); localStorage.setItem('hfz_v18_prods', JSON.stringify(prods));
             if(type === 'print') printBill(sale); else sendWhatsApp(sale);
         }
 
-              // --- ADVANCED REPORTING ---
-        function generateReport(type) {
-            let filteredSales = [], filteredExps = [], label = "";
-            let start = document.getElementById('repStart').value, end = document.getElementById('repEnd').value;
-            if(!start) return alert("Please select date!");
-            
-            let sDate = new Date(start).toLocaleDateString();
-            if(type === 'daily') {
-                filteredSales = sales.filter(s => s.date === sDate);
-                filteredExps = expenses.filter(e => e.date === sDate);
-                label = "Daily Report: " + sDate;
-            } else {
-                if(!end) return alert("Select end date!");
-                let eDate = new Date(end);
-                filteredSales = sales.filter(s => { let d = new Date(s.date); return d >= new Date(start) && d <= eDate; });
-                filteredExps = expenses.filter(e => { let d = new Date(e.date); return d >= new Date(start) && d <= eDate; });
-                label = `Range: ${sDate} to ${eDate.toLocaleDateString()}`;
+        // --- LEDGER WITH PAYMENT HISTORY ---
+        function renderCustLedger() {
+            document.getElementById('custLedgerList').innerHTML = Object.keys(customers).map(k => `
+                <div class="bg-white p-6 rounded-2xl border-2 shadow-sm">
+                    <div class="flex justify-between items-start mb-4">
+                        <div><b class="uppercase text-lg">${customers[k].name}</b><br><small class="text-gray-400">${k}</small></div>
+                        <div class="text-right"><div class="text-xl font-black text-rose-600">Rs ${customers[k].balance}</div></div>
+                    </div>
+                    <div class="max-h-32 overflow-y-auto bg-gray-50 p-2 rounded-lg mb-4">
+                        <p class="text-[9px] font-black text-gray-400 mb-2 uppercase italic border-b">Recent Payments</p>
+                        ${(customers[k].payments || []).map(p => `<div class="history-item">Rs ${p.amt} <span class="float-right text-gray-400">${p.date}</span></div>`).reverse().join('') || '<p class="text-[10px] text-gray-400">No payments yet</p>'}
+                    </div>
+                    <button onclick="receivePayment('${k}')" class="w-full bg-blue-600 text-white py-2 rounded-xl text-xs font-black uppercase">Collect Cash</button>
+                </div>`).join('');
+        }
+        function receivePayment(k) {
+            let a = prompt("Amount Received from " + customers[k].name + "?");
+            if(a && !isNaN(a)) {
+                if(!customers[k].payments) customers[k].payments = [];
+                customers[k].payments.push({ amt: a, date: new Date().toLocaleDateString() });
+                customers[k].balance -= parseFloat(a);
+                localStorage.setItem('hfz_v18_cust', JSON.stringify(customers));
+                renderCustLedger();
             }
-            renderStats(filteredSales, filteredExps, label);
         }
 
-        function renderAllTimeReports() { renderStats(sales, expenses, "All Time Records"); }
-        function renderStats(fs, fe, label) {
-            let s = fs.reduce((a, b) => a + b.itemsSum, 0);
-            let profit = fs.reduce((acc, sale) => acc + (sale.itemsSum - sale.items.reduce((iAcc, item) => iAcc + ((prods.find(x => x.name === item.name)?.cost || 0) * item.qty), 0)), 0);
-            let exp = fe.reduce((a, b) => a + b.amt, 0);
-            document.getElementById('repStats').innerHTML = `<div class="col-span-full font-black text-blue-600 underline uppercase">${label}</div>
-                <div class="bg-blue-600 text-white p-8 rounded-3xl">Total Sale<br><span class="text-3xl font-black">Rs ${s}</span></div>
-                <div class="bg-rose-600 text-white p-8 rounded-3xl">Total Exp<br><span class="text-3xl font-black">Rs ${exp}</span></div>
-                <div class="bg-emerald-600 text-white p-8 rounded-3xl">Net Profit<br><span class="text-3xl font-black">Rs ${profit - exp}</span></div>`;
-        }
-
-        // --- BACKUP LOGIC ---
+        // --- EXCEL BACKUP ---
         function exportFullBackup() {
             let data = sales.map(s => ({ Date: s.date, Customer: s.customer, Mobile: s.mob, Total: s.grandTotal, Paid: s.paid, Balance: s.finalBal }));
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Backup_Sales");
+            XLSX.utils.book_append_sheet(wb, ws, "SalesData");
             XLSX.writeFile(wb, config.name + "_Backup.xlsx");
         }
 
-        // --- SETTINGS & HELPERS ---
-        function addExpense() { let n = document.getElementById('expNote').value, a = parseFloat(document.getElementById('expAmt').value); if(n && a) { expenses.push({ note: n, amt: a, date: new Date().toLocaleDateString() }); localStorage.setItem('hfz_v17_exps', JSON.stringify(expenses)); renderExpenses(); document.getElementById('expNote').value = ''; document.getElementById('expAmt').value = ''; } }
-        function renderExpenses() { document.getElementById('expenseList').innerHTML = expenses.map(e => `<div class="bg-white p-3 border-l-4 border-rose-500 flex justify-between font-bold"><span>${e.note} (${e.date})</span><span>Rs ${e.amt}</span></div>`).reverse().join(''); }
-        function renderProductList() { document.getElementById('prodListBody').innerHTML = prods.map((p, idx) => `<tr class="border-b"><td class="p-4 uppercase">${p.name}</td><td class="p-4">${p.stock}</td><td class="p-4">${p.cost}</td><td class="p-4">${p.price}</td><td class="p-4"><button onclick="prods.splice(${idx},1);localStorage.setItem('hfz_v17_prods',JSON.stringify(prods));renderProductList()" class="text-red-500">✕</button></td></tr>`).join(''); }
-        function saveProduct() { let n = document.getElementById('listPName').value, s = parseInt(document.getElementById('listPStock').value), c = parseFloat(document.getElementById('listPCost').value), p = parseFloat(document.getElementById('listPPrice').value); if(n) { prods.push({ name: n, stock: s, cost: c, price: p }); localStorage.setItem('hfz_v17_prods', JSON.stringify(prods)); renderProductList(); } }
-        function updateSettings() {
-            config.name = document.getElementById('setStoreName').value; config.pin = document.getElementById('setPin').value;
-            const file = document.getElementById('logoUpload').files[0];
-            if(file) { let reader = new FileReader(); reader.onload = (e) => { config.logo = e.target.result; saveConfig(); }; reader.readAsDataURL(file); } else { saveConfig(); }
+        // --- REPORTS & SETTINGS ---
+        function renderAllTimeReports() { renderStats(sales, expenses, "All Records"); }
+        function generateReport() {
+            let start = document.getElementById('repStart').value, end = document.getElementById('repEnd').value;
+            if(!start) return alert("Select Date");
+            let fs = sales.filter(s => { let d = new Date(s.date); return d >= new Date(start) && d <= new Date(end || start); });
+            renderStats(fs, expenses, "Filtered Data");
         }
-        function saveConfig() { localStorage.setItem('hfz_v17_cfg', JSON.stringify(config)); location.reload(); }
+        function renderStats(fs, fe, label) {
+            let s = fs.reduce((a, b) => a + b.itemsSum, 0);
+            let profit = fs.reduce((acc, sale) => acc + (sale.itemsSum - sale.items.reduce((iAcc, item) => iAcc + ((prods.find(x => x.name === item.name)?.cost || 0) * item.qty), 0)), 0);
+            let exp = fe.reduce((a, b) => a + b.amt, 0);
+            document.getElementById('repStats').innerHTML = `
+                <div class="bg-blue-600 text-white p-8 rounded-3xl">Sales<br><span class="text-3xl font-black">Rs ${s}</span></div>
+                <div class="bg-rose-600 text-white p-8 rounded-3xl">Expenses<br><span class="text-3xl font-black">Rs ${exp}</span></div>
+                <div class="bg-emerald-600 text-white p-8 rounded-3xl">Profit<br><span class="text-3xl font-black">Rs ${profit - exp}</span></div>`;
+        }
+
+        function updateSettings() {
+            config.name = document.getElementById('setStoreName').value;
+            config.traderNo = document.getElementById('setTraderNo').value;
+            config.pin = document.getElementById('setPin').value;
+            const file = document.getElementById('logoUpload').files[0];
+            if(file) { let reader = new FileReader(); reader.onload = (e) => { config.logo = e.target.result; saveCfg(); }; reader.readAsDataURL(file); } else saveCfg();
+        }
+        function saveCfg() { localStorage.setItem('hfz_v18_cfg', JSON.stringify(config)); location.reload(); }
         function lockSystem() { sessionStorage.removeItem('unlocked'); location.reload(); }
-        function sendWhatsApp(s) { let msg = `*${config.name}*\nDate: ${s.date}\nCustomer: ${s.customer}\n------------------\nTotal: Rs ${s.grandTotal}\nPaid: ${s.paid}\nBal: ${s.finalBal}\n------------------\nPowered by GM Agency`; window.open(`https://wa.me/92${s.mob.substring(1)}?text=${encodeURIComponent(msg)}`, '_blank'); location.reload(); }
-        function printBill(s) { document.getElementById('rStoreName').innerText = config.name; document.getElementById('rDate').innerText = s.date; document.getElementById('rCust').innerText = `${s.customer} (${s.mob})`; document.getElementById('rItems').innerHTML = s.items.map(i => `<div class="flex justify-between"><span>${i.name} x${i.qty}</span><span>${i.subtotal}</span></div>`).join(''); document.getElementById('rFooter').innerHTML = `<b>Grand Total: Rs ${s.grandTotal}</b><br>Paid: ${s.paid}<br>Balance: ${s.finalBal}`; window.print(); location.reload(); }
-        function renderCustLedger() { document.getElementById('custLedgerList').innerHTML = Object.keys(customers).filter(k => customers[k].balance > 0).map(k => `<div class="bg-white p-6 rounded-2xl border-2 text-center shadow-sm"><b class="uppercase">${customers[k].name}</b><div class="text-2xl font-black text-rose-600 my-2">Rs ${customers[k].balance}</div><button onclick="receivePayment('${k}')" class="w-full bg-blue-600 text-white py-2 rounded-xl text-xs font-black uppercase">Collect</button></div>`).join(''); }
-        function receivePayment(k) { let a = prompt("Amount?"); if(a) { customers[k].balance -= parseFloat(a); localStorage.setItem('hfz_v17_cust', JSON.stringify(customers)); renderCustLedger(); } }
-        function renderHistory() { document.getElementById('historyList').innerHTML = [...sales].reverse().map(s => `<div class="bg-white p-4 rounded-xl border-2 flex justify-between items-center"><div><b>${s.customer}</b><br><small>${s.date}</small></div><div><b>Rs ${s.grandTotal}</b></div></div>`).join(''); }
+        function sendWhatsApp(s) { let msg = `*${config.name}*\nTrader: ${config.traderNo}\nDate: ${s.date}\nCustomer: ${s.customer}\n------------------\nTotal Bill: Rs ${s.grandTotal}\n(Incl. Rs 5 Charges)\nPaid: ${s.paid}\nBalance: ${s.finalBal}\n------------------\nPowered by GM Agency`; window.open(`https://wa.me/92${s.mob.substring(1)}?text=${encodeURIComponent(msg)}`, '_blank'); location.reload(); }
+        function printBill(s) { document.getElementById('rStoreName').innerText = config.name; document.getElementById('rDate').innerText = s.date; document.getElementById('rCust').innerText = s.customer; document.getElementById('rItems').innerHTML = s.items.map(i => `<div>${i.name} x${i.qty} = ${i.subtotal}</div>`).join(''); document.getElementById('rFooter').innerHTML = `Service Charge: Rs 5<br><b>Grand Total: Rs ${s.grandTotal}</b><br>Paid: ${s.paid}<br>Balance: ${s.finalBal}`; window.print(); location.reload(); }
 
         window.onload = () => {
             if(sessionStorage.getItem('unlocked') === 'true') document.getElementById('lockScreen').style.display = 'none';
             document.getElementById('sideStoreName').innerText = config.name;
             document.getElementById('lockStoreName').innerText = config.name;
             document.getElementById('setStoreName').value = config.name;
+            document.getElementById('setTraderNo').value = config.traderNo;
             document.getElementById('setPin').value = config.pin;
             if(config.logo) { ["lockLogo", "sideLogo", "receiptLogo"].forEach(id => { document.getElementById(id).src = config.logo; document.getElementById(id).classList.remove('hidden'); }); }
         };
