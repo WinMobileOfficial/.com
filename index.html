@@ -244,7 +244,8 @@
         function logout() { sessionStorage.removeItem('unlocked'); location.reload(); }
         function toggleOwner() { let p = prompt("OWNER PIN:"); if(p === settings.pin) { isOwner = true; document.querySelectorAll('.owner-only').forEach(e => e.style.display = 'block'); } }
         function switchTab(t) { document.querySelectorAll('.flex-1.p-6, .flex-1.p-8').forEach(el => el.classList.add('hidden-tab')); document.getElementById(t+'Tab').classList.remove('hidden-tab'); if(t==='reports') renderReports(); }
-   // --- POS ENGINE ---
+
+.    // --- POS ENGINE ---
         function filterProducts(q) {
             const list = document.getElementById('searchList'); if(!q) { list.classList.add('hidden'); return; }
             const filtered = prods.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
@@ -341,4 +342,4 @@
         window.onload = loadCloudData;
     </script>
 </body>
-</html>('pPrice').value), q = parseInt(document.getElementById('pQty').
+</html>
