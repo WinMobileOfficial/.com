@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GM Agency | Final POS</title>
+    <title>GM Agency | Perfect POS v5</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,7 +11,9 @@
     <style>
         @media print { body > *:not(#receipt) { display: none !important; } #receipt { display: block !important; width: 80mm; padding: 2mm; background: white; color: black; font-family: 'Courier New', Courier, monospace; } }
         .hidden-tab { display: none !important; }
-        .dashed { border-top: 1px dashed black; margin: 5px 0; }
+        .dashed { border-top: 2px dashed black; margin: 5px 0; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
     </style>
 </head>
 <body class="bg-slate-100 flex h-screen overflow-hidden font-sans">
@@ -19,152 +21,178 @@
     <div id="lockScreen" class="fixed inset-0 bg-[#0f172a] z-[9999] flex flex-col items-center justify-center text-white">
         <div class="bg-slate-800 p-10 rounded-[3rem] shadow-2xl text-center border-2 border-slate-700 w-80">
             <h1 class="text-2xl font-black mb-1 text-blue-400 italic">GM AGENCY</h1>
-            <input id="accessCode" type="password" placeholder="ENTER PIN" class="w-full p-4 rounded-2xl text-black text-center text-3xl font-black mb-4 outline-none border-4 border-blue-500">
-            <button onclick="checkAccess()" class="w-full bg-blue-600 py-4 rounded-2xl font-black uppercase">Unlock</button>
+            <p class="text-[10px] mb-4 opacity-50">SECURE ACCESS PANEL</p>
+            <input id="accessCode" type="password" placeholder="ENTER PIN" class="w-full p-4 rounded-2xl text-black text-center text-3xl font-black mb-4 outline-none border-4 border-blue-500 shadow-inner">
+            <button onclick="checkAccess()" class="w-full bg-blue-600 py-4 rounded-2xl font-black uppercase hover:bg-blue-500 transition-all shadow-lg">Unlock Now</button>
         </div>
     </div>
 
     <div class="w-72 bg-[#0f172a] text-white flex flex-col no-print">
         <div class="p-8 text-center border-b border-slate-800">
-            <img id="sideLogo" class="w-20 h-20 mx-auto rounded-full mb-4 border-2 border-blue-500 object-cover hidden">
+            <img id="sideLogo" class="w-24 h-24 mx-auto rounded-full mb-4 border-4 border-blue-500 object-cover hidden shadow-xl">
             <h2 id="sideName" class="text-xl font-black text-blue-400 italic">GM AGENCY</h2>
-            <p id="roleLabel" class="text-[10px] text-emerald-400 font-bold uppercase mt-1"></p>
+            <div id="roleLabel" class="bg-blue-900/50 text-blue-300 text-[10px] font-black uppercase py-1 px-3 rounded-full mt-2 inline-block"></div>
         </div>
-        <nav class="p-4 flex-1 space-y-2 font-bold text-sm uppercase italic overflow-y-auto">
-            <button onclick="switchTab('billing')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-file-invoice-dollar"></i> Billing</button>
-            <button id="btnPending" onclick="switchTab('pending')" class="w-full text-left p-4 hover:bg-orange-600 rounded-2xl flex items-center gap-3"><i class="fas fa-clock"></i> Pending</button>
+        <nav class="p-4 flex-1 space-y-1 font-bold text-sm uppercase italic overflow-y-auto">
+            <button onclick="switchTab('billing')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3 transition-all"><i class="fas fa-shopping-cart"></i> Billing</button>
+            <button id="btnPending" onclick="switchTab('pending')" class="w-full text-left p-4 hover:bg-orange-600 rounded-2xl flex items-center gap-3"><i class="fas fa-clock"></i> Pending <span id="pendCount" class="bg-white text-orange-600 px-2 rounded-full text-[10px]">0</span></button>
             <button id="btnLoadSheet" onclick="switchTab('loadsheet')" class="w-full text-left p-4 hover:bg-purple-600 rounded-2xl flex items-center gap-3"><i class="fas fa-truck-loading"></i> Load Sheet</button>
-            <button id="btnHistory" onclick="switchTab('history')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-history"></i> History</button>
-            <button id="btnCust" onclick="switchTab('cust')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-users-cog"></i> Ledger</button>
-            <button id="btnProducts" onclick="switchTab('products')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-boxes"></i> Inventory</button>
+            <button id="btnHistory" onclick="switchTab('history')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-file-invoice"></i> History</button>
+            <button id="btnCust" onclick="switchTab('cust')" class="w-full text-left p-4 hover:bg-emerald-600 rounded-2xl flex items-center gap-3"><i class="fas fa-user-friends"></i> Ledger</button>
+            <button id="btnProducts" onclick="switchTab('products')" class="w-full text-left p-4 hover:bg-slate-700 rounded-2xl flex items-center gap-3"><i class="fas fa-boxes"></i> Inventory</button>
             <button id="btnExpenses" onclick="switchTab('expenses')" class="w-full text-left p-4 hover:bg-rose-600 rounded-2xl flex items-center gap-3"><i class="fas fa-wallet"></i> Expenses</button>
-            <button id="btnReports" onclick="switchTab('reports')" class="w-full text-left p-4 hover:bg-emerald-600 rounded-2xl flex items-center gap-3"><i class="fas fa-chart-line"></i> Reports</button>
-            <button id="btnSettings" onclick="switchTab('settings')" class="w-full text-left p-4 hover:bg-indigo-600 rounded-2xl flex items-center gap-3"><i class="fas fa-cog"></i> Settings</button>
+            <button id="btnReports" onclick="switchTab('reports')" class="w-full text-left p-4 hover:bg-indigo-600 rounded-2xl flex items-center gap-3"><i class="fas fa-chart-pie"></i> P&L Report</button>
+            <button id="btnSettings" onclick="switchTab('settings')" class="w-full text-left p-4 hover:bg-indigo-700 rounded-2xl flex items-center gap-3"><i class="fas fa-tools"></i> Settings</button>
         </nav>
+        <div class="p-4 border-t border-slate-800">
+            <button onclick="location.reload()" class="w-full p-4 bg-red-900/20 text-red-500 rounded-2xl font-black text-xs uppercase hover:bg-red-900/40">Lock & Exit</button>
+        </div>
     </div>
 
-    <div class="flex-1 overflow-hidden relative flex flex-col bg-white">
+    <div class="flex-1 flex flex-col bg-white overflow-hidden relative">
         
-        <div id="billingTab" class="flex-1 p-6 flex gap-6">
+        <div id="billingTab" class="flex-1 p-6 flex gap-6 overflow-hidden">
             <div class="w-80 space-y-4">
-                <div class="bg-slate-50 p-6 rounded-[2rem] border shadow-lg">
-                    <input id="cMob" oninput="checkExistingCustomer(this.value)" placeholder="PHONE" class="w-full p-4 border rounded-xl mb-2 font-black">
-                    <input id="cName" placeholder="NAME" class="w-full p-4 border rounded-xl mb-2 font-bold uppercase italic">
-                    <div id="prevBalShow" class="bg-amber-100 p-3 rounded-xl mb-4 hidden text-xs font-black">OLD BAL: <span id="prevBalVal">0</span></div>
-                    <input id="pSearch" oninput="filterProducts(this.value)" placeholder="SEARCH PRODUCT" class="w-full p-4 border rounded-xl mb-2 font-black uppercase">
-                    <div id="searchList" class="hidden absolute w-72 bg-white border z-50 max-h-40 overflow-auto"></div>
+                <div class="bg-slate-50 p-6 rounded-[2.5rem] border shadow-xl">
+                    <input id="cMob" oninput="checkExistingCustomer(this.value)" placeholder="CUSTOMER PHONE" class="w-full p-4 border rounded-2xl mb-2 font-black outline-none focus:ring-2 ring-blue-500">
+                    <input id="cName" placeholder="CUSTOMER NAME" class="w-full p-4 border rounded-2xl mb-2 font-bold uppercase italic">
+                    <div id="prevBalShow" class="bg-amber-100 p-4 rounded-2xl mb-4 hidden border-2 border-amber-200">
+                        <p class="text-[10px] font-black text-amber-700">PREVIOUS BALANCE: Rs <span id="prevBalVal">0</span></p>
+                    </div>
+                    <div class="relative">
+                        <input id="pSearch" oninput="filterProducts(this.value)" placeholder="SEARCH PRODUCT..." class="w-full p-4 border rounded-2xl mb-2 font-black uppercase">
+                        <div id="searchList" class="hidden absolute left-0 right-0 bg-white border-2 rounded-2xl shadow-2xl z-[100] max-h-48 overflow-y-auto"></div>
+                    </div>
                     <div class="grid grid-cols-2 gap-2 mb-4">
-                        <input id="pPrice" type="number" placeholder="PRICE" class="p-4 border rounded-xl font-black">
-                        <input id="pQty" type="number" value="1" class="p-4 border rounded-xl font-black bg-blue-50">
+                        <input id="pPrice" type="number" placeholder="PRICE" class="p-4 border rounded-2xl font-black text-center">
+                        <input id="pQty" type="number" value="1" class="p-4 border rounded-2xl font-black text-center bg-blue-50">
                     </div>
-                    <button onclick="addToCart()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black uppercase">Add Item</button>
+                    <button onclick="addToCart()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase italic shadow-lg active:scale-95 transition-all">Add to Cart</button>
                 </div>
             </div>
-            <div class="flex-1 bg-slate-900 rounded-[3rem] p-8 text-white flex flex-col">
-                <div id="cartBody" class="flex-1 overflow-auto space-y-2"></div>
-                <div class="pt-6 border-t border-slate-700">
-                    <div class="flex justify-between text-3xl font-black text-blue-400 mb-4"><span>TOTAL:</span><span>Rs <span id="totalDisplay">0</span></span></div>
+            <div class="flex-1 bg-slate-900 rounded-[3.5rem] flex flex-col text-white shadow-2xl border-8 border-slate-800">
+                <div id="cartBody" class="flex-1 p-8 overflow-y-auto space-y-3 font-bold uppercase italic"></div>
+                <div class="p-8 bg-slate-800/50 rounded-b-[3rem]">
+                    <div class="flex justify-between text-4xl font-black text-blue-400 mb-6 italic"><span>TOTAL:</span><span>Rs <span id="totalDisplay">0</span></span></div>
                     <div id="adminPaySection" class="grid grid-cols-2 gap-4 mb-4">
-                        <input id="paidAmt" oninput="calcTotal()" placeholder="PAID" type="number" class="bg-slate-700 p-4 rounded-xl text-emerald-400 font-black">
-                        <input id="balAmt" readonly placeholder="BAL" class="bg-slate-700 p-4 rounded-xl text-rose-400 font-black">
+                        <input id="paidAmt" oninput="calcTotal()" type="number" placeholder="CASH RECEIVED" class="w-full bg-slate-700 p-5 rounded-2xl text-emerald-400 font-black text-2xl">
+                        <input id="balAmt" readonly placeholder="NEW BALANCE" class="w-full bg-slate-700 p-5 rounded-2xl text-rose-400 font-black text-2xl">
                     </div>
-                    <button onclick="processBill()" class="w-full bg-emerald-500 py-5 rounded-2xl font-black text-xl">CONFIRM ORDER</button>
+                    <button id="mainConfirmBtn" onclick="processBill()" class="w-full bg-emerald-500 py-6 rounded-[2rem] font-black text-2xl uppercase italic shadow-lg active:scale-95">Confirm Order</button>
                 </div>
             </div>
         </div>
 
-        <div id="pendingTab" class="flex-1 p-10 hidden-tab overflow-auto">
-            <h2 class="text-3xl font-black mb-6 uppercase italic border-b-4 border-orange-500 inline-block">Pending Orders</h2>
-            <div id="pendingList" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+        <div id="pendingTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-slate-50">
+            <h2 class="text-3xl font-black mb-8 border-b-4 border-orange-500 inline-block uppercase italic">Pending Orders</h2>
+            <div id="pendingList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </div>
 
-        <div id="loadsheetTab" class="flex-1 p-10 hidden-tab overflow-auto">
-            <h2 class="text-3xl font-black mb-6 uppercase italic border-b-4 border-purple-500 inline-block">Daily Load Sheet</h2>
-            <div id="loadSheetBody" class="bg-white rounded-2xl border overflow-hidden max-w-lg"></div>
+        <div id="loadsheetTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-slate-50">
+            <h2 class="text-3xl font-black mb-8 border-b-4 border-purple-500 inline-block uppercase italic">Total Load Sheet</h2>
+            <div id="loadSheetBody" class="bg-white rounded-[2rem] shadow-xl overflow-hidden max-w-lg border"></div>
         </div>
 
-        <div id="settingsTab" class="flex-1 p-10 hidden-tab overflow-auto bg-slate-50">
-            <h2 class="text-3xl font-black mb-8 border-b-4 border-indigo-600 inline-block">SETTINGS</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="bg-white p-8 rounded-3xl shadow-lg space-y-4">
-                    <h3 class="font-black italic text-slate-400 uppercase">Shop Details</h3>
-                    <div class="flex items-center gap-4">
-                        <label class="flex-1 bg-slate-100 p-4 rounded-xl border-dashed border-2 text-center cursor-pointer">
-                            <span class="text-xs font-black uppercase">Upload Logo</span>
+        <div id="settingsTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-slate-50">
+            <h2 class="text-3xl font-black mb-8 border-b-4 border-indigo-600 inline-block uppercase italic">System Settings</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <div class="bg-white p-8 rounded-[3rem] shadow-xl border-4 border-white space-y-4 italic">
+                    <h3 class="font-black text-slate-400 uppercase">Shop Identity</h3>
+                    <div class="flex items-center gap-6">
+                        <label class="w-24 h-24 bg-slate-100 rounded-full border-4 border-dashed border-slate-300 flex items-center justify-center cursor-pointer overflow-hidden">
+                            <span id="uploadLabel" class="text-[8px] font-black text-center">CLICK TO<br>UPLOAD</span>
+                            <img id="logoPreview" class="w-full h-full object-cover hidden">
                             <input type="file" class="hidden" onchange="handleLogoUpload(this)">
                         </label>
-                        <img id="logoPreview" class="w-16 h-16 rounded-full border hidden">
+                        <div class="flex-1 space-y-2">
+                            <input id="setStoreName" placeholder="SHOP NAME" class="w-full p-3 border rounded-xl font-black uppercase">
+                            <input id="setStorePhone" placeholder="SHOP PHONE" class="w-full p-3 border rounded-xl font-black">
+                        </div>
                     </div>
-                    <input id="setStoreName" placeholder="SHOP NAME" class="w-full p-4 border rounded-xl font-black">
-                    <input id="setStorePhone" placeholder="SHOP PHONE" class="w-full p-4 border rounded-xl font-black">
-                    <input id="setStorePIN" type="password" placeholder="ADMIN PIN" class="w-full p-4 border rounded-xl font-black">
-                    <button onclick="saveSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase">Save Shop Info</button>
+                    <input id="setStorePIN" type="password" placeholder="ADMIN LOGIN PIN" class="w-full p-4 border rounded-xl font-black">
+                    <button onclick="saveSettings()" class="w-full bg-[#0f172a] text-white py-5 rounded-2xl font-black uppercase shadow-lg">Save Configuration</button>
                 </div>
-                <div class="bg-white p-8 rounded-3xl shadow-lg">
-                    <h3 class="font-black italic text-slate-400 uppercase mb-4">Manage Bookers</h3>
-                    <div class="flex gap-2 mb-4">
-                        <input id="newBName" placeholder="NAME" class="flex-1 p-3 border rounded-xl font-bold">
-                        <input id="newBPIN" placeholder="PIN" class="w-20 p-3 border rounded-xl font-bold">
-                        <button onclick="addBooker()" class="bg-indigo-600 text-white px-4 rounded-xl"><i class="fas fa-plus"></i></button>
+                <div class="bg-white p-8 rounded-[3rem] shadow-xl border-4 border-white italic">
+                    <h3 class="font-black text-slate-400 uppercase mb-4">Booker Management</h3>
+                    <div class="flex gap-2 mb-6">
+                        <input id="newBName" placeholder="BOOKER NAME" class="flex-1 p-4 border rounded-2xl font-black uppercase">
+                        <input id="newBPIN" placeholder="PIN" class="w-24 p-4 border rounded-2xl font-black text-center">
+                        <button onclick="addBooker()" class="bg-indigo-600 text-white px-6 rounded-2xl shadow-lg"><i class="fas fa-plus"></i></button>
                     </div>
-                    <div id="bookerList" class="space-y-2"></div>
+                    <div id="bookerList" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
                 </div>
             </div>
         </div>
 
-        <div id="custTab" class="flex-1 p-10 hidden-tab overflow-auto"><div id="custLedgerList" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div></div>
-        
-        <div id="historyTab" class="flex-1 p-10 hidden-tab overflow-auto"><div id="historyList" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div></div>
-        
-        <div id="productsTab" class="flex-1 p-10 hidden-tab overflow-auto">
-             <div class="bg-white p-8 rounded-3xl shadow-xl mb-8 grid grid-cols-4 gap-4">
-                <input id="listPName" placeholder="ITEM" class="p-4 border rounded-xl font-black uppercase">
-                <input id="listPStock" type="number" placeholder="STOCK" class="p-4 border rounded-xl font-black">
-                <input id="listPCost" type="number" placeholder="COST" class="p-4 border rounded-xl font-black">
-                <input id="listPPrice" type="number" placeholder="SALE" class="p-4 border rounded-xl font-black">
-                <button onclick="saveProduct()" class="col-span-4 bg-slate-900 text-white p-4 rounded-xl font-black uppercase">Update Product</button>
-            </div>
-            <table class="w-full border-collapse"><thead class="bg-slate-900 text-white"><tr><th class="p-4">Item</th><th>Stock</th><th>Cost</th><th>Sale</th><th>Action</th></tr></thead><tbody id="prodListBody" class="text-center font-bold italic uppercase divide-y"></tbody></table>
+        <div id="custTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-slate-50">
+            <h2 class="text-3xl font-black mb-8 border-b-4 border-emerald-500 inline-block uppercase italic text-emerald-600">Customer Ledger</h2>
+            <div id="custLedgerList" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
         </div>
 
-        <div id="reportsTab" class="flex-1 p-10 hidden-tab overflow-auto">
-             <div class="grid grid-cols-3 gap-6 mb-8">
-                <div class="bg-emerald-600 text-white p-6 rounded-2xl">Today: <h3 id="dailyProfit" class="text-3xl font-black">0</h3></div>
-             </div>
-             <button onclick="fullBackup()" class="bg-slate-800 text-white p-4 rounded-xl font-black uppercase">Download Full Data Backup</button>
+        <div id="historyTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-slate-50">
+            <h2 class="text-3xl font-black mb-8 border-b-4 border-blue-500 inline-block uppercase italic">Sale History</h2>
+            <div id="historyList" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
         </div>
-        
-        <div id="expensesTab" class="flex-1 p-10 hidden-tab overflow-auto">
-            <div class="bg-white p-6 rounded-2xl shadow border max-w-md">
-                <input id="expNote" placeholder="NOTE" class="w-full p-4 border rounded-xl mb-2 font-black">
-                <input id="expAmt" type="number" placeholder="AMOUNT" class="w-full p-4 border rounded-xl mb-2 font-black">
-                <button onclick="addExpense()" class="w-full bg-rose-600 text-white py-4 rounded-xl font-black">Save Expense</button>
+
+        <div id="productsTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-slate-50">
+            <div class="bg-white p-8 rounded-[3rem] shadow-xl mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input id="listPName" placeholder="ITEM NAME" class="p-4 border rounded-2xl font-black uppercase italic">
+                <input id="listPStock" type="number" placeholder="STOCK" class="p-4 border rounded-2xl font-black">
+                <input id="listPCost" type="number" placeholder="COST PRICE" class="p-4 border rounded-2xl font-black">
+                <input id="listPPrice" type="number" placeholder="SALE PRICE" class="p-4 border rounded-2xl font-black text-blue-600">
+                <button onclick="saveProduct()" class="md:col-span-4 bg-slate-900 text-white p-5 rounded-2xl font-black uppercase shadow-lg">Update Inventory</button>
             </div>
-            <div id="expenseList" class="mt-6 space-y-2 max-w-md"></div>
+            <table class="w-full bg-white rounded-3xl overflow-hidden shadow-xl italic"><thead class="bg-slate-900 text-white font-black uppercase"><tr><th class="p-5">Item</th><th>Stock</th><th>Cost</th><th>Sale</th><th>Del</th></tr></thead><tbody id="prodListBody" class="text-center divide-y uppercase font-bold"></tbody></table>
+        </div>
+
+        <div id="expensesTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-slate-50">
+            <h2 class="text-3xl font-black mb-8 border-b-4 border-rose-500 inline-block uppercase italic">Daily Expenses</h2>
+            <div class="bg-white p-8 rounded-[3rem] shadow-xl border-4 border-white max-w-md mb-8 italic">
+                <input id="expNote" placeholder="EXPENSE DETAIL" class="w-full p-4 border rounded-2xl font-black mb-4 uppercase">
+                <input id="expAmt" type="number" placeholder="AMOUNT" class="w-full p-4 border rounded-2xl font-black mb-4 text-rose-600">
+                <button onclick="addExpense()" class="w-full bg-rose-600 text-white py-4 rounded-2xl font-black uppercase shadow-lg">Record Expense</button>
+            </div>
+            <div id="expenseList" class="space-y-3 max-w-md font-black uppercase italic"></div>
+        </div>
+
+        <div id="reportsTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-slate-50 italic">
+            <h2 class="text-3xl font-black mb-8 border-b-4 border-emerald-500 inline-block uppercase text-emerald-600">P&L Financial Reports</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 text-white">
+                <div class="bg-emerald-600 p-8 rounded-[2rem] shadow-xl"><span>DAILY PROFIT</span><h3 id="dailyProfit" class="text-4xl font-black mt-2">Rs 0</h3></div>
+                <div class="bg-blue-600 p-8 rounded-[2rem] shadow-xl"><span>WEEKLY PROFIT</span><h3 id="weeklyProfit" class="text-4xl font-black mt-2">Rs 0</h3></div>
+                <div class="bg-indigo-600 p-8 rounded-[2rem] shadow-xl"><span>MONTHLY PROFIT</span><h3 id="monthlyProfit" class="text-4xl font-black mt-2">Rs 0</h3></div>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="fullBackup()" class="bg-slate-900 text-white px-10 py-5 rounded-2xl font-black uppercase shadow-xl"><i class="fas fa-download mr-2"></i> Download Full Backup</button>
+            </div>
         </div>
     </div>
 
-    <div id="paymentModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-[5000]">
-        <div class="bg-white p-8 rounded-3xl w-80">
-            <h3 class="font-black uppercase mb-4">Collect Cash</h3>
-            <input id="collectAmt" type="number" placeholder="AMOUNT" class="w-full p-4 border rounded-2xl text-2xl font-black text-center mb-4">
-            <button onclick="saveCashCollection()" class="w-full bg-emerald-600 text-white py-4 rounded-xl font-black">Confirm Payment</button>
-            <button onclick="this.parentElement.parentElement.classList.add('hidden')" class="w-full mt-2 text-slate-400 font-bold uppercase">Cancel</button>
+    <div id="paymentModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-[10000] backdrop-blur-sm">
+        <div class="bg-white p-10 rounded-[3rem] w-96 shadow-2xl border-4 border-emerald-500 italic">
+            <h3 class="font-black uppercase text-center mb-6 text-emerald-600">Cash Collection</h3>
+            <input id="collectAmt" type="number" placeholder="ENTER AMOUNT" class="w-full p-5 border-4 border-slate-100 rounded-2xl text-3xl font-black text-center mb-6 outline-none focus:border-emerald-500">
+            <button onclick="saveCashCollection()" class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase text-xl shadow-lg">Confirm Cash</button>
+            <button onclick="document.getElementById('paymentModal').classList.add('hidden')" class="w-full mt-4 text-slate-400 font-black uppercase text-xs">Cancel</button>
         </div>
     </div>
 
-    <div id="receipt" style="display:none;">
+    <div id="receipt" style="display:none; line-height: 1.3;">
         <center>
-            <img id="rLogo" style="width: 60px; height: 60px; border-radius: 50%;">
-            <h1 id="rStoreName" style="font-size: 20px; font-weight: 900; margin: 0;"></h1>
-            <p id="rStorePhone" style="font-size: 14px; margin: 2px 0;"></p>
-            <div class="dashed"></div>
-            <p id="rDateTime" style="font-size: 11px;"></p>
-            <div style="border:1px solid black; padding: 5px; text-align: left; font-size: 12px;">CUST: <span id="rCustName"></span><br>PH: <span id="rCustMob"></span></div>
+            <img id="rLogo" style="width: 60px; height: 60px; border-radius: 50%; margin-bottom: 5px;">
+            <h1 id="rStoreName" style="font-size: 20px; font-weight: 900; margin: 0; text-transform: uppercase;"></h1>
+            <p id="rStorePhone" style="font-size: 13px; font-weight: bold; margin: 2px 0;"></p>
+            <div class="dashed" style="border-top: 2px dashed black; margin: 5px 0;"></div>
+            <p id="rDateTime" style="font-size: 11px; font-weight: bold;"></p>
+            <div style="border: 1px solid black; padding: 4px; margin: 5px 0; text-align: left; font-size: 12px; font-weight: bold;">
+                CUSTOMER: <span id="rCustName"></span><br>
+                CONTACT: <span id="rCustMob"></span>
+            </div>
         </center>
-        <div id="rItems" style="margin: 10px 0; font-size: 13px;"></div>
-        <div class="dashed"></div>
-        <div id="rTotals" style="text-align: right; font-weight: 900; font-size: 14px;"></div>
+        <div id="rItems" style="margin: 10px 0; font-size: 13px; font-weight: bold; text-transform: uppercase;"></div>
+        <div class="dashed" style="border-top: 2px dashed black; margin: 5px 0;"></div>
+        <div id="rTotals" style="text-align: right; font-weight: 900; font-size: 14px; white-space: pre-wrap;"></div>
+        <center><p style="border: 1px solid black; padding: 3px 10px; display: inline-block; font-size: 10px; font-weight: 900; margin-top: 10px;">SOFTWARE BY GM AGENCY</p></center>
     </div>
 
     <script>
@@ -180,61 +208,162 @@
             const setDoc = await db.collection("settings").doc("main").get();
             if(setDoc.exists) settings = setDoc.data();
             applySettingsUI();
+            
             db.collection("products").onSnapshot(snap => { prods = snap.docs.map(doc => doc.data()); renderProductList(); });
             db.collection("customers").onSnapshot(snap => { snap.forEach(doc => { customers[doc.id] = doc.data(); }); renderCustLedger(); });
             db.collection("sales").orderBy("timestamp", "desc").onSnapshot(snap => { sales = snap.docs.map(doc => doc.data()); renderHistory(); renderReports(); });
-            db.collection("pending").onSnapshot(snap => { pendingOrders = snap.docs.map(doc => doc.data()); renderPending(); renderLoadSheet(); });
-            db.collection("expenses").onSnapshot(snap => { expenses = snap.docs.map(doc => doc.data()); renderExpenses(); });
+            db.collection("pending").onSnapshot(snap => { pendingOrders = snap.docs.map(doc => doc.data()); document.getElementById('pendCount').innerText = pendingOrders.length; renderPending(); renderLoadSheet(); });
+            db.collection("expenses").onSnapshot(snap => { expenses = snap.docs.map(doc => doc.data()); renderExpenses(); renderReports(); });
         }
 
-        // --- AUTH ---
+        // --- AUTH (FIXED BOOKER LOGIN) ---
         function checkAccess() {
             const code = document.getElementById('accessCode').value;
-            if(code === settings.pin) currentUser = {name: "Admin", role: "admin"};
-            else {
-                const b = (settings.bookers || []).find(x => x.pin === code);
-                if(b) currentUser = {name: b.name, role: "booker"};
-                else { alert("PIN WRONG!"); return; }
+            if(code === settings.pin) {
+                currentUser = { name: "Admin", role: "admin" };
+            } else {
+                const booker = (settings.bookers || []).find(b => b.pin === code);
+                if(booker) currentUser = { name: booker.name, role: "booker" };
+                else { alert("INVALID PIN CODE!"); return; }
             }
-            applyRoleUI(); document.getElementById('lockScreen').style.display = 'none';
+            applyRoleUI();
+            document.getElementById('lockScreen').style.display = 'none';
         }
 
         function applyRoleUI() {
-            document.getElementById('roleLabel').innerText = currentUser.name;
+            document.getElementById('roleLabel').innerText = currentUser.role === 'admin' ? "👑 ADMINISTRATOR" : "📝 BOOKER: " + currentUser.name;
             if(currentUser.role === 'booker') {
-                ['btnPending', 'btnLoadSheet', 'btnHistory', 'btnProducts', 'btnExpenses', 'btnReports', 'btnSettings'].forEach(id => document.getElementById(id).style.display = 'none');
+                ['btnPending', 'btnLoadSheet', 'btnHistory', 'btnProducts', 'btnExpenses', 'btnReports', 'btnSettings'].forEach(id => {
+                    const el = document.getElementById(id); if(el) el.style.display = 'none';
+                });
                 document.getElementById('adminPaySection').style.display = 'none';
+                document.getElementById('mainConfirmBtn').innerText = "Submit Booking To Admin";
             }
         }
 
         function switchTab(t) { document.querySelectorAll('.flex-1.p-6, .flex-1.p-10').forEach(el => el.classList.add('hidden-tab')); document.getElementById(t+'Tab').classList.remove('hidden-tab'); }
 
-        // --- BILLING & WHATSAPP ---
+        // --- SETTINGS (IMAGE UPLOAD & BOOKER MGMT) ---
+        function handleLogoUpload(input) {
+            if(input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    settings.logo = e.target.result;
+                    document.getElementById('logoPreview').src = e.target.result;
+                    document.getElementById('logoPreview').classList.remove('hidden');
+                    document.getElementById('uploadLabel').classList.add('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function applySettingsUI() {
+            document.getElementById('sideName').innerText = settings.name;
+            document.getElementById('setStoreName').value = settings.name;
+            document.getElementById('setStorePhone').value = settings.phone;
+            document.getElementById('setStorePIN').value = settings.pin;
+            if(settings.logo) {
+                document.getElementById('sideLogo').src = settings.logo;
+                document.getElementById('sideLogo').classList.remove('hidden');
+                document.getElementById('logoPreview').src = settings.logo;
+                document.getElementById('logoPreview').classList.remove('hidden');
+                document.getElementById('uploadLabel').classList.add('hidden');
+            }
+            renderBookerList();
+        }
+
+        async function saveSettings() {
+            settings.name = document.getElementById('setStoreName').value;
+            settings.phone = document.getElementById('setStorePhone').value;
+            settings.pin = document.getElementById('setStorePIN').value;
+            await db.collection("settings").doc("main").set(settings);
+            alert("SYSTEM UPDATED!"); location.reload();
+        }
+
+        function renderBookerList() {
+            document.getElementById('bookerList').innerHTML = (settings.bookers || []).map((b, i) => `
+                <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border font-black uppercase text-xs">
+                    <span>${b.name} <span class="text-blue-600 ml-2">PIN: ${b.pin}</span></span>
+                    <button onclick="removeBooker(${i})" class="text-rose-500 hover:scale-125 transition-all"><i class="fas fa-trash"></i></button>
+                </div>`).join('');
+        }
+
+        async function addBooker() {
+            const n = document.getElementById('newBName').value, p = document.getElementById('newBPIN').value;
+            if(n && p) {
+                if(!settings.bookers) settings.bookers = [];
+                settings.bookers.push({name: n.toUpperCase(), pin: p});
+                await db.collection("settings").doc("main").set(settings);
+                document.getElementById('newBName').value = ''; document.getElementById('newBPIN').value = '';
+                renderBookerList();
+            }
+        }
+
+        async function removeBooker(i) {
+            settings.bookers.splice(i, 1);
+            await db.collection("settings").doc("main").set(settings);
+            renderBookerList();
+        }
+
+        // --- BILLING & WHATSAPP (FIXED DETAIL BILL) ---
         function checkExistingCustomer(mob) {
-            if(customers[mob]) { document.getElementById('cName').value = customers[mob].name; document.getElementById('prevBalVal').innerText = customers[mob].balance; document.getElementById('prevBalShow').classList.remove('hidden'); }
-            else { document.getElementById('cName').value = ""; document.getElementById('prevBalVal').innerText = "0"; document.getElementById('prevBalShow').classList.add('hidden'); }
+            if(customers[mob]) {
+                document.getElementById('cName').value = customers[mob].name;
+                document.getElementById('prevBalVal').innerText = customers[mob].balance;
+                document.getElementById('prevBalShow').classList.remove('hidden');
+            } else {
+                document.getElementById('cName').value = "";
+                document.getElementById('prevBalVal').innerText = "0";
+                document.getElementById('prevBalShow').classList.add('hidden');
+            }
             calcTotal();
         }
+
         function filterProducts(q) {
             const list = document.getElementById('searchList'); if(!q) { list.classList.add('hidden'); return; }
             const filtered = prods.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
-            list.innerHTML = filtered.map(p => `<div class="p-4 border-b cursor-pointer hover:bg-blue-600 hover:text-white flex justify-between uppercase italic" onclick="selectProduct('${p.name}', ${p.price})"><span>${p.name}</span><span>Rs ${p.price}</span></div>`).join('');
+            list.innerHTML = filtered.map(p => `
+                <div class="p-4 border-b cursor-pointer hover:bg-blue-600 hover:text-white flex justify-between uppercase italic font-bold" 
+                     onclick="selectProduct('${p.name}', ${p.price})">
+                    <span>${p.name}</span><span class="text-xs">Rs ${p.price}</span>
+                </div>`).join('');
             list.classList.remove('hidden');
         }
-        function selectProduct(n, p) { document.getElementById('pSearch').value = n; document.getElementById('pPrice').value = p; document.getElementById('searchList').classList.add('hidden'); }
-        function addToCart() {
-            let n = document.getElementById('pSearch').value, p = parseFloat(document.getElementById('pPrice').value), q = parseInt(document.getElementById('pQty').value);
-            if(n && p) { cart.push({ name: n, price: p, qty: q, subtotal: p*q }); renderCart(); document.getElementById('pSearch').value = ''; }
+
+        function selectProduct(n, p) { 
+            document.getElementById('pSearch').value = n; 
+            document.getElementById('pPrice').value = p; 
+            document.getElementById('searchList').classList.add('hidden');
+            document.getElementById('pQty').focus();
         }
+
+        function addToCart() {
+            const n = document.getElementById('pSearch').value, p = parseFloat(document.getElementById('pPrice').value), q = parseInt(document.getElementById('pQty').value);
+            if(n && p) {
+                cart.push({ name: n, price: p, qty: q, subtotal: p*q });
+                renderCart();
+                document.getElementById('pSearch').value = '';
+            }
+        }
+
         function renderCart() {
-            document.getElementById('cartBody').innerHTML = cart.map((i, idx) => `<div class="flex justify-between items-center p-4 bg-slate-800 rounded-xl"><div><p class="text-blue-400 text-[10px]">${i.name}</p><p>Rs ${i.price} x ${i.qty}</p></div><span>Rs ${i.subtotal}</span></div>`).join('');
+            document.getElementById('cartBody').innerHTML = cart.map((item, idx) => `
+                <div class="flex justify-between items-center p-4 bg-slate-800 rounded-2xl border-l-4 border-blue-500">
+                    <div><p class="text-blue-400 text-[10px]">${item.name}</p><p class="text-lg">Rs ${item.price} x ${item.qty}</p></div>
+                    <div class="flex items-center gap-4">
+                        <span class="font-black text-xl">Rs ${item.subtotal}</span>
+                        <button onclick="cart.splice(${idx},1);renderCart();" class="text-rose-500"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>`).join('');
             calcTotal();
         }
+
         function calcTotal() {
-            let itemsSum = cart.reduce((s, i) => s + i.subtotal, 0), prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0;
-            let grand = itemsSum + prev + (cart.length > 0 ? 5 : 0);
+            const itemsSum = cart.reduce((s, i) => s + i.subtotal, 0), prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0;
+            const bag = cart.length > 0 ? 5 : 0;
+            const grand = itemsSum + prev + bag;
             document.getElementById('totalDisplay').innerText = grand;
-            let paid = parseFloat(document.getElementById('paidAmt').value) || 0;
+            const paid = parseFloat(document.getElementById('paidAmt').value) || 0;
             document.getElementById('balAmt').value = grand - paid;
         }
 
@@ -247,87 +376,178 @@
                 customer: cName, mob: mob, items: [...cart], itemsSum, prevBal: prev, grandTotal: itemsSum+prev+5, 
                 booker: currentUser.name 
             };
+
             if(currentUser.role === 'admin') {
-                sale.paid = parseFloat(document.getElementById('paidAmt').value) || 0; sale.finalBal = sale.grandTotal - sale.paid;
+                sale.paid = parseFloat(document.getElementById('paidAmt').value) || 0;
+                sale.finalBal = sale.grandTotal - sale.paid;
                 await db.collection("sales").doc(sale.id).set(sale);
                 await db.collection("customers").doc(mob).set({ name: cName, balance: sale.finalBal });
+                // Update Inventory
+                for(let item of cart) {
+                    const p = prods.find(x => x.name.toLowerCase() === item.name.toLowerCase());
+                    if(p) await db.collection("products").doc(p.name.toLowerCase()).update({ stock: p.stock - item.qty });
+                }
                 printReceipt(sale); location.reload();
-            } else { await db.collection("pending").doc(sale.id).set(sale); alert("Booking Submitted!"); location.reload(); }
-        }
-
-        function shareBillWhatsApp(s) {
-            let msg = `*${settings.name}*\nBill For: ${s.customer}\n---\n`;
-            s.items.forEach(i => msg += `${i.name} x ${i.qty} = ${i.subtotal}\n`);
-            msg += `---\n*Total Bill: Rs ${s.grandTotal}*\n*Paid: Rs ${s.paid}*\n*Balance: Rs ${s.finalBal}*`;
-            window.open(`https://wa.me/92${s.mob.substring(1)}?text=${encodeURIComponent(msg)}`);
-        }
-
-        // --- SETTINGS (Booker Mgmt & Image Upload) ---
-        function handleLogoUpload(input) {
-            const reader = new FileReader();
-            reader.onload = (e) => { settings.logo = e.target.result; document.getElementById('logoPreview').src = e.target.result; document.getElementById('logoPreview').classList.remove('hidden'); };
-            reader.readAsDataURL(input.files[0]);
-        }
-        function applySettingsUI() {
-            document.getElementById('sideName').innerText = settings.name;
-            document.getElementById('setStoreName').value = settings.name;
-            document.getElementById('setStorePhone').value = settings.phone;
-            document.getElementById('setStorePIN').value = settings.pin;
-            if(settings.logo) { document.getElementById('sideLogo').src = settings.logo; document.getElementById('sideLogo').classList.remove('hidden'); document.getElementById('logoPreview').src = settings.logo; document.getElementById('logoPreview').classList.remove('hidden'); }
-            renderBookerList();
-        }
-        async function saveSettings() {
-            settings.name = document.getElementById('setStoreName').value;
-            settings.phone = document.getElementById('setStorePhone').value;
-            settings.pin = document.getElementById('setStorePIN').value;
-            await db.collection("settings").doc("main").set(settings); alert("Settings Saved!"); location.reload();
-        }
-        function renderBookerList() {
-            document.getElementById('bookerList').innerHTML = (settings.bookers || []).map((b, idx) => `
-                <div class="flex justify-between bg-slate-100 p-2 rounded-lg font-bold text-xs">
-                    <span>${b.name} (${b.pin})</span>
-                    <button onclick="removeBooker(${idx})" class="text-red-500"><i class="fas fa-trash"></i></button>
-                </div>`).join('');
-        }
-        async function addBooker() {
-            const n = document.getElementById('newBName').value, p = document.getElementById('newBPIN').value;
-            if(n && p) { if(!settings.bookers) settings.bookers = []; settings.bookers.push({name:n, pin:p}); await db.collection("settings").doc("main").set(settings); renderBookerList(); }
-        }
-        async function removeBooker(i) { settings.bookers.splice(i,1); await db.collection("settings").doc("main").set(settings); renderBookerList(); }
-
-        // --- CASH COLLECTION (LEDGER) ---
-        function openPaymentModal(id) { activeCustId = id; document.getElementById('paymentModal').classList.remove('hidden'); }
-        async function saveCashCollection() {
-            const amt = parseFloat(document.getElementById('collectAmt').value);
-            if(amt > 0) {
-                const newBal = (customers[activeCustId].balance || 0) - amt;
-                await db.collection("customers").doc(activeCustId).update({ balance: newBal });
-                await db.collection("sales").add({ customer: customers[activeCustId].name, mob: activeCustId, grandTotal: 0, paid: amt, finalBal: newBal, timestamp: Date.now(), date: new Date().toLocaleDateString(), items: [], itemsSum: 0 });
-                alert("Cash Received!"); location.reload();
+            } else {
+                await db.collection("pending").doc(sale.id).set(sale);
+                alert("BOOKING SENT TO ADMIN!"); location.reload();
             }
         }
 
-        // --- OTHERS ---
-        function renderPending() { document.getElementById('pendingList').innerHTML = pendingOrders.map(s => `<div class="bg-white p-6 rounded-3xl border-2"><b>${s.customer}</b><div class="text-xs my-2">${s.items.map(i=>i.name).join(', ')}</div><button onclick="approveNow('${s.id}')" class="w-full bg-emerald-600 text-white p-2 rounded-xl text-xs uppercase font-black">Approve</button></div>`).join(''); }
-        async function approveNow(id) { const s = pendingOrders.find(x => x.id === id); const paid = prompt("CASH PAID?", 0); if(paid !== null) { s.paid = parseFloat(paid); s.finalBal = s.grandTotal - s.paid; await db.collection("sales").doc(s.id).set(s); await db.collection("customers").doc(s.mob).set({name: s.customer, balance: s.finalBal}); await db.collection("pending").doc(id).delete(); } }
-        function renderLoadSheet() { const sum = {}; pendingOrders.forEach(o => o.items.forEach(i => sum[i.name] = (sum[i.name] || 0) + i.qty)); document.getElementById('loadSheetBody').innerHTML = Object.keys(sum).map(n => `<div class="p-4 border-b flex justify-between font-black uppercase"><span>${n}</span><span>${sum[n]}</span></div>`).join(''); }
-        function renderHistory() { document.getElementById('historyList').innerHTML = sales.map(s => `<div class="bg-white p-6 rounded-2xl border flex flex-col gap-2"><div><b>${s.customer}</b><br><small>${s.date}</small></div><b>Rs ${s.grandTotal}</b><div class="flex gap-2"><button onclick='printReceipt(${JSON.stringify(s)})' class="bg-slate-800 text-white px-3 py-1 rounded text-[10px]">Print</button><button onclick='shareBillWhatsApp(${JSON.stringify(s)})' class="bg-emerald-600 text-white px-3 py-1 rounded text-[10px]">WhatsApp</button></div></div>`).join(''); }
-        function renderCustLedger() { document.getElementById('custLedgerList').innerHTML = Object.keys(customers).map(k => `<div class="bg-white p-6 rounded-2xl shadow"><b>${customers[k].name}</b><div class="text-2xl font-black text-rose-600">Rs ${customers[k].balance}</div><button onclick="openPaymentModal('${k}')" class="w-full bg-emerald-600 text-white p-2 rounded-xl mt-2 text-[10px] uppercase font-black">Collect Cash</button></div>`).join(''); }
-        function renderProductList() { document.getElementById('prodListBody').innerHTML = prods.map(p => `<tr><td class="p-4">${p.name}</td><td>${p.stock}</td><td>${p.cost}</td><td>${p.price}</td><td><button onclick="db.collection('products').doc('${p.name}').delete()" class="text-rose-500"><i class="fas fa-trash"></i></button></td></tr>`).join(''); }
-        async function saveProduct() { let n = document.getElementById('listPName').value.toLowerCase().trim(), s = parseInt(document.getElementById('listPStock').value), c = parseFloat(document.getElementById('listPCost').value), p = parseFloat(document.getElementById('listPPrice').value); if(n) await db.collection("products").doc(n).set({name:n, stock:s, cost:c, price:p}); }
-        function renderReports() { document.getElementById('dailyProfit').innerText = "Rs " + sales.filter(s => s.timestamp >= new Date().setHours(0,0,0,0)).reduce((a,b)=>a+(b.itemsSum||0), 0); }
-        async function addExpense() { const n = document.getElementById('expNote').value, a = parseFloat(document.getElementById('expAmt').value); if(n && a) { await db.collection("expenses").add({ note:n, amt:a, timestamp:Date.now() }); location.reload(); } }
-        function renderExpenses() { document.getElementById('expenseList').innerHTML = expenses.map(e => `<div class="bg-white p-3 border-l-4 border-rose-500 flex justify-between uppercase italic font-bold text-xs"><span>${e.note}</span><span>Rs ${e.amt}</span></div>`).join(''); }
+        function shareBillWhatsApp(s) {
+            let msg = `*${settings.name}*\n*BILL INVOICE*\nCustomer: ${s.customer}\nDate: ${s.date}\n------------------\n`;
+            s.items.forEach(i => { msg += `${i.name}\n${i.qty} x ${i.price} = Rs ${i.subtotal}\n`; });
+            msg += `------------------\n*Current Bill: Rs ${s.itemsSum}*\n*Old Balance: Rs ${s.prevBal}*\n*Bag Charges: Rs 5*\n*NET TOTAL: Rs ${s.grandTotal}*\n*CASH PAID: Rs ${s.paid}*\n*REMAINING: Rs ${s.finalBal}*\n------------------\n*Thank You!*`;
+            window.open(`https://wa.me/92${s.mob.substring(1)}?text=${encodeURIComponent(msg)}`);
+        }
+
+        // --- PENDING & LOAD SHEET (FIXED FETCH) ---
+        function renderPending() {
+            document.getElementById('pendingList').innerHTML = pendingOrders.map(s => `
+                <div class="bg-white p-6 rounded-[2rem] border-2 border-orange-200 shadow-lg italic">
+                    <div class="flex justify-between mb-2"><b class="uppercase">${s.customer}</b><small>${s.time}</small></div>
+                    <p class="text-[10px] font-black opacity-50 mb-3 uppercase">Booker: ${s.booker}</p>
+                    <div class="bg-slate-50 p-3 rounded-xl mb-4 text-xs font-bold divide-y">
+                        ${s.items.map(i => `<div class="flex justify-between py-1"><span>${i.name}</span><span>x${i.qty}</span></div>`).join('')}
+                    </div>
+                    <div class="flex justify-between font-black text-orange-600 mb-4 uppercase italic"><span>Estimated:</span><span>Rs ${s.grandTotal}</span></div>
+                    <button onclick="approveNow('${s.id}')" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-black uppercase shadow-lg">Approve Order</button>
+                </div>`).join('');
+        }
+
+        async function approveNow(id) {
+            const s = pendingOrders.find(x => x.id === id);
+            const paid = prompt("ENTER CASH PAID BY CUSTOMER:", 0);
+            if(paid !== null) {
+                s.paid = parseFloat(paid); s.finalBal = s.grandTotal - s.paid;
+                await db.collection("sales").doc(s.id).set(s);
+                await db.collection("customers").doc(s.mob).set({ name: s.customer, balance: s.finalBal });
+                for(let item of s.items) {
+                    const p = prods.find(x => x.name.toLowerCase() === item.name.toLowerCase());
+                    if(p) await db.collection("products").doc(p.name.toLowerCase()).update({ stock: p.stock - item.qty });
+                }
+                await db.collection("pending").doc(id).delete();
+                alert("ORDER APPROVED!");
+            }
+        }
+
+        function renderLoadSheet() {
+            const sum = {};
+            pendingOrders.forEach(o => o.items.forEach(i => { sum[i.name] = (sum[i.name] || 0) + i.qty; }));
+            document.getElementById('loadSheetBody').innerHTML = Object.keys(sum).length > 0 ? Object.keys(sum).map(n => `
+                <div class="p-5 border-b flex justify-between font-black uppercase italic items-center">
+                    <span class="text-slate-700">${n}</span>
+                    <span class="bg-purple-100 text-purple-600 px-4 py-1 rounded-full text-xl">${sum[n]}</span>
+                </div>`).join('') : '<p class="p-10 text-center opacity-40 font-black italic">NO PENDING ORDERS</p>';
+        }
+
+        // --- CASH COLLECTION (FIXED LEDGER) ---
+        function openPaymentModal(id) { activeCustId = id; document.getElementById('paymentModal').classList.remove('hidden'); document.getElementById('collectAmt').focus(); }
+        
+        async function saveCashCollection() {
+            const amt = parseFloat(document.getElementById('collectAmt').value);
+            if(amt > 0) {
+                const currentBal = customers[activeCustId].balance || 0;
+                const newBal = currentBal - amt;
+                await db.collection("customers").doc(activeCustId).update({ balance: newBal });
+                // Add to Sales History as "Cash Collection"
+                await db.collection("sales").add({ 
+                    customer: customers[activeCustId].name, mob: activeCustId, 
+                    itemsSum: 0, grandTotal: 0, paid: amt, finalBal: newBal, 
+                    timestamp: Date.now(), date: new Date().toLocaleDateString(), 
+                    time: new Date().toLocaleTimeString(), items: [{name: "CASH PAYMENT", subtotal: 0, qty: 1, price: 0}] 
+                });
+                document.getElementById('paymentModal').classList.add('hidden');
+                document.getElementById('collectAmt').value = '';
+                alert("CASH RECEIVED SUCCESSFULLY!");
+            }
+        }
+
+        // --- UTILS (History, Inventory, Expenses) ---
+        function renderHistory() {
+            document.getElementById('historyList').innerHTML = sales.map(s => `
+                <div class="bg-white p-6 rounded-[2rem] border shadow-lg flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <b class="uppercase text-lg">${s.customer}</b>
+                            <span class="text-blue-600 font-black">Rs ${s.grandTotal}</span>
+                        </div>
+                        <p class="text-[10px] font-bold opacity-50">${s.date} | ${s.time}</p>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button onclick='printReceipt(${JSON.stringify(s)})' class="flex-1 bg-slate-800 text-white p-3 rounded-xl text-[10px] font-black uppercase italic"><i class="fas fa-print"></i> Print</button>
+                        <button onclick='shareBillWhatsApp(${JSON.stringify(s)})' class="flex-1 bg-emerald-600 text-white p-3 rounded-xl text-[10px] font-black uppercase italic"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function renderCustLedger() {
+            document.getElementById('custLedgerList').innerHTML = Object.keys(customers).map(k => `
+                <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-white italic">
+                    <b class="uppercase font-black text-slate-500">${customers[k].name}</b>
+                    <p class="text-[10px] opacity-40 mb-4">${k}</p>
+                    <div class="text-3xl font-black text-rose-600 mb-6">Rs ${customers[k].balance}</div>
+                    <button onclick="openPaymentModal('${k}')" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase italic shadow-lg">Collect Cash</button>
+                </div>`).join('');
+        }
+
+        function renderProductList() {
+            document.getElementById('prodListBody').innerHTML = prods.map(p => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-4 text-left font-black text-blue-600">${p.name}</td>
+                    <td class="${p.stock <= 5 ? 'text-rose-600 bg-rose-50' : ''}">${p.stock}</td>
+                    <td>${p.cost}</td>
+                    <td class="text-emerald-600">${p.price}</td>
+                    <td><button onclick="db.collection('products').doc('${p.name.toLowerCase()}').delete()" class="text-rose-500"><i class="fas fa-trash"></i></button></td>
+                </tr>`).join('');
+        }
+
+        async function saveProduct() {
+            let n = document.getElementById('listPName').value.toLowerCase().trim(), s = parseInt(document.getElementById('listPStock').value), c = parseFloat(document.getElementById('listPCost').value), p = parseFloat(document.getElementById('listPPrice').value);
+            if(n) { await db.collection("products").doc(n).set({name:n, stock:s, cost:c, price:p}); alert("INVENTORY UPDATED!"); }
+        }
+
+        async function addExpense() {
+            const n = document.getElementById('expNote').value, a = parseFloat(document.getElementById('expAmt').value);
+            if(n && a) { await db.collection("expenses").add({ note: n.toUpperCase(), amt: a, timestamp: Date.now(), date: new Date().toLocaleDateString() }); document.getElementById('expNote').value=''; document.getElementById('expAmt').value=''; }
+        }
+
+        function renderExpenses() {
+            document.getElementById('expenseList').innerHTML = expenses.map(e => `
+                <div class="bg-white p-4 rounded-2xl border-l-8 border-rose-500 shadow flex justify-between font-black uppercase">
+                    <span>${e.note}</span><span class="text-rose-600">Rs ${e.amt}</span>
+                </div>`).join('');
+        }
+
+        function renderReports() {
+            const startOfDay = new Date().setHours(0,0,0,0);
+            const getProfit = (since) => {
+                const sSum = sales.filter(s => s.timestamp >= since).reduce((a,b)=>a+(b.itemsSum||0), 0);
+                const eSum = expenses.filter(e => e.timestamp >= since).reduce((a,b)=>a+(b.amt||0), 0);
+                return sSum - eSum;
+            };
+            document.getElementById('dailyProfit').innerText = "Rs " + getProfit(startOfDay);
+            document.getElementById('weeklyProfit').innerText = "Rs " + getProfit(Date.now() - 7*24*60*60*1000);
+            document.getElementById('monthlyProfit').innerText = "Rs " + getProfit(Date.now() - 30*24*60*60*1000);
+        }
+
         function printReceipt(s) {
-            document.getElementById('rStoreName').innerText = settings.name; document.getElementById('rStorePhone').innerText = settings.phone;
+            document.getElementById('rStoreName').innerText = settings.name; 
+            document.getElementById('rStorePhone').innerText = settings.phone;
             if(settings.logo) { document.getElementById('rLogo').src = settings.logo; document.getElementById('rLogo').style.display = 'block'; }
-            document.getElementById('rCustName').innerText = s.customer; document.getElementById('rCustMob').innerText = s.mob;
+            document.getElementById('rCustName').innerText = s.customer;
+            document.getElementById('rCustMob').innerText = s.mob;
             document.getElementById('rDateTime').innerText = s.date + " " + s.time;
             document.getElementById('rItems').innerHTML = s.items.map(i => `<div style="display:flex;justify-content:space-between"><span>${i.name} x${i.qty}</span><span>${i.subtotal}</span></div>`).join('');
-            document.getElementById('rTotals').innerHTML = `NET TOTAL: RS ${s.grandTotal}<br>PAID: RS ${s.paid}<br><b>BAL: RS ${s.finalBal}</b>`;
+            document.getElementById('rTotals').innerText = `BILL TOTAL: RS ${s.itemsSum}\nOLD BALANCE: RS ${s.prevBal}\nBAG CHARGES: RS 5\nNET PAYABLE: RS ${s.grandTotal}\n------------------\nCASH PAID: RS ${s.paid}\nNEW BALANCE: RS ${s.finalBal}`;
             window.print();
         }
-        async function fullBackup() { const data = { prods, customers, sales, expenses, settings }; const blob = new Blob([JSON.stringify(data)], {type: "application/json"}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Backup_${new Date().toLocaleDateString()}.json`; a.click(); }
+
+        async function fullBackup() {
+            const data = { products: prods, customers, sales, expenses, settings };
+            const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `GM_Backup_${new Date().toLocaleDateString()}.json`; a.click();
+        }
 
         init();
     </script>
