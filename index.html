@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GM Agency | Elite POS Ultimate</title>
+    <title>GM Agency | POS A-to-Z</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -23,29 +23,29 @@
 
     <div id="lockScreen" class="fixed inset-0 bg-[#0f172a] z-[9999] flex flex-col items-center justify-center text-white">
         <div class="bg-slate-800 p-10 rounded-[3rem] shadow-2xl text-center border-2 border-slate-700 w-80">
-            <img id="lockLogo" class="w-24 h-24 mx-auto mb-6 rounded-3xl bg-white p-2 object-contain hidden">
-            <h1 class="text-2xl font-black mb-1 text-blue-400 italic">GM AGENCY POS</h1>
+            <h1 class="text-2xl font-black mb-1 text-blue-400 italic">GM AGENCY</h1>
             <input id="accessCode" type="password" placeholder="ENTER PIN" class="w-full p-4 rounded-2xl text-black text-center text-3xl font-black mb-4 outline-none border-4 border-blue-500">
-            <button onclick="checkAccess()" class="w-full bg-blue-600 py-4 rounded-2xl font-black uppercase hover:bg-blue-500 transition-all">Unlock</button>
-            <a href="https://wa.me/923023313131" target="_blank" class="mt-6 inline-flex items-center gap-2 text-emerald-400 text-xs font-bold hover:underline italic"><i class="fab fa-whatsapp"></i> Help: 03023313131</a>
+            <button onclick="checkAccess()" class="w-full bg-blue-600 py-4 rounded-2xl font-black uppercase hover:bg-blue-500 transition-all">Unlock System</button>
         </div>
     </div>
 
     <div class="w-72 bg-[#0f172a] text-white flex flex-col shadow-2xl no-print">
         <div class="p-8 text-center border-b border-slate-800">
-            <img id="sideLogo" class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-white p-1 object-contain hidden">
             <h2 id="sideName" class="text-xl font-black text-blue-400 italic uppercase">GM AGENCY</h2>
+            <p id="roleLabel" class="text-[10px] text-emerald-400 font-bold uppercase mt-1"></p>
         </div>
-        <nav class="p-4 flex-1 space-y-2 font-bold text-sm uppercase italic overflow-y-auto">
+        <nav id="navBar" class="p-4 flex-1 space-y-2 font-bold text-sm uppercase italic overflow-y-auto">
             <button onclick="switchTab('billing')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-file-invoice-dollar"></i> POS Billing</button>
-            <button onclick="switchTab('history')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-history"></i> Bill History</button>
+            <button id="btnPending" onclick="switchTab('pending')" class="w-full text-left p-4 hover:bg-orange-600 rounded-2xl flex items-center gap-3"><i class="fas fa-clock"></i> Pending Orders</button>
+            <button id="btnLoadSheet" onclick="switchTab('loadsheet')" class="w-full text-left p-4 hover:bg-purple-600 rounded-2xl flex items-center gap-3"><i class="fas fa-truck-loading"></i> Load Sheet</button>
+            <button id="btnHistory" onclick="switchTab('history')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-history"></i> Bill History</button>
             <button onclick="switchTab('cust')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-users-cog"></i> Customer Ledger</button>
-            <button onclick="switchTab('products')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-boxes"></i> Inventory</button>
-            <button onclick="switchTab('expenses')" class="w-full text-left p-4 hover:bg-rose-600 rounded-2xl flex items-center gap-3"><i class="fas fa-wallet"></i> Daily Expenses</button>
-            <button onclick="switchTab('reports')" class="w-full text-left p-4 hover:bg-emerald-600 rounded-2xl flex items-center gap-3"><i class="fas fa-chart-line"></i> P&L Reports</button>
-            <button onclick="switchTab('settings')" class="w-full text-left p-4 hover:bg-indigo-600 rounded-2xl flex items-center gap-3"><i class="fas fa-cog"></i> Settings</button>
+            <button id="btnProducts" onclick="switchTab('products')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-boxes"></i> Inventory</button>
+            <button id="btnExpenses" onclick="switchTab('expenses')" class="w-full text-left p-4 hover:bg-rose-600 rounded-2xl flex items-center gap-3"><i class="fas fa-wallet"></i> Expenses</button>
+            <button id="btnReports" onclick="switchTab('reports')" class="w-full text-left p-4 hover:bg-emerald-600 rounded-2xl flex items-center gap-3"><i class="fas fa-chart-line"></i> P&L Reports</button>
+            <button id="btnSettings" onclick="switchTab('settings')" class="w-full text-left p-4 hover:bg-indigo-600 rounded-2xl flex items-center gap-3"><i class="fas fa-cog"></i> Settings</button>
         </nav>
-        <div class="p-4"><button onclick="logout()" class="w-full p-4 bg-red-900/30 text-red-500 rounded-2xl font-black text-xs border border-red-900/50 uppercase italic">Lock System</button></div>
+        <div class="p-4"><button onclick="logout()" class="w-full p-4 bg-red-900/30 text-red-500 rounded-2xl font-black text-xs uppercase italic">Lock</button></div>
     </div>
 
     <div class="flex-1 flex flex-col bg-white overflow-hidden relative">
@@ -53,124 +53,99 @@
         <div id="billingTab" class="flex-1 p-6 flex gap-6 overflow-hidden">
             <div class="w-80 space-y-4">
                 <div class="bg-slate-50 p-6 rounded-[2.5rem] border-2 shadow-xl border-slate-200">
-                    <label class="text-[10px] font-black text-slate-400 ml-2 italic uppercase">Customer</label>
+                    <label class="text-[10px] font-black text-slate-400 ml-2 italic uppercase">Customer Details</label>
                     <input id="cMob" oninput="checkExistingCustomer(this.value)" placeholder="PHONE NUMBER" class="w-full border-2 p-4 rounded-2xl mb-2 font-black outline-none focus:border-blue-500">
                     <input id="cName" placeholder="CUSTOMER NAME" class="w-full border-2 p-4 rounded-2xl mb-4 font-bold outline-none uppercase italic">
-                    <div id="prevBalShow" class="bg-amber-100 text-amber-700 p-4 rounded-2xl mb-4 hidden border-2 border-amber-300">
-                        <p class="text-[9px] font-black italic uppercase">Old Balance</p>
-                        <p class="text-2xl font-black italic">Rs <span id="prevBalVal">0</span></p>
+                    
+                    <div id="bookerVisitBtns" class="flex gap-2 mb-4">
+                        <button onclick="markGPSVisit()" class="flex-1 bg-slate-800 text-white p-3 rounded-xl text-[10px] font-black uppercase italic">Visit Done</button>
+                        <button onclick="whatsappPhoto()" class="flex-1 bg-emerald-600 text-white p-3 rounded-xl text-[10px] font-black uppercase italic">WA Photo</button>
                     </div>
-                    <label class="text-[10px] font-black text-slate-400 ml-2 italic uppercase">Search Product</label>
-                    <input id="pSearch" oninput="filterProducts(this.value)" placeholder="SEARCH..." class="w-full border-2 p-4 rounded-2xl font-black mb-2 outline-none uppercase italic">
-                    <div id="searchList" class="hidden absolute w-72 bg-white border-2 rounded-2xl shadow-2xl z-50 max-h-48 overflow-y-auto"></div>
+
+                    <div id="prevBalShow" class="bg-amber-100 text-amber-700 p-4 rounded-2xl mb-4 hidden border-2 border-amber-300">
+                        <p class="text-[9px] font-black italic">OLD BALANCE: Rs <span id="prevBalVal">0</span></p>
+                    </div>
+
+                    <label class="text-[10px] font-black text-slate-400 ml-2 italic uppercase">Add Product</label>
+                    <input id="pSearch" oninput="filterProducts(this.value)" placeholder="SEARCH ITEM..." class="w-full border-2 p-4 rounded-2xl font-black mb-2 outline-none uppercase italic">
+                    <div id="searchList" class="hidden absolute w-72 bg-white border-2 rounded-2xl shadow-2xl z-50 max-h-48 overflow-y-auto font-black italic"></div>
+                    
                     <div class="grid grid-cols-2 gap-2 mb-4">
                         <input id="pPrice" type="number" placeholder="PRICE" class="border-2 p-4 rounded-2xl font-black text-center">
                         <input id="pQty" type="number" value="1" class="border-2 p-4 rounded-2xl font-black text-center bg-blue-50">
                     </div>
-                    <button onclick="addToCart()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg hover:bg-blue-500 transition-all italic">Add to Bill</button>
+                    <button onclick="addToCart()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase italic">Add to Cart</button>
                 </div>
             </div>
+
             <div class="flex-1 bg-slate-900 rounded-[3.5rem] flex flex-col text-white shadow-2xl border-8 border-slate-800">
                 <div id="cartBody" class="flex-1 p-8 overflow-y-auto space-y-4 font-bold italic uppercase"></div>
                 <div class="p-8 bg-slate-800">
-                    <div class="flex justify-between text-4xl font-black text-blue-400 mb-6 italic tracking-tighter uppercase"><span>TOTAL:</span><span>Rs <span id="totalDisplay">0</span></span></div>
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <input id="paidAmt" oninput="calcTotal()" type="number" placeholder="CASH PAID" class="w-full bg-slate-700 p-5 rounded-2xl text-emerald-400 font-black text-3xl outline-none border-2 border-emerald-500/20">
+                    <div class="flex justify-between text-4xl font-black text-blue-400 mb-6 italic uppercase"><span>Total:</span><span>Rs <span id="totalDisplay">0</span></span></div>
+                    <div id="adminPaySection" class="grid grid-cols-2 gap-4 mb-4">
+                        <input id="paidAmt" oninput="calcTotal()" type="number" placeholder="CASH PAID" class="w-full bg-slate-700 p-5 rounded-2xl text-emerald-400 font-black text-3xl outline-none">
                         <input id="balAmt" readonly placeholder="BALANCE" class="w-full bg-slate-700 p-5 rounded-2xl text-rose-400 font-black text-3xl outline-none italic">
                     </div>
-                    <button onclick="processBill()" class="w-full bg-emerald-500 py-6 rounded-[2rem] font-black text-2xl shadow-xl hover:bg-emerald-400 uppercase italic transition-all"><i class="fas fa-print mr-2"></i> Save & Print</button>
+                    <button id="mainConfirmBtn" onclick="processBill()" class="w-full bg-emerald-500 py-6 rounded-[2rem] font-black text-2xl uppercase italic">Confirm Order</button>
                 </div>
             </div>
         </div>
 
+        <div id="pendingTab" class="flex-1 p-10 hidden-tab overflow-y-auto">
+            <h2 class="text-3xl font-black mb-8 italic border-b-4 border-orange-500 inline-block uppercase italic">Pending Orders</h2>
+            <div id="pendingList" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+        </div>
+
+        <div id="loadsheetTab" class="flex-1 p-10 hidden-tab overflow-y-auto">
+            <h2 class="text-3xl font-black mb-8 italic border-b-4 border-purple-500 inline-block uppercase">Daily Load Sheet</h2>
+            <div id="loadSheetBody" class="bg-white rounded-3xl shadow-xl overflow-hidden border"></div>
+        </div>
+
         <div id="historyTab" class="flex-1 p-10 hidden-tab overflow-y-auto">
-            <h2 class="text-3xl font-black mb-8 italic border-b-4 border-amber-500 inline-block uppercase italic">Bill Archives</h2>
+            <h2 class="text-3xl font-black mb-8 italic border-b-4 border-blue-500 inline-block uppercase">Sale Archives</h2>
             <div id="historyList" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
         </div>
 
-        <div id="custTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-slate-50">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-3xl font-black italic border-b-4 border-blue-500 uppercase italic">Customer Ledger</h2>
-                <input id="ledgerSearch" oninput="renderCustLedger(this.value)" placeholder="🔍 Search Name/Mob..." class="p-4 border-2 rounded-2xl w-80 font-bold outline-none italic uppercase">
-            </div>
-            <div id="custLedgerList" class="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
-        </div>
-
         <div id="productsTab" class="flex-1 p-10 hidden-tab overflow-y-auto">
-            <h2 class="text-3xl font-black mb-6 italic border-b-4 border-slate-900 inline-block uppercase italic">Inventory Management</h2>
+            <h2 class="text-3xl font-black mb-6 italic border-b-4 border-slate-900 inline-block uppercase">Inventory</h2>
             <div class="bg-white p-8 rounded-[3rem] border-4 border-slate-100 shadow-xl mb-8 grid grid-cols-4 gap-4">
                 <input id="listPName" placeholder="ITEM NAME" class="p-4 rounded-2xl bg-slate-50 border-2 font-black uppercase italic">
                 <input id="listPStock" type="number" placeholder="STOCK" class="p-4 rounded-2xl bg-slate-50 border-2 font-black">
                 <input id="listPCost" type="number" placeholder="COST PRICE" class="p-4 rounded-2xl bg-slate-50 border-2 font-black text-rose-600">
                 <input id="listPPrice" type="number" placeholder="SALE PRICE" class="p-4 rounded-2xl bg-slate-50 border-2 font-black text-emerald-600">
-                <button onclick="saveProduct()" class="col-span-4 bg-[#0f172a] text-white p-5 rounded-2xl font-black uppercase text-xl hover:bg-blue-600 transition-all italic">Update Stock</button>
+                <button onclick="saveProduct()" class="col-span-4 bg-slate-900 text-white p-5 rounded-2xl font-black uppercase italic">Update Inventory</button>
             </div>
-            <table class="w-full text-center rounded-2xl overflow-hidden border">
-                <thead class="bg-slate-900 text-white text-[10px] uppercase font-black italic">
-                    <tr><th class="p-5 text-left">Product</th><th>Stock</th><th>Cost</th><th>Sale</th><th>Action</th></tr>
+            <table class="w-full text-center border">
+                <thead class="bg-slate-900 text-white text-[10px] uppercase font-black">
+                    <tr><th class="p-5">Product</th><th>Stock</th><th>Cost</th><th>Sale</th><th>Action</th></tr>
                 </thead>
-                <tbody id="prodListBody" class="font-bold divide-y text-sm italic"></tbody>
+                <tbody id="prodListBody" class="font-bold divide-y text-sm uppercase italic"></tbody>
             </table>
         </div>
 
-        <div id="expensesTab" class="flex-1 p-10 hidden-tab overflow-y-auto">
-            <h2 class="text-3xl font-black mb-8 italic border-b-4 border-rose-500 inline-block uppercase italic">Shop Expenses</h2>
-            <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 max-w-xl flex flex-col gap-4 mb-8">
-                <input id="expNote" placeholder="EXPENSE NOTE" class="p-4 border-2 rounded-2xl font-black uppercase italic">
-                <input id="expAmt" type="number" placeholder="AMOUNT" class="p-4 border-2 rounded-2xl font-black text-rose-600 text-2xl">
-                <button onclick="addExpense()" class="bg-rose-600 text-white py-5 rounded-2xl font-black uppercase italic shadow-lg hover:bg-rose-500 transition-all">Record Expense</button>
-            </div>
-            <div id="expenseList" class="space-y-4 max-w-xl"></div>
-        </div>
-
         <div id="reportsTab" class="flex-1 p-10 hidden-tab overflow-y-auto">
-            <h2 class="text-3xl font-black mb-8 italic border-b-4 border-emerald-500 inline-block uppercase italic">Financial Reports</h2>
-            <div id="repStats" class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10 text-white italic uppercase font-black"></div>
-            <div class="bg-slate-50 p-10 rounded-[3rem] border-4 border-dashed border-slate-300">
-                <h3 class="text-xl font-black mb-4 uppercase italic">Export Data</h3>
-                <div class="flex gap-4">
-                    <button onclick="exportToExcel('sales')" class="bg-blue-700 text-white px-8 py-4 rounded-2xl font-black uppercase italic shadow-lg">Export Sales (Excel)</button>
-                    <button onclick="exportToExcel('products')" class="bg-amber-700 text-white px-8 py-4 rounded-2xl font-black uppercase italic shadow-lg">Export Stock (Excel)</button>
+            <h2 class="text-3xl font-black mb-8 italic border-b-4 border-emerald-500 inline-block uppercase text-emerald-600">P&L Reports</h2>
+            <div id="repCards" class="grid grid-cols-3 gap-6 mb-10">
+                <div class="bg-blue-600 text-white p-8 rounded-[2rem]">
+                    <p class="text-[10px] font-black uppercase opacity-70">Today</p>
+                    <h3 id="dailyProfit" class="text-4xl font-black">Rs 0</h3>
+                </div>
+                <div class="bg-purple-600 text-white p-8 rounded-[2rem]">
+                    <p class="text-[10px] font-black uppercase opacity-70">Weekly</p>
+                    <h3 id="weeklyProfit" class="text-4xl font-black">Rs 0</h3>
+                </div>
+                <div class="bg-emerald-600 text-white p-8 rounded-[2rem]">
+                    <p class="text-[10px] font-black uppercase opacity-70">Monthly</p>
+                    <h3 id="monthlyProfit" class="text-4xl font-black">Rs 0</h3>
                 </div>
             </div>
+            <button onclick="exportToExcel('sales')" class="bg-slate-900 text-white px-8 py-5 rounded-2xl font-black uppercase">Export Full Sales to Excel</button>
         </div>
 
-        <div id="settingsTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-white">
-            <h2 class="text-3xl font-black mb-8 italic border-b-4 border-indigo-600 inline-block uppercase text-indigo-600">Settings Control</h2>
-            <div class="max-w-2xl bg-slate-50 p-10 rounded-[3rem] shadow-2xl border-4 border-white space-y-8">
-                <div class="flex flex-col items-center gap-4 text-center">
-                    <img id="logoPreview" class="w-24 h-24 rounded-3xl shadow-xl bg-white p-2 object-contain hidden border">
-                    <div class="flex gap-2">
-                        <label class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[10px] cursor-pointer uppercase italic">Upload Logo <input type="file" id="logoInput" class="hidden" accept="image/*" onchange="handleLogo(this)"></label>
-                        <button onclick="removeLogo()" class="bg-red-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase italic">Remove Logo</button>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-2"><label class="text-[9px] font-black text-slate-400 ml-2 uppercase italic">Store Name</label><input id="setStoreName" class="w-full p-4 border-2 rounded-2xl font-black uppercase italic"></div>
-                    <div><label class="text-[9px] font-black text-slate-400 ml-2 uppercase italic">WhatsApp No</label><input id="setStorePhone" class="w-full p-4 border-2 rounded-2xl font-black italic"></div>
-                    <div><label class="text-[9px] font-black text-slate-400 ml-2 uppercase italic">System PIN</label><input id="setStorePIN" type="password" class="w-full p-4 border-2 rounded-2xl font-black italic"></div>
-                </div>
-                <button onclick="saveSettings()" class="w-full bg-[#0f172a] text-white py-6 rounded-[2rem] font-black uppercase shadow-2xl hover:bg-indigo-700 text-xl italic">Save Settings</button>
-            </div>
-        </div>
-
-    </div>
-
-    <div id="paymentModal" class="fixed inset-0 bg-black/70 hidden z-[1000] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white p-8 rounded-[3rem] w-full max-w-md shadow-2xl border-t-8 border-emerald-500">
-            <h3 class="text-2xl font-black mb-2 uppercase italic text-emerald-600">Collect Cash (Jama)</h3>
-            <p id="modalCustName" class="font-bold text-slate-500 mb-6 italic uppercase"></p>
-            <input id="collectAmount" type="number" placeholder="ENTER AMOUNT" class="w-full p-6 border-4 border-emerald-500/20 rounded-3xl text-5xl font-black text-center mb-6 outline-none focus:border-emerald-500 text-emerald-600 italic">
-            <div class="flex gap-4">
-                <button onclick="savePayment()" class="flex-1 bg-emerald-500 text-white py-5 rounded-2xl font-black uppercase italic shadow-lg hover:bg-emerald-400 transition-all">Confirm</button>
-                <button onclick="closeModal()" class="flex-1 bg-slate-200 py-5 rounded-2xl font-black uppercase italic text-slate-500">Cancel</button>
-            </div>
-        </div>
     </div>
 
     <div id="receipt" style="display:none; line-height: 1.4;">
         <center>
-            <img id="rLogo" style="width: 50px; height: 50px; object-fit: contain; margin-bottom: 5px; display: none;">
             <h1 id="rStoreName" style="font-size: 19px; font-weight: 900; margin: 0; text-transform: uppercase;"></h1>
             <p id="rStorePhone" style="font-size: 13px; margin: 2px 0; font-weight: bold;"></p>
             <div class="dashed" style="border-top: 2px dashed black;"></div>
@@ -180,12 +155,11 @@
         <div id="rItems" style="margin: 10px 0; font-size: 13px; font-weight: bold; text-transform: uppercase;"></div>
         <div class="dashed" style="border-top: 2px dashed black;"></div>
         <div id="rTotals" style="text-align: right; font-weight: 900; font-size: 13px; line-height: 1.6;"></div>
-        <div class="dashed" style="border-top: 2px dashed black; margin-top: 10px;"></div>
         <center><p style="font-weight: 900; font-size: 11px; margin-top: 5px; border: 1px solid black; padding: 3px 12px; display: inline-block;">THANK YOU</p></center>
     </div>
 
     <script>
-        // FIREBASE SETUP
+        // CONFIGURATION
         const firebaseConfig = { 
             apiKey: "AIzaSyBP3VrLzUl5AIR2ca1v871cV-cJOMz-SX0",
             authDomain: "gm-agency-pos.firebaseapp.com",
@@ -197,104 +171,51 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        let prods = [], customers = {}, sales = [], expenses = [], cart = [];
-        let settings = { name: "GM AGENCY", phone: "03023313131", pin: "0770", logo: "" };
-        let currentCustId = null;
+        let prods = [], customers = {}, sales = [], pendingOrders = [], expenses = [], cart = [];
+        let settings = { name: "GM AGENCY", phone: "03066442004", pin: "0770", bookers: [{name: "Booker A", pin: "0001"}, {name: "Booker B", pin: "0002"}] };
+        let currentUser = null;
 
         async function init() {
             const setDoc = await db.collection("settings").doc("main").get();
             if(setDoc.exists) settings = setDoc.data();
-            applySettings();
-            db.collection("products").onSnapshot(snap => { prods = snap.docs.map(doc => doc.data()); renderProductList(); });
-            db.collection("customers").onSnapshot(snap => { snap.forEach(doc => { customers[doc.id] = doc.data(); }); renderCustLedger(); });
-            db.collection("sales").orderBy("timestamp", "desc").limit(100).onSnapshot(snap => { sales = snap.docs.map(doc => doc.data()); renderHistory(); });
-            db.collection("expenses").orderBy("timestamp", "desc").onSnapshot(snap => { expenses = snap.docs.map(doc => doc.data()); renderExpenses(); });
-        }
-
-        function applySettings() {
             document.getElementById('sideName').innerText = settings.name;
-            document.getElementById('setStoreName').value = settings.name;
-            document.getElementById('setStorePhone').value = settings.phone;
-            document.getElementById('setStorePIN').value = settings.pin;
-            updateLogoUI(settings.logo);
+
+            db.collection("products").onSnapshot(snap => { prods = snap.docs.map(doc => doc.data()); renderProductList(); });
+            db.collection("customers").onSnapshot(snap => { snap.forEach(doc => { customers[doc.id] = doc.data(); }); });
+            db.collection("sales").orderBy("timestamp", "desc").onSnapshot(snap => { sales = snap.docs.map(doc => doc.data()); renderHistory(); renderReports(); });
+            db.collection("pending").onSnapshot(snap => { pendingOrders = snap.docs.map(doc => doc.data()); renderPending(); renderLoadSheet(); });
+            db.collection("expenses").onSnapshot(snap => { expenses = snap.docs.map(doc => doc.data()); renderReports(); });
         }
 
-        async function saveSettings() {
-            settings.name = document.getElementById('setStoreName').value;
-            settings.phone = document.getElementById('setStorePhone').value;
-            settings.pin = document.getElementById('setStorePIN').value;
-            await db.collection("settings").doc("main").set(settings);
-            alert("✅ Settings Saved!"); location.reload();
+        function checkAccess() {
+            const code = document.getElementById('accessCode').value;
+            if(code === settings.pin) { currentUser = {name: "Admin", role: "admin"}; }
+            else {
+                const b = settings.bookers.find(x => x.pin === code);
+                if(b) { currentUser = {name: b.name, role: "booker"}; }
+                else { alert("WRONG PIN"); return; }
+            }
+            applyRoleUI();
+            document.getElementById('lockScreen').style.display = 'none';
         }
 
-        function handleLogo(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = e => { settings.logo = e.target.result; updateLogoUI(e.target.result); };
-                reader.readAsDataURL(input.files[0]);
+        function applyRoleUI() {
+            document.getElementById('roleLabel').innerText = currentUser.name;
+            if(currentUser.role === 'booker') {
+                ['btnPending', 'btnLoadSheet', 'btnHistory', 'btnProducts', 'btnExpenses', 'btnReports', 'btnSettings'].forEach(id => document.getElementById(id).style.display = 'none');
+                document.getElementById('adminPaySection').style.display = 'none';
+                document.getElementById('mainConfirmBtn').innerText = "Submit Booking";
             }
         }
-        function removeLogo() { settings.logo = ""; updateLogoUI(""); }
-        function updateLogoUI(src) {
-            ['sideLogo', 'logoPreview', 'rLogo', 'lockLogo'].forEach(id => {
-                const el = document.getElementById(id);
-                if(src) { el.src = src; el.classList.remove('hidden'); el.style.display = "block"; }
-                else { el.classList.add('hidden'); el.style.display = "none"; }
-            });
-        }
 
-            // TABS SWITCHING
         function switchTab(t) {
             document.querySelectorAll('.flex-1.p-6, .flex-1.p-10').forEach(el => el.classList.add('hidden-tab'));
             document.getElementById(t+'Tab').classList.remove('hidden-tab');
-            if(t==='reports') renderReports();
         }
 
-        // INVENTORY
-        function renderProductList() {
-            document.getElementById('prodListBody').innerHTML = prods.map(p => `
-                <tr class="border-b transition-all font-black ${p.stock <= 5 ? 'low-stock' : ''}">
-                    <td class="p-5 text-left uppercase text-blue-600">${p.name}</td>
-                    <td>${p.stock}</td><td>${p.cost || 0}</td><td>${p.price}</td>
-                    <td><button onclick="deleteProd('${p.name}')" class="text-rose-500"><i class="fas fa-trash-alt"></i></button></td>
-                </tr>`).join('');
-        }
-        async function saveProduct() {
-            let n = document.getElementById('listPName').value.toLowerCase().trim(), s = parseInt(document.getElementById('listPStock').value), c = parseFloat(document.getElementById('listPCost').value), p = parseFloat(document.getElementById('listPPrice').value);
-            if(n) { await db.collection("products").doc(n).set({name:n, stock:s, cost:c, price:p}); alert("Updated!"); }
-        }
-        async function deleteProd(n) { if(confirm("Delete?")) await db.collection("products").doc(n.toLowerCase()).delete(); }
+        function logout() { location.reload(); }
 
-        // EXPENSES
-        async function addExpense() {
-            let n = document.getElementById('expNote').value, a = parseFloat(document.getElementById('expAmt').value);
-            if(n && a) { await db.collection("expenses").add({note: n, amt: a, date: new Date().toLocaleDateString(), timestamp: Date.now()}); alert("Expense Saved!"); document.getElementById('expNote').value=''; document.getElementById('expAmt').value=''; }
-        }
-        function renderExpenses() {
-            document.getElementById('expenseList').innerHTML = expenses.map(e => `
-                <div class="bg-white p-5 rounded-2xl border-l-8 border-l-rose-500 shadow-md flex justify-between font-black uppercase italic">
-                    <div><span>${e.note}</span><br><small class="text-slate-400">${e.date}</small></div>
-                    <span class="text-rose-600">Rs ${e.amt}</span>
-                </div>`).join('');
-        }
-
-        // BILL HISTORY
-        function renderHistory() {
-            document.getElementById('historyList').innerHTML = sales.map(s => `
-                <div class="bg-white p-6 rounded-3xl border-2 shadow-lg flex justify-between items-center border-l-8 border-l-amber-500">
-                    <div><b class="uppercase font-black text-slate-700 italic">${s.customer}</b><br><small class="text-slate-400">${s.date} | ${s.time}</small></div>
-                    <div class="text-right">
-                        <div class="font-black text-blue-600 text-2xl italic tracking-tighter">Rs ${s.grandTotal}</div>
-                        <div class="flex gap-4 mt-2">
-                             <button onclick="shareWhatsApp('${s.id}')" class="text-emerald-500 text-xl"><i class="fab fa-whatsapp"></i></button>
-                             <button onclick="reprintBill('${s.id}')" class="text-slate-500 text-xl"><i class="fas fa-print"></i></button>
-                        </div>
-                    </div>
-                </div>`).join('');
-        }
-        function reprintBill(id) { let s = sales.find(x => x.id === id); if(s) printReceipt(s); }
-
-        // RE-USE EXISTING POS FUNCTIONS
+        // CORE BILLING LOGIC
         function checkExistingCustomer(mob) {
             if(customers[mob]) {
                 document.getElementById('cName').value = customers[mob].name;
@@ -305,97 +226,122 @@
             }
             calcTotal();
         }
+
         function filterProducts(q) {
             const list = document.getElementById('searchList'); if(!q) { list.classList.add('hidden'); return; }
             const filtered = prods.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
-            list.innerHTML = filtered.map(p => `<div class="p-4 border-b cursor-pointer hover:bg-blue-600 hover:text-white font-black flex justify-between uppercase italic" onclick="selectProduct('${p.name}', ${p.price})"><span>${p.name}</span><span class="text-xs">Rs ${p.price} | STK: ${p.stock}</span></div>`).join('');
+            list.innerHTML = filtered.map(p => `<div class="p-4 border-b cursor-pointer hover:bg-blue-600 hover:text-white flex justify-between uppercase italic" onclick="selectProduct('${p.name}', ${p.price})"><span>${p.name}</span><span>Rs ${p.price}</span></div>`).join('');
             list.classList.remove('hidden');
         }
+
         function selectProduct(n, p) { document.getElementById('pSearch').value = n; document.getElementById('pPrice').value = p; document.getElementById('searchList').classList.add('hidden'); document.getElementById('pQty').focus(); }
+
         function addToCart() {
             let n = document.getElementById('pSearch').value, p = parseFloat(document.getElementById('pPrice').value), q = parseInt(document.getElementById('pQty').value);
-            if(n && p) { cart.push({ name: n, price: p, qty: q, subtotal: p*q }); renderCart(); document.getElementById('pSearch').value = ''; document.getElementById('pSearch').focus(); }
+            if(n && p) { cart.push({ name: n, price: p, qty: q, subtotal: p*q }); renderCart(); document.getElementById('pSearch').value = ''; }
         }
+
         function renderCart() {
-            document.getElementById('cartBody').innerHTML = cart.map((i, idx) => `<div class="flex justify-between items-center p-5 bg-slate-800 rounded-3xl border border-slate-700 shadow-lg"><div><p class="text-blue-400 text-xs font-black uppercase tracking-widest">${i.name}</p><p class="text-xl">Rs ${i.price} x ${i.qty}</p></div><div class="flex items-center gap-4 text-2xl font-black">Rs ${i.subtotal} <button onclick="cart.splice(${idx},1);renderCart()" class="text-rose-500"><i class="fas fa-times-circle"></i></button></div></div>`).join('');
+            document.getElementById('cartBody').innerHTML = cart.map((i, idx) => `<div class="flex justify-between items-center p-5 bg-slate-800 rounded-2xl"><div><p class="text-blue-400 text-xs">${i.name}</p><p>Rs ${i.price} x ${i.qty}</p></div><div class="flex items-center gap-4">Rs ${i.subtotal} <button onclick="cart.splice(${idx},1);renderCart()" class="text-rose-500"><i class="fas fa-times"></i></button></div></div>`).join('');
             calcTotal();
         }
+
         function calcTotal() {
             let itemsSum = cart.reduce((s, i) => s + i.subtotal, 0), prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0;
-            let grand = itemsSum + prev + (cart.length > 0 ? 5 : 0);
+            let grand = itemsSum + prev + (cart.length > 0 ? 5 : 0); // Original Rs 5 Bag charge
             document.getElementById('totalDisplay').innerText = grand;
             let paid = parseFloat(document.getElementById('paidAmt').value) || 0;
             document.getElementById('balAmt').value = grand - paid;
         }
+
         async function processBill() {
             if(!cart.length) return;
-            let mob = document.getElementById('cMob').value || "0000", cName = document.getElementById('cName').value || "WALKING";
-            let itemsSum = cart.reduce((s,i)=>s+i.subtotal, 0), prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0, paid = parseFloat(document.getElementById('paidAmt').value) || 0;
-            let netBal = (itemsSum+prev+5)-paid;
-            let now = new Date();
-            let sale = { id: Date.now().toString(), timestamp: now.getTime(), date: now.toLocaleDateString(), time: now.toLocaleTimeString(), customer: cName, mob: mob, items: [...cart], itemsSum, prevBal: prev, grandTotal: itemsSum+prev+5, paid, finalBal: netBal };
-            await db.collection("sales").doc(sale.id).set(sale);
-            await db.collection("customers").doc(mob).set({ name: cName, balance: netBal });
-            for(let c of cart) {
-                let p = prods.find(x => x.name.toLowerCase() === c.name.toLowerCase());
-                if(p) await db.collection("products").doc(p.name.toLowerCase()).update({stock: p.stock - c.qty});
+            const mob = document.getElementById('cMob').value || "0000", cName = document.getElementById('cName').value || "WALKING";
+            const itemsSum = cart.reduce((s,i)=>s+i.subtotal, 0), prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0;
+            const now = new Date();
+            const sale = { 
+                id: Date.now().toString(), 
+                timestamp: now.getTime(), 
+                date: now.toLocaleDateString(), 
+                time: now.toLocaleTimeString(), 
+                customer: cName, mob: mob, 
+                items: [...cart], itemsSum, prevBal: prev, 
+                grandTotal: itemsSum+prev+5, 
+                booker: currentUser.name, 
+                gps: sessionStorage.getItem('last_gps') || 'N/A' 
+            };
+
+            if(currentUser.role === 'admin') {
+                sale.paid = parseFloat(document.getElementById('paidAmt').value) || 0;
+                sale.finalBal = sale.grandTotal - sale.paid;
+                await db.collection("sales").doc(sale.id).set(sale);
+                await db.collection("customers").doc(mob).set({ name: cName, balance: sale.finalBal });
+                for(let c of cart) {
+                    let p = prods.find(x => x.name.toLowerCase() === c.name.toLowerCase());
+                    if(p) await db.collection("products").doc(p.name.toLowerCase()).update({stock: p.stock - c.qty});
+                }
+                printReceipt(sale); location.reload();
+            } else {
+                await db.collection("pending").doc(sale.id).set(sale);
+                alert("BOOKING SENT!"); location.reload();
             }
-            printReceipt(sale); location.reload();
-        }
-        function printReceipt(s) {
-            document.getElementById('rStoreName').innerText = settings.name;
-            document.getElementById('rStorePhone').innerText = settings.phone;
-            document.getElementById('rCustName').innerText = s.customer.toUpperCase();
-            document.getElementById('rCustMob').innerText = s.mob;
-            document.getElementById('rDateTime').innerText = s.date + " | " + s.time;
-            document.getElementById('rItems').innerHTML = s.items.map(i => `<div style="display:flex;justify-content:space-between"><span>${i.name} x${i.qty}</span><span>${i.subtotal}</span></div>`).join('');
-            document.getElementById('rTotals').innerHTML = `ITEM TOTAL: RS ${s.itemsSum}<br>OLD BALANCE: RS ${s.prevBal}<br>BAG/SERVICE: RS 5<br><b>NET TOTAL: RS ${s.grandTotal}</b><br>CASH PAID: RS ${s.paid}<br><b>BALANCE: RS ${s.finalBal}</b>`;
-            window.print();
-        }
-        function shareWhatsApp(id) {
-            let s = sales.find(x => x.id === id);
-            let txt = `*${settings.name}*\n--------------------\n*BILL:* ${s.date}\n*CUST:* ${s.customer}\n--------------------\n`;
-            s.items.forEach(i => txt += `${i.name} x${i.qty} = ${i.subtotal}\n`);
-            txt += `--------------------\n*TOTAL:* Rs ${s.grandTotal}\n*PAID:* Rs ${s.paid}\n*BAL:* Rs ${s.finalBal}\n--------------------\nSHUKRIYA!`;
-            window.open(`https://wa.me/92${s.mob}?text=${encodeURIComponent(txt)}`);
         }
 
-        // CUSTOMER LEDGER
-        function renderCustLedger(query = "") {
-            const list = document.getElementById('custLedgerList'); list.innerHTML = "";
-            Object.keys(customers).filter(k => customers[k].name.toLowerCase().includes(query.toLowerCase()) || k.includes(query)).forEach(k => {
-                list.innerHTML += `<div class="bg-white p-8 rounded-[3rem] border-4 border-white shadow-xl relative overflow-hidden group"><b class="uppercase font-black text-xl italic text-slate-800">${customers[k].name}</b><br><small class="text-slate-400 font-bold">${k}</small><div class="my-6"><span class="text-[9px] font-black text-slate-400 uppercase italic">Balance</span><div class="text-4xl font-black text-rose-600 italic">Rs ${customers[k].balance}</div></div><div class="flex gap-2"><button onclick="selectCustomerForBill('${k}')" class="bg-blue-600 text-white flex-1 py-4 rounded-2xl font-black text-xs uppercase italic shadow-md hover:bg-blue-500">New Bill</button><button onclick="openPaymentModal('${k}')" class="bg-emerald-600 text-white flex-1 py-4 rounded-2xl font-black text-xs uppercase italic shadow-md hover:bg-emerald-500">Collect Cash</button></div></div>`;
-            });
-        }
-        function openPaymentModal(id) { currentCustId = id; document.getElementById('modalCustName').innerText = customers[id].name + " (" + id + ")"; document.getElementById('paymentModal').classList.remove('hidden'); }
-        function closeModal() { document.getElementById('paymentModal').classList.add('hidden'); }
-        async function savePayment() {
-            const amt = parseFloat(document.getElementById('collectAmount').value); if(!amt || !currentCustId) return;
-            const newBal = customers[currentCustId].balance - amt;
-            await db.collection("customers").doc(currentCustId).update({ balance: newBal });
-            await db.collection("sales").add({ customer: customers[currentCustId].name, mob: currentCustId, itemsSum: 0, grandTotal: 0, paid: amt, finalBal: newBal, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), timestamp: Date.now(), type: "CASH_COLLECTION", items: [] });
-            alert("✅ Payment Added!"); closeModal(); location.reload();
+        // PENDING ORDERS RENDER
+        function renderPending() {
+            document.getElementById('pendingList').innerHTML = pendingOrders.map(s => `
+                <div class="bg-white p-6 rounded-[2rem] border-2 border-orange-200 shadow-lg">
+                    <div class="flex justify-between mb-2">
+                        <b class="uppercase font-black">${s.customer}</b>
+                        <span class="bg-orange-600 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase">By ${s.booker}</span>
+                    </div>
+                    <div class="text-[9px] text-slate-400 mb-4 font-black italic">LOC: ${s.gps}</div>
+                    <div class="text-xs space-y-1 mb-4 border-t pt-2">${s.items.map(i => `<div>${i.name} x${i.qty}</div>`).join('')}</div>
+                    <div class="flex gap-2">
+                        <button onclick="approveNow('${s.id}')" class="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-black text-xs uppercase italic">Approve Bill</button>
+                        <button onclick="db.collection('pending').doc('${s.id}').delete()" class="bg-rose-100 text-rose-500 px-4 rounded-xl"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`).join('');
         }
 
-        // REPORTS
+        async function approveNow(id) {
+            const s = pendingOrders.find(x => x.id === id);
+            const paid = prompt("ENTER CASH PAID BY CUSTOMER:", 0);
+            if(paid !== null) {
+                s.paid = parseFloat(paid); s.finalBal = s.grandTotal - s.paid;
+                await db.collection("sales").doc(s.id).set(s);
+                await db.collection("customers").doc(s.mob).set({name: s.customer, balance: s.finalBal});
+                for(let c of s.items) {
+                    let p = prods.find(x => x.name.toLowerCase() === c.name.toLowerCase());
+                    if(p) await db.collection("products").doc(p.name.toLowerCase()).update({stock: p.stock - c.qty});
+                }
+                await db.collection("pending").doc(id).delete();
+                alert("BILL FINALIZED!");
+            }
+        }
+
+        function renderLoadSheet() {
+            const sum = {};
+            pendingOrders.forEach(o => o.items.forEach(i => sum[i.name] = (sum[i.name] || 0) + i.qty));
+            document.getElementById('loadSheetBody').innerHTML = Object.keys(sum).map(n => `<div class="flex justify-between p-6 border-b font-black uppercase italic"><span>${n}</span><span class="text-blue-600 text-2xl">${sum[n]}</span></div>`).join('');
+        }
+
+        // ORIGINAL FEATURES: Inventory, Expenses, Reports
+        async function saveProduct() { let n = document.getElementById('listPName').value.toLowerCase().trim(), s = parseInt(document.getElementById('listPStock').value), c = parseFloat(document.getElementById('listPCost').value), p = parseFloat(document.getElementById('listPPrice').value); if(n) await db.collection("products").doc(n).set({name:n, stock:s, cost:c, price:p}); }
+        function renderProductList() { document.getElementById('prodListBody').innerHTML = prods.map(p => `<tr class="border-b font-black ${p.stock <= 5 ? 'low-stock' : ''}"><td class="p-5 text-left uppercase text-blue-600">${p.name}</td><td>${p.stock}</td><td>${p.cost}</td><td>${p.price}</td><td><button onclick="db.collection('products').doc('${p.name}').delete()" class="text-rose-500"><i class="fas fa-trash"></i></button></td></tr>`).join(''); }
+        function renderHistory() { document.getElementById('historyList').innerHTML = sales.map(s => `<div class="bg-white p-6 rounded-3xl border-2 flex justify-between"><div><b class="uppercase">${s.customer}</b><br><small>${s.date}</small></div><div class="font-black text-blue-600 text-2xl">Rs ${s.grandTotal}</div></div>`).join(''); }
         function renderReports() {
-            let sSum = sales.reduce((a, b) => a + (b.itemsSum || 0), 0), eSum = expenses.reduce((a, b) => a + (b.amt || 0), 0);
-            document.getElementById('repStats').innerHTML = `<div class="bg-blue-600 p-8 rounded-[3rem] shadow-2xl">Gross Sales<br><span class="text-5xl">Rs ${sSum}</span></div><div class="bg-rose-600 p-8 rounded-[3rem] shadow-2xl">Expenses<br><span class="text-5xl">Rs ${eSum}</span></div><div class="bg-emerald-600 p-8 rounded-[3rem] shadow-2xl">Net Profit<br><span class="text-5xl">Rs ${sSum - eSum}</span></div>`;
-        }
-        function exportToExcel(type) {
-            let data = type === 'sales' ? sales : prods;
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Elite Report");
-            XLSX.writeFile(wb, `${type}_Report.xlsx`);
+            const now = new Date();
+            const day = new Date(now.setHours(0,0,0,0)).getTime();
+            const p = (t) => sales.filter(s => s.timestamp >= t).reduce((a,b)=>a+(b.itemsSum||0), 0) - expenses.filter(e => e.timestamp >= t).reduce((a,b)=>a+(b.amt||0),0);
+            document.getElementById('dailyProfit').innerText = "Rs " + p(day);
         }
 
-        // AUTH & ACCESS
-        function checkAccess() { if(document.getElementById('accessCode').value === settings.pin) { document.getElementById('lockScreen').style.display = 'none'; sessionStorage.setItem('v35_ok', '1'); } else alert("❌ WRONG PIN!"); }
-        function logout() { sessionStorage.clear(); location.reload(); }
-        function selectCustomerForBill(k) { document.getElementById('cMob').value = k; checkExistingCustomer(k); switchTab('billing'); }
-        if(sessionStorage.getItem('v35_ok')) document.getElementById('lockScreen').style.display = 'none';
-        
+        function markGPSVisit() { navigator.geolocation.getCurrentPosition(p => { sessionStorage.setItem('last_gps', `Lat: ${p.coords.latitude.toFixed(4)}, Lon: ${p.coords.longitude.toFixed(4)}`); alert("GPS LOCKED!"); }); }
+        function whatsappPhoto() { const shop = document.getElementById('cName').value || "Shop"; window.open(`https://wa.me/923066442004?text=Visiting: ${shop}`); }
+        function printReceipt(s) { document.getElementById('rStoreName').innerText = settings.name; document.getElementById('rStorePhone').innerText = settings.phone; document.getElementById('rCustName').innerText = s.customer; document.getElementById('rCustMob').innerText = s.mob; document.getElementById('rDateTime').innerText = s.date + " " + s.time; document.getElementById('rItems').innerHTML = s.items.map(i => `<div style="display:flex;justify-content:space-between"><span>${i.name} x${i.qty}</span><span>${i.subtotal}</span></div>`).join(''); document.getElementById('rTotals').innerHTML = `TOTAL: RS ${s.itemsSum}<br>OLD BAL: RS ${s.prevBal}<br>BAG: RS 5<br><b>NET: RS ${s.grandTotal}</b><br>PAID: RS ${s.paid}<br><b>BAL: RS ${s.finalBal}</b>`; window.print(); }
+        function exportToExcel(t) { const ws = XLSX.utils.json_to_sheet(t === 'sales' ? sales : prods); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data"); XLSX.writeFile(wb, `${t}.xlsx`); }
+
         init();
     </script>
 </body>
