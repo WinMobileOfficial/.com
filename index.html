@@ -214,7 +214,8 @@
         <div class="dashed"></div>
         <p id="rDateTime" style="font-size: 12px; margin: 5px 0;"></p>
         <div style="text-align: left; font-size: 13px; border: 1px solid black; padding: 6px; margin: 8px 0; text-transform: uppercase;">
-           <b>CUSTOMER:</b> <span id="rCustName"></span>
+           <b>CUSTOMER:</b> <span id="rCustName"></span><br>
+           <b>PHONE:</b> <span id="rCustMob"></span>
         </div>
     </center>
     <div id="rItems" style="margin: 10px 0; font-size: 14px; font-weight: bold; text-transform: uppercase;"></div>
@@ -312,14 +313,13 @@ async function processBill() {
 function updateStats() {
     let today = new Date().toLocaleDateString();
     let todaySales = sales.filter(s => s.date === today);
-    let todayExp = expenses.filter(e => e.date === today).reduce((a,b) => a + (b.amt || 0), 0);
+    let todayExp = expenses.filter(e => e.date === today).reduce((a,b) => a + (Number(b.amt) || 0), 0);
     let dProfit = 0; let itemsMap = {};
     
     todaySales.forEach(s => { s.items.forEach(i => { 
         let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase()); 
-        // Logic: (Sale - Cost) * Qty
-        dProfit += (i.price - (p ? p.cost : i.price)) * i.qty; 
-        itemsMap[i.name] = (itemsMap[i.name] || 0) + i.qty; 
+        dProfit += (Number(i.price) - (p ? Number(p.cost) : Number(i.price))) * Number(i.qty); 
+        itemsMap[i.name] = (itemsMap[i.name] || 0) + Number(i.qty); 
     }); });
     
     document.getElementById('dailyProfitVal').innerText = (dProfit - todayExp).toFixed(0);
@@ -394,13 +394,14 @@ function reprintBill(id) { let s = sales.find(x => x.id === id); if(s) printRece
 function checkLowStock() { let low = prods.some(p => p.stock <= 5); document.getElementById('lowStockWarning').classList.toggle('hidden', !low); }
 
 function renderReports() {
-    let sSum = sales.reduce((a, b) => a + (b.itemsSum || 0), 0), eSum = expenses.reduce((a, b) => a + (b.amt || 0), 0);
+    let sSum = sales.reduce((a, b) => a + (Number(b.itemsSum) || 0), 0), eSum = expenses.reduce((a, b) => a + (Number(b.amt) || 0), 0);
     let totalRealP = 0; 
     sales.forEach(s => s.items.forEach(i => { 
         let pData = prods.find(p => p.name.toLowerCase() === i.name.toLowerCase()); 
-        totalRealP += (i.price - (pData ? pData.cost : i.price)) * i.qty; 
+        totalRealP += (Number(i.price) - (pData ? Number(pData.cost) : Number(i.price))) * Number(i.qty); 
     }));
-    document.getElementById('repStats').innerHTML = `<div class="bg-blue-600 p-8 rounded-3xl">Total Sales<br><span class="text-4xl">Rs ${sSum}</span></div><div class="bg-rose-600 p-8 rounded-3xl">Expenses<br><span class="text-4xl">Rs ${eSum}</span></div><div class="bg-emerald-600 p-8 rounded-3xl">Net Profit<br><span class="text-4xl">Rs ${totalRealP - eSum}</span></div>`;
+    let finalProfit = totalRealP - eSum;
+    document.getElementById('repStats').innerHTML = `<div class="bg-blue-600 p-8 rounded-3xl">Total Sales<br><span class="text-4xl">Rs ${sSum}</span></div><div class="bg-rose-600 p-8 rounded-3xl">Expenses<br><span class="text-4xl">Rs ${eSum}</span></div><div class="bg-emerald-600 p-8 rounded-3xl">Net Profit<br><span class="text-4xl">Rs ${finalProfit.toFixed(0)}</span></div>`;
     document.getElementById('monthlyExpList').innerHTML = expenses.map(e => `<div class="flex justify-between text-xs font-bold border-b p-2 uppercase italic"><span>${e.note} (${e.date})</span><span class="text-rose-600">Rs ${e.amt}</span></div>`).join('');
 }
 
@@ -415,7 +416,9 @@ if(sessionStorage.getItem('v36_ok')) document.getElementById('lockScreen').style
 
 function printReceipt(s) { 
     document.getElementById('rStoreName').innerText = settings.name; document.getElementById('rStorePhone').innerText = settings.phone; 
-    document.getElementById('rCustName').innerText = s.customer; document.getElementById('rDateTime').innerText = s.date + " " + s.time; 
+    document.getElementById('rCustName').innerText = s.customer;
+    document.getElementById('rCustMob').innerText = s.mob; // Customer mobile added here
+    document.getElementById('rDateTime').innerText = s.date + " " + s.time; 
     document.getElementById('rItems').innerHTML = s.items.map(i => `<div style="display:flex;justify-content:space-between"><span>${i.name} X${i.qty}</span><span>${i.subtotal}</span></div>`).join(''); 
     document.getElementById('rTotals').innerHTML = `ITEMS: RS ${s.itemsSum}<br>PREV: RS ${s.prevBal}<br><b>TOTAL: RS ${s.grandTotal}</b><br>PAID: RS ${s.paid}<br><b>BAL: RS ${s.finalBal}</b>`; 
     window.print(); 
