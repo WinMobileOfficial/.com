@@ -21,7 +21,7 @@
 
 <div id="lockScreen" class="fixed inset-0 bg-[#0f172a] z-[9999] flex flex-col items-center justify-center text-white p-6">
     <div class="bg-slate-800 p-8 rounded-[3rem] shadow-2xl text-center border-2 border-slate-700 w-full max-w-xs">
-        <h1 class="text-xl font-black mb-6 text-blue-400 italic uppercase italic">GM BOOKER LOGIN</h1>
+        <h1 class="text-xl font-black mb-6 text-blue-400 italic uppercase">GM BOOKER LOGIN</h1>
         <input id="bookerPin" type="password" placeholder="ENTER PIN" class="w-full p-4 rounded-2xl text-black text-center text-3xl font-black mb-4 outline-none border-4 border-blue-500">
         <button onclick="checkPin()" class="w-full bg-blue-600 py-4 rounded-2xl font-black uppercase italic">Unlock Field App</button>
     </div>
@@ -41,15 +41,17 @@
 
     <div class="p-4 max-w-md mx-auto">
         <div id="orderTab" class="tab-content active-tab space-y-4">
+            
             <div class="bg-white p-5 rounded-[2rem] shadow-xl relative">
-                <p class="text-[9px] font-black text-slate-400 mb-2 uppercase italic">Customer Info (Auto-Ledger)</p>
-                <input id="shopSearch" oninput="searchLedger(this.value)" placeholder="SEARCH CUSTOMER..." class="w-full p-4 border-2 rounded-xl mb-2 font-black uppercase outline-none bg-slate-50 text-sm italic">
+                <p class="text-[9px] font-black text-slate-400 mb-2 uppercase italic">Customer Info (Search or Type New)</p>
+                <input id="shopSearch" oninput="searchLedger(this.value)" placeholder="SEARCH OR TYPE NAME..." class="w-full p-4 border-2 rounded-xl mb-2 font-black uppercase outline-none bg-slate-50 text-sm italic">
                 <div id="ledgerResults" class="search-results hidden border"></div>
                 
                 <div class="grid grid-cols-2 gap-2">
-                    <input id="shopName" readonly placeholder="NAME" class="w-full p-3 bg-slate-100 rounded-xl font-bold text-[10px] uppercase italic">
-                    <input id="shopPhone" readonly placeholder="PHONE" class="w-full p-3 bg-slate-100 rounded-xl font-bold text-[10px]">
+                    <input id="shopName" placeholder="NAME" class="w-full p-3 bg-blue-50 rounded-xl font-bold text-[10px] uppercase italic">
+                    <input id="shopPhone" placeholder="PHONE" class="w-full p-3 bg-blue-50 rounded-xl font-bold text-[10px]">
                 </div>
+                <p id="newCustNotice" class="hidden text-[8px] text-blue-600 font-bold mt-1 animate-pulse italic uppercase">! New Customer - Will be added to Ledger</p>
             </div>
 
             <div class="bg-white p-5 rounded-[2rem] shadow-xl">
@@ -111,7 +113,6 @@ const firebaseConfig = { apiKey: "AIzaSyBP3VrLzUl5AIR2ca1v871cV-cJOMz-SX0", auth
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// CONFIG
 const BOSS_WA = "923066442004";
 let prods = [], ledger = [], cart = [], userLat = "", userLong = "";
 
@@ -130,21 +131,18 @@ function getLocation() {
             userLat = pos.coords.latitude; userLong = pos.coords.longitude;
             document.getElementById('gpsStatus').innerText = "GPS: ACTIVE ✓";
             document.getElementById('gpsStatus').classList.replace('text-rose-400', 'text-emerald-400');
-        });
+        }, () => { alert("Please enable GPS for accurate orders!"); });
     }
 }
 
 function init() {
-    // Sync Stock
     db.collection("products").onSnapshot(snap => { 
         prods = snap.docs.map(doc => doc.data());
         renderStock();
     });
-    // Sync Ledger for auto-fill
     db.collection("customers").onSnapshot(snap => {
         ledger = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     });
-    // Sync Today's Stats
     db.collection("sales").where("date", "==", new Date().toLocaleDateString()).onSnapshot(snap => {
         let t = 0;
         snap.forEach(d => { if(d.data().status === "PENDING") t += Number(d.data().grandTotal); });
@@ -152,12 +150,31 @@ function init() {
     });
 }
 
+// SMART SEARCH & NEW CUSTOMER LOGIC
 function searchLedger(q) {
     const res = document.getElementById('ledgerResults');
-    if(!q) { res.classList.add('hidden'); return; }
+    const nameBox = document.getElementById('shopName');
+    const notice = document.getElementById('newCustNotice');
+
+    if(!q) { 
+        res.classList.add('hidden'); 
+        nameBox.value = ""; 
+        notice.classList.add('hidden');
+        return; 
+    }
+
+    nameBox.value = q.toUpperCase();
     const matches = ledger.filter(c => c.name.toLowerCase().includes(q.toLowerCase()) || c.id.includes(q));
-    res.innerHTML = matches.map(c => `<div class="p-4 border-b font-black text-[10px] uppercase italic" onclick="selectLedger('${c.name}', '${c.id}')">${c.name} <br> <span class="text-blue-500">${c.id}</span></div>`).join('');
-    res.classList.remove('hidden');
+    
+    if(matches.length > 0) {
+        notice.classList.add('hidden');
+        res.innerHTML = matches.map(c => `<div class="p-4 border-b font-black text-[10px] uppercase italic bg-white" onclick="selectLedger('${c.name}', '${c.id}')">${c.name} <br> <span class="text-blue-500">${c.id}</span></div>`).join('');
+        res.classList.remove('hidden');
+    } else {
+        notice.classList.remove('hidden');
+        res.innerHTML = `<div class="p-4 text-[10px] font-black text-rose-500 italic uppercase">New Shop - Fill Details Below</div>`;
+        res.classList.remove('hidden');
+    }
 }
 
 function selectLedger(n, p) {
@@ -165,13 +182,14 @@ function selectLedger(n, p) {
     document.getElementById('shopPhone').value = p;
     document.getElementById('shopSearch').value = n;
     document.getElementById('ledgerResults').classList.add('hidden');
+    document.getElementById('newCustNotice').classList.add('hidden');
 }
 
 function filterProducts(q) {
     const list = document.getElementById('searchList');
     if(!q) { list.classList.add('hidden'); return; }
     const filtered = prods.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
-    list.innerHTML = filtered.map(p => `<div class="p-4 border-b flex justify-between font-black text-[10px] italic uppercase" onclick="selectProduct('${p.name}', ${p.price})"><span>${p.name}</span><span class="text-blue-600">Rs ${p.price}</span></div>`).join('');
+    list.innerHTML = filtered.map(p => `<div class="p-4 border-b flex justify-between font-black text-[10px] italic uppercase bg-white" onclick="selectProduct('${p.name}', ${p.price})"><span>${p.name}</span><span class="text-blue-600">Rs ${p.price}</span></div>`).join('');
     list.classList.remove('hidden');
 }
 
@@ -232,43 +250,61 @@ function showTab(id, btn) {
     btn.classList.add('nav-active');
 }
 
+// FINAL SUBMIT (ORDER + AUTO-LEDGER)
 async function finalSubmit() {
     const shop = document.getElementById('shopName').value;
     const phone = document.getElementById('shopPhone').value;
-    if(!shop || cart.length === 0) return alert("Select Customer & Add Items!");
+    
+    if(!shop || !phone || cart.length === 0) return alert("Select Shop & Add Items!");
 
+    let isNew = !ledger.some(l => l.id === phone);
     let orderId = "GM-" + Date.now().toString().slice(-6);
     let total = cart.reduce((s, i) => s + i.subtotal, 0);
+    // Correct Google Maps Format
     let mapsLink = userLat ? `https://www.google.com/maps?q=${userLat},${userLong}` : "GPS NOT ENABLED";
     
-    // SAVE TO FIREBASE (Pending State)
-    await db.collection("sales").doc(orderId).set({
-        id: orderId, 
-        status: "PENDING", 
-        customer: shop + " (BOOKER)", 
-        mob: phone,
-        date: new Date().toLocaleDateString(),
-        timestamp: Date.now(),
-        items: [...cart],
-        grandTotal: total,
-        gps: mapsLink
-    });
+    try {
+        // 1. SAVE ORDER
+        await db.collection("sales").doc(orderId).set({
+            id: orderId, 
+            status: "PENDING", 
+            customer: shop + (isNew ? " (NEW)" : ""), 
+            mob: phone,
+            date: new Date().toLocaleDateString(),
+            timestamp: Date.now(),
+            items: [...cart],
+            grandTotal: total,
+            gps: mapsLink
+        });
 
-    // WHATSAPP FORMATTING
-    let itemsText = cart.map(i => `• ${i.name} (x${i.qty}) = ${i.subtotal}`).join('%0A');
-    let waMsg = `📦 *GM AGENCY ORDER* %0A━━━━━━━━━━━━━━━%0A🆔 *Order ID:* ${orderId}%0A🏪 *Shop:* ${shop.toUpperCase()}%0A📞 *Phone:* ${phone}%0A💰 *Bill Total:* Rs ${total}%0A━━━━━━━━━━━━━━━%0A*ITEMS:*%0A${itemsText}%0A━━━━━━━━━━━━━━━%0A📍 *Location:* ${mapsLink}`;
+        // 2. AUTO-SAVE TO LEDGER IF NEW
+        if(isNew) {
+            await db.collection("customers").doc(phone).set({
+                name: shop.toUpperCase(),
+                id: phone,
+                balance: 0,
+                dateAdded: new Date().toLocaleDateString()
+            });
+        }
 
-    window.open(`https://wa.me/${BOSS_WA}?text=${waMsg}`);
-    
-    // RESET
-    cart = []; renderCart();
-    document.getElementById('shopSearch').value = "";
-    document.getElementById('shopName').value = "";
-    document.getElementById('shopPhone').value = "";
-    document.getElementById('pImg').classList.add('hidden');
-    document.getElementById('camIcon').classList.remove('hidden');
-    alert("Order Sent to Admin!");
+        // 3. WHATSAPP FORMATTING
+        let itemsText = cart.map(i => `• ${i.name} (x${i.qty}) = ${i.subtotal}`).join('%0A');
+        let waMsg = `📦 *GM AGENCY ORDER*%0A━━━━━━━━━━━━━━━%0A🆔 *Order ID:* ${orderId}%0A🏪 *Shop:* ${shop.toUpperCase()}${isNew ? ' (NEW)' : ''}%0A📞 *Phone:* ${phone}%0A💰 *Bill Total:* Rs ${total}%0A━━━━━━━━━━━━━━━%0A*ITEMS:*%0A${itemsText}%0A━━━━━━━━━━━━━━━%0A📍 *Location:* ${mapsLink}`;
+
+        window.open(`https://wa.me/${BOSS_WA}?text=${waMsg}`);
+        
+        // RESET
+        cart = []; renderCart();
+        document.getElementById('shopSearch').value = "";
+        document.getElementById('shopName').value = "";
+        document.getElementById('shopPhone').value = "";
+        document.getElementById('pImg').classList.add('hidden');
+        document.getElementById('camIcon').classList.remove('hidden');
+        alert(isNew ? "Order Sent & New Customer Saved!" : "Order Sent Successfully!");
+
+    } catch(e) { alert("Error: " + e.message); }
 }
 </script>
 </body>
-</html>
+    </html>
+    
