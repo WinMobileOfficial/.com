@@ -42,19 +42,19 @@
     <div class="p-4 max-w-md mx-auto">
         <div id="orderTab" class="tab-content active-tab space-y-4">
             
-            <div class="bg-white p-5 rounded-[2rem] shadow-xl relative">
+            <div class="bg-white p-5 rounded-[2rem] shadow-xl relative border-2 border-blue-100">
                 <p class="text-[9px] font-black text-slate-400 mb-2 uppercase italic">Customer Info (Search or Type New)</p>
                 <input id="shopSearch" oninput="searchLedger(this.value)" placeholder="SEARCH OR TYPE NAME..." class="w-full p-4 border-2 rounded-xl mb-2 font-black uppercase outline-none bg-slate-50 text-sm italic">
                 <div id="ledgerResults" class="search-results hidden border"></div>
                 
                 <div class="grid grid-cols-2 gap-2">
-                    <input id="shopName" placeholder="NAME" class="w-full p-3 bg-blue-50 rounded-xl font-bold text-[10px] uppercase italic">
-                    <input id="shopPhone" placeholder="PHONE" class="w-full p-3 bg-blue-50 rounded-xl font-bold text-[10px]">
+                    <input id="shopName" placeholder="NAME" class="w-full p-3 bg-blue-50 rounded-xl font-bold text-[10px] uppercase italic outline-none border border-blue-200">
+                    <input id="shopPhone" placeholder="PHONE" class="w-full p-3 bg-blue-50 rounded-xl font-bold text-[10px] outline-none border border-blue-200">
                 </div>
                 <p id="newCustNotice" class="hidden text-[8px] text-blue-600 font-bold mt-1 animate-pulse italic uppercase">! New Customer - Will be added to Ledger</p>
             </div>
 
-            <div class="bg-white p-5 rounded-[2rem] shadow-xl">
+            <div class="bg-white p-5 rounded-[2rem] shadow-xl border-2 border-slate-100">
                 <p class="text-[9px] font-black text-slate-400 mb-2 uppercase italic">Product Details</p>
                 <div class="relative mb-2">
                     <input id="pSearch" oninput="filterProducts(this.value)" placeholder="SEARCH ITEM..." class="w-full p-4 border-2 rounded-xl font-black uppercase outline-none bg-blue-50 italic text-sm">
@@ -64,13 +64,13 @@
                     <input id="pPrice" type="number" readonly placeholder="PRICE" class="p-4 border-2 rounded-xl font-black bg-slate-50 text-center text-sm">
                     <input id="pQty" type="number" value="1" class="p-4 border-2 border-blue-200 rounded-xl font-black text-center text-sm outline-none">
                 </div>
-                <button onclick="addToCart()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase italic text-xs">Add To Cart</button>
+                <button onclick="addToCart()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase italic text-xs active:scale-95 transition-all">Add To Cart</button>
                 <div id="cartItems" class="mt-4 space-y-2"></div>
             </div>
 
-            <div class="bg-white p-5 rounded-[2rem] shadow-xl text-center">
+            <div class="bg-white p-5 rounded-[2rem] shadow-xl text-center border-2 border-slate-100">
                 <input type="file" id="shopPhoto" accept="image/*" capture="camera" class="hidden" onchange="previewPhoto(this)">
-                <div onclick="document.getElementById('shopPhoto').click()" class="w-full h-24 border-2 border-dashed rounded-xl flex items-center justify-center text-slate-400 bg-slate-50 overflow-hidden">
+                <div onclick="document.getElementById('shopPhoto').click()" class="w-full h-24 border-2 border-dashed rounded-xl flex items-center justify-center text-slate-400 bg-slate-50 overflow-hidden relative cursor-pointer">
                     <img id="pImg" class="hidden h-full w-full object-cover">
                     <div id="camIcon" class="text-center">
                         <i class="fas fa-camera text-xl"></i>
@@ -84,7 +84,7 @@
                     <span class="text-white font-black text-xs italic">TOTAL BILL:</span>
                     <span class="text-blue-400 font-black text-2xl italic">Rs <span id="billTotal">0</span></span>
                 </div>
-                <button onclick="finalSubmit()" class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase italic shadow-lg active:scale-95 transition-all">
+                <button id="submitBtn" onclick="finalSubmit()" class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase italic shadow-lg active:scale-95 transition-all">
                     Confirm Order & Send WA
                 </button>
             </div>
@@ -109,11 +109,13 @@
 </div>
 
 <script>
+// Firebase Config
 const firebaseConfig = { apiKey: "AIzaSyBP3VrLzUl5AIR2ca1v871cV-cJOMz-SX0", authDomain: "gm-agency-pos.firebaseapp.com", projectId: "gm-agency-pos", storageBucket: "gm-agency-pos.firebasestorage.app", messagingSenderId: "777771332628", appId: "1:777771332628:web:db60e19d9bdcee21f76301" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 const BOSS_WA = "923066442004";
+const IMGBB_KEY = "ac9e20cc7634087a31f0cc92096c23f4";
 let prods = [], ledger = [], cart = [], userLat = "", userLong = "";
 
 function checkPin() {
@@ -131,7 +133,7 @@ function getLocation() {
             userLat = pos.coords.latitude; userLong = pos.coords.longitude;
             document.getElementById('gpsStatus').innerText = "GPS: ACTIVE ✓";
             document.getElementById('gpsStatus').classList.replace('text-rose-400', 'text-emerald-400');
-        }, () => { alert("Please enable GPS for accurate orders!"); });
+        });
     }
 }
 
@@ -150,29 +152,21 @@ function init() {
     });
 }
 
-// SMART SEARCH & NEW CUSTOMER LOGIC
+// SEARCH LOGIC
 function searchLedger(q) {
     const res = document.getElementById('ledgerResults');
     const nameBox = document.getElementById('shopName');
     const notice = document.getElementById('newCustNotice');
-
-    if(!q) { 
-        res.classList.add('hidden'); 
-        nameBox.value = ""; 
-        notice.classList.add('hidden');
-        return; 
-    }
-
+    if(!q) { res.classList.add('hidden'); nameBox.value = ""; notice.classList.add('hidden'); return; }
     nameBox.value = q.toUpperCase();
     const matches = ledger.filter(c => c.name.toLowerCase().includes(q.toLowerCase()) || c.id.includes(q));
-    
     if(matches.length > 0) {
         notice.classList.add('hidden');
         res.innerHTML = matches.map(c => `<div class="p-4 border-b font-black text-[10px] uppercase italic bg-white" onclick="selectLedger('${c.name}', '${c.id}')">${c.name} <br> <span class="text-blue-500">${c.id}</span></div>`).join('');
         res.classList.remove('hidden');
     } else {
         notice.classList.remove('hidden');
-        res.innerHTML = `<div class="p-4 text-[10px] font-black text-rose-500 italic uppercase">New Shop - Fill Details Below</div>`;
+        res.innerHTML = `<div class="p-4 text-[10px] font-black text-rose-500 bg-white italic uppercase">New Shop - Complete Info</div>`;
         res.classList.remove('hidden');
     }
 }
@@ -182,14 +176,13 @@ function selectLedger(n, p) {
     document.getElementById('shopPhone').value = p;
     document.getElementById('shopSearch').value = n;
     document.getElementById('ledgerResults').classList.add('hidden');
-    document.getElementById('newCustNotice').classList.add('hidden');
 }
 
 function filterProducts(q) {
     const list = document.getElementById('searchList');
     if(!q) { list.classList.add('hidden'); return; }
     const filtered = prods.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
-    list.innerHTML = filtered.map(p => `<div class="p-4 border-b flex justify-between font-black text-[10px] italic uppercase bg-white" onclick="selectProduct('${p.name}', ${p.price})"><span>${p.name}</span><span class="text-blue-600">Rs ${p.price}</span></div>`).join('');
+    list.innerHTML = filtered.map(p => `<div class="p-4 border-b flex justify-between font-black text-[10px] italic bg-white" onclick="selectProduct('${p.name}', ${p.price})"><span>${p.name}</span><span>Rs ${p.price}</span></div>`).join('');
     list.classList.remove('hidden');
 }
 
@@ -200,6 +193,7 @@ function selectProduct(n, p) {
     document.getElementById('pQty').focus();
 }
 
+// CART LOGIC
 function addToCart() {
     let n = document.getElementById('pSearch').value, p = Number(document.getElementById('pPrice').value), q = Number(document.getElementById('pQty').value);
     if(n && q > 0) {
@@ -213,7 +207,7 @@ function addToCart() {
 
 function renderCart() {
     document.getElementById('cartItems').innerHTML = cart.map((i, idx) => `
-        <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border-l-4 border-blue-500 shadow-sm font-black uppercase italic text-[9px]">
+        <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border-l-4 border-blue-500 shadow-sm font-black uppercase text-[9px]">
             <span>${i.name} (x${i.qty})</span>
             <div class="flex items-center gap-3">
                 <span>Rs ${i.subtotal}</span>
@@ -225,7 +219,7 @@ function renderCart() {
 
 function renderStock() {
     document.getElementById('stockList').innerHTML = prods.map(p => `
-        <div class="flex justify-between p-4 bg-slate-50 rounded-2xl border-2 italic uppercase font-black text-xs">
+        <div class="flex justify-between p-4 bg-slate-50 rounded-2xl border-2 font-black text-xs italic uppercase">
             <span class="text-slate-700">${p.name}</span>
             <span class="${p.stock < 10 ? 'text-red-600 animate-pulse' : 'text-emerald-600'}">STK: ${p.stock}</span>
         </div>`).join('');
@@ -246,65 +240,66 @@ function previewPhoto(input) {
 function showTab(id, btn) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active-tab'));
     document.getElementById(id).classList.add('active-tab');
-    document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active', 'text-blue-600'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active'));
     btn.classList.add('nav-active');
 }
 
-// FINAL SUBMIT (ORDER + AUTO-LEDGER)
+// FINAL SUBMIT (ORDER + UPLOAD + LEDGER)
 async function finalSubmit() {
     const shop = document.getElementById('shopName').value;
     const phone = document.getElementById('shopPhone').value;
-    
-    if(!shop || !phone || cart.length === 0) return alert("Select Shop & Add Items!");
+    const photoFile = document.getElementById('shopPhoto').files[0];
+    const btn = document.getElementById('submitBtn');
+
+    if(!shop || !phone || cart.length === 0) return alert("Shop aur Items zaroori hain!");
+
+    btn.disabled = true;
+    btn.innerText = "UPLOADING...";
 
     let isNew = !ledger.some(l => l.id === phone);
     let orderId = "GM-" + Date.now().toString().slice(-6);
     let total = cart.reduce((s, i) => s + i.subtotal, 0);
-    // Correct Google Maps Format
-    let mapsLink = userLat ? `https://www.google.com/maps?q=${userLat},${userLong}` : "GPS NOT ENABLED";
-    
+    let mapsLink = userLat ? `https://www.google.com/maps?q=${userLat},${userLong}` : "GPS OFF";
+    let photoUrl = "No Photo";
+
     try {
-        // 1. SAVE ORDER
+        // 1. Upload to ImgBB (Free Storage)
+        if(photoFile) {
+            let fd = new FormData();
+            fd.append("image", photoFile);
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
+            const data = await res.json();
+            if(data.success) photoUrl = data.data.url;
+        }
+
+        // 2. Save Order to Firebase
         await db.collection("sales").doc(orderId).set({
-            id: orderId, 
-            status: "PENDING", 
-            customer: shop + (isNew ? " (NEW)" : ""), 
-            mob: phone,
-            date: new Date().toLocaleDateString(),
-            timestamp: Date.now(),
-            items: [...cart],
-            grandTotal: total,
-            gps: mapsLink
+            id: orderId, status: "PENDING", customer: shop + (isNew ? " (NEW)" : ""), mob: phone,
+            date: new Date().toLocaleDateString(), timestamp: Date.now(),
+            items: [...cart], grandTotal: total, gps: mapsLink, img: photoUrl
         });
 
-        // 2. AUTO-SAVE TO LEDGER IF NEW
+        // 3. Auto-Save Customer
         if(isNew) {
             await db.collection("customers").doc(phone).set({
-                name: shop.toUpperCase(),
-                id: phone,
-                balance: 0,
-                dateAdded: new Date().toLocaleDateString()
+                name: shop.toUpperCase(), id: phone, balance: 0, dateAdded: new Date().toLocaleDateString()
             });
         }
 
-        // 3. WHATSAPP FORMATTING
-        let itemsText = cart.map(i => `• ${i.name} (x${i.qty}) = ${i.subtotal}`).join('%0A');
-        let waMsg = `📦 *GM AGENCY ORDER*%0A━━━━━━━━━━━━━━━%0A🆔 *Order ID:* ${orderId}%0A🏪 *Shop:* ${shop.toUpperCase()}${isNew ? ' (NEW)' : ''}%0A📞 *Phone:* ${phone}%0A💰 *Bill Total:* Rs ${total}%0A━━━━━━━━━━━━━━━%0A*ITEMS:*%0A${itemsText}%0A━━━━━━━━━━━━━━━%0A📍 *Location:* ${mapsLink}`;
+        // 4. WhatsApp Message
+        let itemsT = cart.map(i => `• ${i.name} (x${i.qty}) = ${i.subtotal}`).join('%0A');
+        let waMsg = `📦 *GM AGENCY ORDER*%0A━━━━━━━━━━━━━━━%0A🆔 *Order ID:* ${orderId}%0A🏪 *Shop:* ${shop.toUpperCase()}%0A📞 *Phone:* ${phone}%0A💰 *Bill Total:* Rs ${total}%0A📸 *Photo:* ${photoUrl}%0A━━━━━━━━━━━━━━━%0A*ITEMS:*%0A${itemsT}%0A━━━━━━━━━━━━━━━%0A📍 *Location:* ${mapsLink}`;
 
         window.open(`https://wa.me/${BOSS_WA}?text=${waMsg}`);
-        
-        // RESET
-        cart = []; renderCart();
-        document.getElementById('shopSearch').value = "";
-        document.getElementById('shopName').value = "";
-        document.getElementById('shopPhone').value = "";
-        document.getElementById('pImg').classList.add('hidden');
-        document.getElementById('camIcon').classList.remove('hidden');
-        alert(isNew ? "Order Sent & New Customer Saved!" : "Order Sent Successfully!");
+        alert(isNew ? "Order Sent & New Shop Saved!" : "Order Sent Successfully!");
+        location.reload();
 
-    } catch(e) { alert("Error: " + e.message); }
+    } catch(e) { 
+        alert("System Error!"); 
+        btn.disabled = false; 
+        btn.innerText = "Confirm Order & Send WA"; 
+    }
 }
 </script>
 </body>
-    </html>
-    
+</html>
