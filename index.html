@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GM Agency | Elite POS Ultimate V12</title>
+    <title>GM Agency | Elite POS Ultimate V13 (Booker Ready)</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,6 +47,15 @@
     <nav class="p-4 flex-1 space-y-2 font-bold text-sm uppercase italic overflow-y-auto">
         <button onclick="switchTab('billing')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-file-invoice-dollar w-5"></i> POS Billing</button>
         <button onclick="switchTab('history')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-history w-5"></i> History</button>
+        
+        <button onclick="switchTab('pending')" class="w-full text-left p-4 hover:bg-yellow-600 rounded-2xl flex items-center justify-between group transition-all">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-clock w-5 text-yellow-400"></i>
+                <span>Pending Orders</span>
+            </div>
+            <span id="pendingBadge" class="bg-red-500 text-[10px] px-2 py-0.5 rounded-full hidden animate-pulse">0</span>
+        </button>
+
         <button onclick="switchTab('cust')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-users-cog w-5"></i> Ledger</button>
         <button onclick="switchTab('products')" class="w-full text-left p-4 hover:bg-blue-600 rounded-2xl flex items-center gap-3"><i class="fas fa-boxes w-5"></i> Inventory</button>
         <button onclick="switchTab('expenses')" class="w-full text-left p-4 hover:bg-rose-600 rounded-2xl flex items-center gap-3"><i class="fas fa-wallet w-5"></i> Expenses</button>
@@ -113,6 +122,15 @@
         </div>
     </div>
 
+    <div id="pendingTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-slate-50">
+        <div class="flex justify-between items-center mb-8 border-b-4 border-yellow-500 pb-2">
+            <h2 class="text-3xl font-black italic uppercase">Booker Pending Orders</h2>
+            <span class="text-xs font-bold text-slate-400">AWAITING DISPATCH</span>
+        </div>
+        <div id="pendingOrdersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+    </div>
+
     <div id="custTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-slate-50">
         <div class="flex justify-between items-center mb-8">
             <h2 class="text-3xl font-black italic border-b-4 border-blue-500 uppercase">Customer Ledger</h2>
@@ -161,14 +179,11 @@
 
     <div id="reportsTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-slate-50">
         <h2 class="text-3xl font-black mb-6 italic uppercase border-b-4 border-emerald-500 inline-block">Financial Reports</h2>
-        
         <div class="flex flex-wrap gap-4 mb-8">
             <button onclick="downloadExcel('daily')" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase italic shadow-lg">Daily Excel</button>
             <button onclick="downloadExcel('monthly')" class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase italic shadow-lg">Monthly Excel</button>
         </div>
-
         <div id="repStats" class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10 text-white italic font-black uppercase"></div>
-
         <div class="bg-white p-8 rounded-[3rem] border-2 shadow-xl mb-10">
             <h3 class="text-xl font-black uppercase italic text-rose-600 mb-4 border-b pb-2">Monthly Expense & Profit Summary</h3>
             <div id="monthlySummary" class="space-y-3"></div>
@@ -204,11 +219,8 @@
             CUSTOMER: <span id="rCustDetails"></span>
         </div>
     </center>
-    
     <div id="rItemsList" style="margin-bottom: 10px;"></div>
-    
     <div class="dashed"></div>
-    
     <table class="rtable">
         <tr><td>ITEMS TOTAL:</td><td class="r-right">RS <span id="rItemsTotal"></span></td></tr>
         <tr><td>PREV BALANCE:</td><td class="r-right">RS <span id="rPrevBal"></span></td></tr>
@@ -216,7 +228,6 @@
         <tr><td>PAID TODAY:</td><td class="r-right">RS <span id="rPaid"></span></td></tr>
         <tr style="border-top: 1px solid black;"><td>NET BALANCE:</td><td class="r-right">RS <span id="rNetBal"></span></td></tr>
     </table>
-
     <div class="dashed" style="margin-top: 15px;"></div>
     <center><p style="font-size: 11px; font-weight: 900; text-transform: uppercase;">POWERED BY GM AGENCY</p></center>
 </div>
@@ -236,11 +247,86 @@ async function init() {
     if(sDoc.exists) { settings = sDoc.data(); applySettings(); }
     db.collection("products").onSnapshot(snap => { prods = snap.docs.map(doc => doc.data()); renderProductList(); checkLowStock(); });
     db.collection("customers").onSnapshot(snap => { snap.forEach(doc => { customers[doc.id] = doc.data(); }); renderCustLedger(); });
-    db.collection("sales").orderBy("timestamp", "desc").onSnapshot(snap => { sales = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); renderHistory(); updateStats(); });
+    
+    // Updated Sales Listener (Filters ONLY Completed orders for History/Profit)
+    db.collection("sales").orderBy("timestamp", "desc").onSnapshot(snap => { 
+        sales = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); 
+        renderHistory(); 
+        updateStats(); 
+    });
+
     db.collection("expenses").orderBy("timestamp", "desc").onSnapshot(snap => { expenses = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); renderExpenses(); updateStats(); });
+    
+    // NEW: Monitor Pending Booker Orders
+    initPendingTracker();
 }
 
-function switchTab(t) { document.querySelectorAll('.flex-1.p-6, .flex-1.p-10').forEach(el => el.classList.add('hidden-tab')); document.getElementById(t+'Tab').classList.remove('hidden-tab'); if(t==='reports') renderReports(); }
+function switchTab(t) { 
+    document.querySelectorAll('.flex-1.p-6, .flex-1.p-10').forEach(el => el.classList.add('hidden-tab')); 
+    document.getElementById(t+'Tab').classList.remove('hidden-tab'); 
+    if(t==='reports') renderReports(); 
+}
+
+// --- BOOKER PENDING SYSTEM ---
+function initPendingTracker() {
+    db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
+        const badge = document.getElementById('pendingBadge');
+        badge.innerText = snap.size;
+        badge.classList.toggle('hidden', snap.size === 0);
+        
+        let html = "";
+        snap.forEach(doc => {
+            let order = doc.data();
+            html += `
+            <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border-2 border-slate-100 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="bg-yellow-100 text-yellow-700 text-[10px] font-black px-2 py-1 rounded-lg uppercase">Booker Order</span>
+                        <span class="text-[10px] font-bold text-slate-400">${order.date}</span>
+                    </div>
+                    <h3 class="font-black text-blue-600 uppercase italic mb-1">${order.customer}</h3>
+                    <div class="space-y-1 mb-4 border-t pt-2 mt-2">
+                        ${order.items.map(i => `<div class="text-[10px] font-bold text-slate-600 flex justify-between"><span>${i.name} x${i.qty}</span><span>Rs ${i.subtotal}</span></div>`).join('')}
+                    </div>
+                </div>
+                <div class="border-t pt-4">
+                    <div class="flex justify-between font-black text-sm mb-4 italic uppercase"><span>Total:</span><span>Rs ${order.grandTotal}</span></div>
+                    <button onclick="dispatchOrder('${doc.id}')" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase italic text-[11px] hover:bg-emerald-700 shadow-lg">
+                        <i class="fas fa-shipping-fast mr-2"></i> Dispatch & Minus Stock
+                    </button>
+                </div>
+            </div>`;
+        });
+        document.getElementById('pendingOrdersList').innerHTML = html || "<div class='col-span-full text-center py-20 opacity-30'><i class='fas fa-inbox text-5xl mb-2'></i><p class='font-black italic uppercase text-sm'>No Pending Orders</p></div>";
+    });
+}
+
+async function dispatchOrder(id) {
+    if(!confirm("Deduct stock and finalize this booking?")) return;
+    
+    const docRef = db.collection("sales").doc(id);
+    const order = (await docRef.get()).data();
+
+    // Deduct Stock
+    for(let item of order.items) {
+        const pRef = db.collection("products").doc(item.name.toLowerCase());
+        const pDoc = await pRef.get();
+        if(pDoc.exists) {
+            await pRef.update({ stock: firebase.firestore.FieldValue.increment(-item.qty) });
+        }
+    }
+
+    // Update Ledger (Create customer if not exists or update balance)
+    let cleanMob = order.mob || "0000";
+    await db.collection("customers").doc(cleanMob).set({
+        name: order.customer.replace(" (ORDER BOOKER)", "").replace(" (BOOKER)", ""),
+        balance: firebase.firestore.FieldValue.increment(order.grandTotal - (order.paid || 0))
+    }, { merge: true });
+
+    // Mark as completed (Will now show in history)
+    await docRef.update({ status: "COMPLETED", timestamp: Date.now() });
+    alert("Order Dispatched Successfully!");
+}
 
 // --- POS FUNCTIONS ---
 function filterProducts(q) { 
@@ -266,7 +352,7 @@ function renderCart() {
 function calcTotal() { 
     let itemsSum = cart.reduce((s, i) => s + i.subtotal, 0); 
     let prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0; 
-    let grand = itemsSum + prev + (cart.length > 0 ? 5 : 0); 
+    let grand = itemsSum + prev; 
     document.getElementById('totalDisplay').innerText = grand; 
     let paid = parseFloat(document.getElementById('paidAmt').value) || 0; 
     document.getElementById('balAmt').value = grand - paid; 
@@ -277,16 +363,23 @@ async function processBill() {
     let mob = document.getElementById('cMob').value || "0000"; let cName = document.getElementById('cName').value || "WALKING";
     let total = parseFloat(document.getElementById('totalDisplay').innerText); let paid = parseFloat(document.getElementById('paidAmt').value) || 0;
     let itemsSum = cart.reduce((s,i)=>s+i.subtotal, 0); let prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0;
-    let sale = { id: Date.now().toString(), date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), timestamp: Date.now(), customer: cName, mob, items: [...cart], itemsSum, prevBal: prev, grandTotal: total, paid, finalBal: total - paid };
+    
+    let sale = { id: Date.now().toString(), status: "COMPLETED", date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), timestamp: Date.now(), customer: cName, mob, items: [...cart], itemsSum, prevBal: prev, grandTotal: total, paid, finalBal: total - paid };
+    
     await db.collection("sales").doc(sale.id).set(sale);
     await db.collection("customers").doc(mob).set({ name: cName, balance: total - paid }, { merge: true });
-    for(let i of cart) { let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase()); if(p) db.collection("products").doc(p.name.toLowerCase()).update({stock: p.stock - i.qty}); }
+    
+    for(let i of cart) { 
+        let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase()); 
+        if(p) db.collection("products").doc(p.name.toLowerCase()).update({stock: p.stock - i.qty}); 
+    }
+    
     printReceipt(sale); 
-    // Reset Cart Only, Don't Reload to stay unlocked
     cart = []; renderCart(); 
     document.getElementById('cName').value = ""; document.getElementById('cMob').value = ""; 
     document.getElementById('prevBalVal').innerText = "0"; document.getElementById('paidAmt').value = "";
     document.getElementById('prevBalShow').classList.add('hidden');
+    document.getElementById('cSearchInput').value = "";
 }
 
 // --- PRINTING & LAYOUT ---
@@ -344,21 +437,26 @@ function sendReminder(mob) { let txt = `*${settings.name}*\nBalance: *Rs ${custo
 // --- REPORTS & STATS ---
 function updateStats() {
     let today = new Date().toLocaleDateString();
-    let todaySales = sales.filter(s => s.date === today);
+    let completedSales = sales.filter(s => s.status === "COMPLETED");
+    let todaySales = completedSales.filter(s => s.date === today);
     let todayExp = expenses.filter(e => e.date === today).reduce((a,b) => a + Number(b.amt), 0);
     let profit = 0; let itemsMap = {};
+    
     todaySales.forEach(s => { if(s.items) s.items.forEach(i => {
         let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase());
         profit += (Number(i.price) - (p ? Number(p.cost) : Number(i.price))) * i.qty;
         itemsMap[i.name] = (itemsMap[i.name] || 0) + i.qty;
     })});
+    
     document.getElementById('dailyProfitVal').innerText = (profit - todayExp).toFixed(0);
     document.getElementById('sideTodayItems').innerHTML = Object.keys(itemsMap).map(k => `<div class="flex justify-between text-[10px]"><span>${k}</span><span class="text-blue-400">x${itemsMap[k]}</span></div>`).join('') || "No Sales";
 }
 
 function renderReports() {
     let sSum = 0, eSum = 0, totalP = 0; let monthlyData = {};
-    sales.forEach(s => {
+    let completedSales = sales.filter(s => s.status === "COMPLETED");
+
+    completedSales.forEach(s => {
         let month = s.date.split('/')[0] + '/' + s.date.split('/')[2];
         if(!monthlyData[month]) monthlyData[month] = { sales: 0, exp: 0, profit: 0 };
         sSum += Number(s.itemsSum) || 0;
@@ -398,14 +496,18 @@ async function saveSettings() { settings.name = document.getElementById('setStor
 function checkAccess() { if(document.getElementById('accessCode').value === settings.pin) document.getElementById('lockScreen').style.display='none'; }
 function toggleDarkMode() { document.getElementById('mainBody').classList.toggle('dark-mode'); }
 function checkLowStock() { let isLow = prods.some(p => p.stock < 10); document.getElementById('lowStockWarning').classList.toggle('hidden', !isLow); }
-function downloadExcel(type) { let data = sales.map(s => ({ Date: s.date, Customer: s.customer, Total: s.grandTotal, Paid: s.paid, Balance: s.finalBal })); const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sales"); XLSX.writeFile(wb, `GM_Report_${type}.xlsx`); }
+function downloadExcel(type) { 
+    let data = sales.filter(s => s.status === "COMPLETED").map(s => ({ Date: s.date, Customer: s.customer, Total: s.grandTotal, Paid: s.paid, Balance: s.finalBal })); 
+    const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sales"); XLSX.writeFile(wb, `GM_Report_${type}.xlsx`); 
+}
 function handleProductImage(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { currentProductImage = e.target.result; document.getElementById('itemImgPreview').src = e.target.result; document.getElementById('itemImgPreview').classList.remove('hidden'); }; reader.readAsDataURL(input.files[0]); } }
 async function saveProduct() { let n = document.getElementById('listPName').value.toLowerCase().trim(), s = parseInt(document.getElementById('listPStock').value), c = parseFloat(document.getElementById('listPCost').value), p = parseFloat(document.getElementById('listPPrice').value); if(n) { await db.collection("products").doc(n).set({name:n, stock:s, cost:c, price:p, image: currentProductImage}); alert("Saved!"); location.reload(); } }
 function renderProductList() { document.getElementById('prodListBody').innerHTML = prods.map(p => `<tr class="border-b"><td class="p-2"><img src="${p.image || ''}" class="w-10 h-10 rounded-xl mx-auto shadow object-cover"></td><td class="p-4 font-black italic uppercase">${p.name}</td><td>${p.stock}</td><td>${p.cost}</td><td>${p.price}</td><td><button onclick="deleteProd('${p.name}')" class="text-rose-500"><i class="fas fa-trash"></i></button></td></tr>`).join(''); }
 async function deleteProd(n) { if(confirm("Delete Product?")) await db.collection("products").doc(n.toLowerCase()).delete(); }
 
 function renderHistory() { 
-    document.getElementById('historyList').innerHTML = sales.map(s => `
+    const completedSales = sales.filter(s => s.status === "COMPLETED");
+    document.getElementById('historyList').innerHTML = completedSales.map(s => `
         <div class="bg-white p-6 rounded-[2.5rem] border shadow flex justify-between items-center group">
             <div><b class="uppercase italic">${s.customer}</b><br><small>${s.date}</small></div>
             <div class="text-right">
