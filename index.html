@@ -15,56 +15,35 @@
         .dark-mode { background-color: #0f172a !important; color: white !important; }
         .dark-mode .bg-white, .dark-mode .bg-slate-50, .dark-mode .bg-slate-100 { background-color: #1e293b !important; color: white !important; }
         .dark-mode input { background-color: #0f172a !important; border-color: #334155 !important; color: white !important; }
+        
+        /* --- 80mm THERMAL PRINT ENGINE --- */
+        @media print { 
+            body > *:not(#receipt) { display: none !important; } 
+            #receipt { 
+                display: block !important; 
+                width: 72mm !important; 
+                margin: 0 auto !important;
+                padding: 2mm !important; 
+                background: white !important; 
+                color: black !important; 
+                font-family: 'Courier New', Courier, monospace !important; 
+            } 
+            .no-print { display: none !important; }
+            .dashed { border-top: 1px dashed black !important; margin: 5px 0 !important; }
+            .rtable { width: 100%; border-collapse: collapse; font-size: 12px; font-weight: bold; }
+            .r-right { text-align: right; }
+            @page { margin: 0; }
+        }
+
+        #receipt { display: none; }
         .hidden-tab { display: none !important; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         .low-stock-blink { background-color: #dc2626 !important; animation: blink 1.2s infinite; }
-
-        /* --- THERMAL RECEIPT PRINT ENGINE --- */
-        @media print {
-            @page { margin: 0; size: 80mm auto; }
-            body * { visibility: hidden; }
-            #receiptPrint, #receiptPrint * { visibility: visible; }
-            #receiptPrint { 
-                position: absolute; left: 0; top: 0; 
-                width: 72mm !important; padding: 2mm; 
-                color: black !important; font-family: 'Courier New', monospace;
-                display: block !important;
-            }
-            .no-print { display: none !important; }
-        }
-        #receiptPrint { display: none; background: white; color: black; line-height: 1.1; text-transform: uppercase; }
-        .dashed-line { border-bottom: 1px dashed #000; margin: 4px 0; }
-        .bill-row { display: flex; justify-content: space-between; font-size: 12px; margin: 2px 0; font-weight: bold; }
     </style>
 </head>
 <body id="mainBody" class="bg-slate-100 flex h-screen overflow-hidden">
 
-<div id="receiptPrint">
-    <div style="text-align: center;">
-        <h2 id="pStoreName" style="font-size: 18px; font-weight: 900; margin: 0;">GM AGENCY</h2>
-        <p id="pStorePhone" style="font-size: 12px; margin: 2px 0;"></p>
-        <div class="dashed-line"></div>
-        <p style="font-size: 10px;"><span id="pDate"></span> | <span id="pTime"></span></p>
-        <div class="dashed-line"></div>
-        <div style="text-align: left; font-size: 11px; font-weight: 900; margin: 5px 0;">
-            CUST: <span id="pCustName"></span><br>
-            MOB : <span id="pCustMob"></span>
-        </div>
-        <div class="dashed-line"></div>
-    </div>
-    <div id="pItemsList"></div>
-    <div class="dashed-line"></div>
-    <div class="bill-row"><span>SUB TOTAL:</span><span>Rs <span id="pSubTotal">0</span></span></div>
-    <div class="bill-row"><span>OLD BAL:</span><span>Rs <span id="pPrevBal">0</span></span></div>
-    <div class="bill-row" style="font-size: 14px;"><span>G. TOTAL:</span><span>Rs <span id="pGrandTotal">0</span></span></div>
-    <div class="bill-row"><span>CASH PAID:</span><span>Rs <span id="pPaid">0</span></span></div>
-    <div class="dashed-line"></div>
-    <div class="bill-row" style="font-size: 14px;"><span>NEW BAL:</span><span>Rs <span id="pNetBal">0</span></span></div>
-    <div class="dashed-line"></div>
-    <p style="text-align: center; font-size: 10px; margin-top: 5px; font-weight: bold;">THANK YOU FOR YOUR BUSINESS!</p>
-</div>
-
-<div id="lockScreen" class="fixed inset-0 bg-[#0f172a] z-[9999] flex flex-col items-center justify-center text-white no-print">
+<div id="lockScreen" class="fixed inset-0 bg-[#0f172a] z-[9999] flex flex-col items-center justify-center text-white">
     <div class="bg-slate-800 p-10 rounded-[3rem] shadow-2xl text-center border-2 border-slate-700 w-80">
         <img id="lockLogo" class="w-24 h-24 mx-auto mb-6 rounded-3xl bg-white p-2 object-contain hidden">
         <h1 class="text-2xl font-black mb-1 text-blue-400 italic uppercase">GM AGENCY</h1>
@@ -90,7 +69,7 @@
     </div>
 </div>
 
-<div class="w-72 bg-[#0f172a] text-white flex flex-col no-print shadow-2xl sidebar">
+<div class="w-72 bg-[#0f172a] text-white flex flex-col no-print shadow-2xl">
     <div class="p-8 text-center border-b border-slate-800">
         <img id="sideLogo" class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-white p-1 object-contain hidden">
         <h2 id="sideName" class="text-xl font-black text-blue-400 italic uppercase">GM AGENCY</h2>
@@ -108,14 +87,13 @@
         <button onclick="switchTab('expenses')" class="w-full text-left p-4 hover:bg-rose-600 rounded-2xl flex items-center gap-3"><i class="fas fa-wallet w-5"></i> Expenses</button>
         <button onclick="switchTab('reports')" class="w-full text-left p-4 hover:bg-emerald-600 rounded-2xl flex items-center gap-3"><i class="fas fa-chart-line w-5"></i> Reports</button>
         <button onclick="switchTab('settings')" class="w-full text-left p-4 hover:bg-indigo-600 rounded-2xl flex items-center gap-3"><i class="fas fa-cog w-5"></i> Settings</button>
-        <div id="sideTodayItems" class="mt-6 p-4 bg-slate-800/50 rounded-2xl border border-slate-700 space-y-2 text-[10px] font-bold uppercase italic opacity-80"></div>
     </nav>
 </div>
 
-<div class="flex-1 flex flex-col bg-white overflow-hidden relative">
+<div class="flex-1 flex flex-col bg-white overflow-hidden relative no-print">
     
     <div id="billingTab" class="flex-1 p-6 flex flex-col gap-4 overflow-hidden">
-        <div class="grid grid-cols-2 gap-4 no-print">
+        <div class="grid grid-cols-2 gap-4">
             <div class="bg-emerald-600 text-white p-4 rounded-3xl shadow-lg flex justify-between items-center px-8">
                 <span class="font-black italic uppercase text-[10px]">Today's Real Profit</span>
                 <span class="text-2xl font-black italic">Rs <span id="dailyProfitVal">0</span></span>
@@ -125,13 +103,9 @@
                 <i class="fas fa-hand-holding-usd text-2xl text-blue-400"></i>
             </button>
         </div>
-        
-        <div id="lowStockWarning" class="hidden text-white p-4 rounded-3xl shadow-lg flex justify-between items-center px-8 low-stock-blink no-print">
-            <span class="font-black italic uppercase text-[10px]">Low Stock Warning</span><i class="fas fa-exclamation-triangle"></i>
-        </div>
 
         <div class="flex gap-6 flex-1 overflow-hidden">
-            <div class="w-80 space-y-4 overflow-y-auto pr-2 no-print">
+            <div class="w-80 space-y-4 overflow-y-auto pr-2">
                 <div class="bg-slate-50 p-6 rounded-[2.5rem] border-2 shadow-xl">
                     <input id="cSearchInput" oninput="searchCustomer(this.value)" placeholder="SEARCH CUSTOMER" class="w-full border-2 p-4 rounded-2xl mb-2 font-black outline-none uppercase italic">
                     <div id="custSearchList" class="hidden absolute w-64 bg-white border-2 rounded-2xl shadow-2xl z-50 max-h-48 overflow-y-auto"></div>
@@ -151,15 +125,16 @@
                     <button onclick="addToCart()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase italic shadow-lg">Add to Bill</button>
                 </div>
             </div>
-            <div class="flex-1 bg-slate-900 rounded-[3.5rem] flex flex-col text-white shadow-2xl border-8 border-slate-800 overflow-hidden">
+            
+            <div class="flex-1 bg-slate-900 rounded-[3.5rem] flex flex-col text-white shadow-2xl border-8 border-slate-800">
                 <div id="cartBody" class="flex-1 p-8 overflow-y-auto space-y-4 font-bold italic uppercase"></div>
                 <div class="p-8 bg-slate-800">
                     <div class="flex justify-between text-4xl font-black text-blue-400 mb-6 italic uppercase"><span>TOTAL:</span><span>Rs <span id="totalDisplay">0</span></span></div>
-                    <div class="grid grid-cols-2 gap-4 mb-4 no-print">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
                         <input id="paidAmt" oninput="calcTotal()" type="number" placeholder="CASH" class="w-full bg-slate-700 p-5 rounded-2xl text-emerald-400 font-black text-3xl outline-none">
                         <input id="balAmt" readonly placeholder="BAL" class="w-full bg-slate-700 p-5 rounded-2xl text-rose-400 font-black text-3xl italic">
                     </div>
-                    <button onclick="processBill()" class="w-full bg-emerald-500 py-6 rounded-[2rem] font-black text-2xl uppercase italic no-print"><i class="fas fa-print mr-2"></i> Save & Print</button>
+                    <button onclick="processBill()" class="w-full bg-emerald-500 py-6 rounded-[2rem] font-black text-2xl uppercase italic"><i class="fas fa-print mr-2"></i> Save & Print (80mm)</button>
                 </div>
             </div>
         </div>
@@ -171,22 +146,25 @@
     </div>
 
     <div id="custTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-slate-50">
-        <div class="bg-rose-600 text-white p-8 rounded-[3rem] shadow-xl mb-8 border-b-8 border-rose-800 flex justify-between items-center no-print">
-            <div><p class="text-xs font-black uppercase italic opacity-80">Total Market Credit</p><h2 class="text-4xl font-black italic">Rs <span id="totalMarketCredit">0</span></h2></div>
+        <div class="bg-rose-600 text-white p-8 rounded-[3rem] shadow-xl mb-8 border-b-8 border-rose-800 flex justify-between items-center">
+            <div>
+                <p class="text-xs font-black uppercase italic opacity-80">Total Market Credit (Receivable)</p>
+                <h2 class="text-4xl font-black italic">Rs <span id="totalMarketCredit">0</span></h2>
+            </div>
             <i class="fas fa-money-bill-wave text-5xl opacity-30"></i>
         </div>
-        <div class="flex justify-between items-center mb-8 no-print"><h2 class="text-3xl font-black italic border-b-4 border-blue-500 uppercase">Customer Ledger</h2><input id="ledgerSearchInput" oninput="renderCustLedger(this.value)" placeholder="SEARCH LEDGER..." class="p-4 border-2 rounded-2xl font-black w-80 outline-none"></div>
+        <div class="flex justify-between items-center mb-8"><h2 class="text-3xl font-black italic border-b-4 border-blue-500 uppercase">Customer Ledger</h2><input id="ledgerSearchInput" oninput="renderCustLedger(this.value)" placeholder="SEARCH LEDGER..." class="p-4 border-2 rounded-2xl font-black w-80 outline-none"></div>
         <div id="custLedgerList" class="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
     </div>
 
     <div id="historyTab" class="flex-1 p-10 hidden-tab overflow-y-auto">
-        <div class="flex justify-between items-center mb-8 border-b-4 border-amber-500 pb-2 no-print"><h2 class="text-3xl font-black italic uppercase">Bill History</h2><button onclick="clearAllHistory()" class="bg-red-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase italic">Clear All History</button></div>
+        <div class="flex justify-between items-center mb-8 border-b-4 border-amber-500 pb-2"><h2 class="text-3xl font-black italic uppercase">Bill History</h2><button onclick="clearAllHistory()" class="bg-red-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase italic">Clear All History</button></div>
         <div id="historyList" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
     </div>
 
     <div id="productsTab" class="flex-1 p-10 hidden-tab overflow-y-auto">
-        <h2 class="text-3xl font-black mb-6 italic uppercase border-b-4 border-blue-400">Inventory</h2>
-        <div class="bg-white p-8 rounded-[3rem] border shadow-xl mb-8 grid grid-cols-4 gap-4 no-print">
+        <h2 class="text-3xl font-black mb-6 italic uppercase">Inventory</h2>
+        <div class="bg-white p-8 rounded-[3rem] border shadow-xl mb-8 grid grid-cols-4 gap-4">
             <input id="listPName" placeholder="ITEM NAME" class="p-4 rounded-2xl bg-slate-50 border-2 font-black uppercase italic">
             <input id="listPStock" type="number" placeholder="STOCK" class="p-4 rounded-2xl bg-slate-50 border-2 font-black italic">
             <input id="listPCost" type="number" placeholder="COST" class="p-4 rounded-2xl bg-slate-50 border-2 font-black text-rose-600 italic">
@@ -199,14 +177,14 @@
             <button onclick="saveProduct()" class="col-span-4 bg-slate-900 text-white p-5 rounded-2xl font-black uppercase text-xl italic">Update Stock</button>
         </div>
         <table class="w-full text-center">
-            <thead class="bg-slate-900 text-white uppercase italic text-[10px] font-black"><tr><th>Photo</th><th class="p-4">Name</th><th>Stock</th><th>Cost</th><th>Sale</th><th class="no-print">Del</th></tr></thead>
+            <thead class="bg-slate-900 text-white uppercase italic text-[10px] font-black"><tr><th>Photo</th><th class="p-4">Name</th><th>Stock</th><th>Cost</th><th>Sale</th><th>Del</th></tr></thead>
             <tbody id="prodListBody" class="font-bold divide-y italic uppercase text-sm"></tbody>
         </table>
     </div>
 
     <div id="expensesTab" class="flex-1 p-10 hidden-tab overflow-y-auto">
         <h2 class="text-3xl font-black mb-8 italic border-b-4 border-rose-500 inline-block uppercase italic">Shop Expenses</h2>
-        <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 max-w-xl mb-8 flex flex-col gap-4 no-print">
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 max-w-xl mb-8 flex flex-col gap-4">
             <input id="expNote" placeholder="EXPENSE NOTE" class="p-4 border-2 rounded-2xl font-black uppercase italic">
             <input id="expAmt" type="number" placeholder="AMOUNT" class="p-4 border-2 rounded-2xl font-black text-rose-600 italic">
             <button onclick="addExpense()" class="bg-rose-600 text-white py-5 rounded-2xl font-black uppercase italic">Record Expense</button>
@@ -223,7 +201,7 @@
         </div>
     </div>
     
-    <div id="settingsTab" class="flex-1 p-10 hidden-tab overflow-y-auto no-print">
+    <div id="settingsTab" class="flex-1 p-10 hidden-tab overflow-y-auto">
         <h2 class="text-3xl font-black mb-8 italic border-b-4 border-indigo-600 inline-block uppercase">Settings</h2>
         <div class="max-w-2xl bg-slate-50 p-10 rounded-[3rem] shadow-2xl space-y-6 text-center">
             <div class="flex flex-col items-center gap-4">
@@ -239,6 +217,38 @@
             <button onclick="saveSettings()" class="w-full bg-slate-900 text-white py-6 rounded-3xl font-black uppercase italic text-xl">Save Settings</button>
         </div>
     </div>
+</div>
+
+<div id="receipt">
+    <center>
+        <img id="rLogo" style="width: 50px; height: 50px; display:none; margin-bottom: 5px; border-radius: 8px;">
+        <h1 id="rStoreName" style="font-size: 18px; text-transform: uppercase; font-weight: 900; margin-bottom: 2px;"></h1>
+        <p id="rStorePhone" style="font-size: 12px; margin-bottom: 5px;"></p>
+        <div class="dashed"></div>
+        <p id="rDateTime" style="font-size: 10px; margin-bottom: 5px;"></p>
+        <div style="text-align: left; font-size: 11px; font-weight: 900; margin-bottom: 5px;">
+            CUSTOMER: <span id="rCustDetails"></span>
+        </div>
+        <div class="dashed"></div>
+    </center>
+    
+    <div id="rItemsList" style="margin-bottom: 5px;"></div>
+    
+    <div class="dashed"></div>
+    
+    <table class="rtable">
+        <tr><td>SUB TOTAL:</td><td class="r-right">Rs <span id="rItemsTotal"></span></td></tr>
+        <tr><td>OLD BAL:</td><td class="r-right">Rs <span id="rPrevBal"></span></td></tr>
+        <tr style="font-size: 14px; border-top: 1px solid black;"><td>GRAND TOTAL:</td><td class="r-right">Rs <span id="rGrandTotal"></span></td></tr>
+        <tr><td>CASH PAID:</td><td class="r-right">Rs <span id="rPaid"></span></td></tr>
+        <tr style="border-top: 1px dashed black; font-size: 14px;"><td>NET BALANCE:</td><td class="r-right">Rs <span id="rNetBal"></span></td></tr>
+    </table>
+    
+    <div class="dashed" style="margin-top: 10px;"></div>
+    <center>
+        <p style="font-size: 10px; font-weight: 900; text-transform: uppercase; margin-top: 5px;">*** SHUKRIYA / THANK YOU ***</p>
+        <p style="font-size: 8px;">Powered by GM Agency</p>
+    </center>
 </div>
 
 <script>
@@ -287,25 +297,21 @@ async function dispatchOrder(id) {
     let mob = order.mob || "0000";
     await db.collection("customers").doc(mob).set({ name: order.customer.replace(" (BOOKER)", ""), balance: firebase.firestore.FieldValue.increment(order.grandTotal) }, { merge: true });
     await docRef.update({ status: "COMPLETED", timestamp: Date.now() });
+    alert("Order Dispatched!");
 }
 
-// --- PRINT ENGINE PREP ---
-function prepareReceipt(sale) {
-    document.getElementById('pDate').innerText = sale.date;
-    document.getElementById('pTime').innerText = sale.time;
-    document.getElementById('pCustName').innerText = sale.customer;
-    document.getElementById('pCustMob').innerText = sale.mob;
-    document.getElementById('pSubTotal').innerText = sale.itemsSum;
-    document.getElementById('pPrevBal').innerText = sale.prevBal;
-    document.getElementById('pGrandTotal').innerText = sale.grandTotal;
-    document.getElementById('pPaid').innerText = sale.paid;
-    document.getElementById('pNetBal').innerText = sale.finalBal;
-    
-    let html = "";
-    sale.items.forEach(i => {
-        html += `<div class="bill-row"><span>${i.name} x${i.qty}</span><span>${i.subtotal}</span></div>`;
-    });
-    document.getElementById('pItemsList').innerHTML = html;
+// --- CASH RECEIVE LOGIC ---
+async function receivePayment() {
+    const mob = prompt("Enter Customer Mobile:"); if(!mob) return;
+    const custRef = db.collection("customers").doc(mob);
+    const custDoc = await custRef.get();
+    if(!custDoc.exists) return alert("Customer not found!");
+    const amt = Number(prompt(`Shop: ${custDoc.data().name}\nCurrent Bal: Rs ${custDoc.data().balance}\nEnter Paid Amount:`));
+    if(isNaN(amt) || amt <= 0) return;
+    const newBal = Number(custDoc.data().balance) - amt;
+    await custRef.update({ balance: newBal });
+    await db.collection("payments").add({ mob, customerName: custDoc.data().name, paid: amt, remaining: newBal, date: new Date().toLocaleDateString(), timestamp: Date.now() });
+    alert("Payment Received!");
 }
 
 // --- POS CORE ---
@@ -315,10 +321,27 @@ function filterProducts(q) {
     list.innerHTML = filtered.map(p => `<div class="p-3 border-b cursor-pointer hover:bg-blue-600 hover:text-white font-black flex justify-between uppercase italic" onclick="selectProduct('${p.name}', ${p.price})"><span>${p.name}</span><span class="text-[10px] bg-slate-900 text-white px-2 py-1 rounded">Stock: ${p.stock}</span></div>`).join('');
     list.classList.remove('hidden');
 }
+
 function selectProduct(n, p) { document.getElementById('pSearch').value = n; document.getElementById('pPrice').value = p; document.getElementById('searchList').classList.add('hidden'); document.getElementById('pQty').focus(); }
-function addToCart() { let n = document.getElementById('pSearch').value, p = parseFloat(document.getElementById('pPrice').value), q = parseInt(document.getElementById('pQty').value); if(n && p) { cart.push({ name: n, price: p, qty: q, subtotal: p*q }); renderCart(); document.getElementById('pSearch').value = ""; document.getElementById('pSearch').focus(); } }
-function renderCart() { document.getElementById('cartBody').innerHTML = cart.map((i, idx) => `<div class="flex justify-between items-center p-5 bg-slate-800 rounded-3xl"><div><p class="text-blue-400 text-[10px] font-black italic uppercase">${i.name}</p><p class="text-lg">Rs ${i.price} x ${i.qty}</p></div><button onclick="cart.splice(${idx}, 1); renderCart()" class="text-rose-500 text-xl no-print"><i class="fas fa-times-circle"></i></button></div>`).join(''); calcTotal(); }
-function calcTotal() { let itemsSum = cart.reduce((s, i) => s + i.subtotal, 0); let prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0; let grand = itemsSum + prev; document.getElementById('totalDisplay').innerText = grand; let paid = parseFloat(document.getElementById('paidAmt').value) || 0; document.getElementById('balAmt').value = grand - paid; }
+
+function addToCart() { 
+    let n = document.getElementById('pSearch').value, p = parseFloat(document.getElementById('pPrice').value), q = parseInt(document.getElementById('pQty').value); 
+    if(n && p) { cart.push({ name: n, price: p, qty: q, subtotal: p*q }); renderCart(); document.getElementById('pSearch').value = ""; document.getElementById('pSearch').focus(); } 
+}
+
+function renderCart() { 
+    document.getElementById('cartBody').innerHTML = cart.map((i, idx) => `<div class="flex justify-between items-center p-5 bg-slate-800 rounded-3xl"><div><p class="text-blue-400 text-[10px] font-black italic uppercase">${i.name}</p><p class="text-lg">Rs ${i.price} x ${i.qty}</p></div><button onclick="cart.splice(${idx}, 1); renderCart()" class="text-rose-500 text-xl"><i class="fas fa-times-circle"></i></button></div>`).join(''); 
+    calcTotal(); 
+}
+
+function calcTotal() { 
+    let itemsSum = cart.reduce((s, i) => s + i.subtotal, 0); 
+    let prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0; 
+    let grand = itemsSum + prev; 
+    document.getElementById('totalDisplay').innerText = grand; 
+    let paid = parseFloat(document.getElementById('paidAmt').value) || 0; 
+    document.getElementById('balAmt').value = grand - paid; 
+}
 
 async function processBill() {
     if(!cart.length) return;
@@ -328,7 +351,6 @@ async function processBill() {
     
     let sale = { id: Date.now().toString(), status: "COMPLETED", date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), timestamp: Date.now(), customer: cName, mob, items: [...cart], itemsSum, prevBal: prev, grandTotal: total, paid, finalBal: total - paid };
     
-    prepareReceipt(sale);
     await db.collection("sales").doc(sale.id).set(sale);
     await db.collection("customers").doc(mob).set({ name: cName, balance: total - paid }, { merge: true });
     
@@ -337,89 +359,43 @@ async function processBill() {
         if(p) db.collection("products").doc(p.name.toLowerCase()).update({stock: p.stock - i.qty}); 
     }
     
-    setTimeout(() => { window.print(); }, 300);
-    
+    printReceipt(sale); 
     cart = []; renderCart();
-    ['cName','cMob','pSearch','paidAmt','cSearchInput'].forEach(id => document.getElementById(id).value = "");
+    ['cName','cMob','pSearch','paidAmt','cSearchInput'].forEach(id => {
+        let el = document.getElementById(id);
+        if(el) el.value = "";
+    });
     document.getElementById('prevBalVal').innerText = "0"; document.getElementById('prevBalShow').classList.add('hidden');
 }
-    // --- ALL OTHER FEATURES (LEDGER, REPORTS, ETC.) ---
-function renderCustLedger(filter = "") {
-    const list = document.getElementById('custLedgerList'); list.innerHTML = "";
-    let marketCredit = 0;
-    Object.keys(customers).forEach(k => {
-        let bal = Number(customers[k].balance) || 0;
-        marketCredit += bal;
-        if(k.includes(filter) || customers[k].name.toLowerCase().includes(filter.toLowerCase())) {
-            list.innerHTML += `<div class="bg-white p-8 rounded-[3.5rem] border shadow-xl relative group">
-                <button onclick="deleteCustomer('${k}')" class="absolute top-6 right-6 text-rose-500 opacity-0 group-hover:opacity-100 no-print"><i class="fas fa-trash"></i></button>
-                <b class="uppercase italic text-lg">${customers[k].name}</b><br><small>${k}</small>
-                <div class="text-3xl font-black text-rose-600 my-4 italic">Rs ${bal}</div>
-                <div class="flex flex-col gap-2 no-print">
-                    <div class="flex gap-2"><button onclick="sendReminder('${k}')" class="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-black text-[10px] uppercase italic">Reminder</button>
-                    <button onclick="selectCustomer('${k}'); switchTab('billing');" class="flex-1 bg-slate-900 text-white py-3 rounded-2xl font-black text-[10px] uppercase italic">Bill</button></div>
-                    <button onclick="viewCustomerDetails('${k}', '${customers[k].name}')" class="w-full bg-blue-100 text-blue-700 py-3 rounded-2xl font-black text-[10px] uppercase italic">Statement</button>
-                </div>
-            </div>`;
-        }
-    });
-    document.getElementById('totalMarketCredit').innerText = marketCredit.toLocaleString();
-}
 
-async function viewCustomerDetails(mob, name) {
-    document.getElementById('modalCustName').innerText = name;
-    document.getElementById('modalCustPhone').innerText = mob;
-    document.getElementById('detailModal').classList.remove('hidden');
-    const hList = document.getElementById('modalHistoryList');
-    hList.innerHTML = "<p class='text-center py-5 italic font-bold'>Loading...</p>";
-    const custDoc = await db.collection("customers").doc(mob).get();
-    document.getElementById('modalCurrentBal').innerText = "Rs " + (custDoc.data().balance || 0).toLocaleString();
-    const salesSnap = await db.collection("sales").where("mob", "==", mob).where("status", "==", "COMPLETED").get();
-    let recs = salesSnap.docs.map(doc => ({ type: 'SALE', amount: doc.data().itemsSum || doc.data().grandTotal, date: doc.data().date, timestamp: doc.data().timestamp }));
-    const paySnap = await db.collection("payments").where("mob", "==", mob).get();
-    paySnap.forEach(doc => recs.push({ type: 'PAYMENT', amount: doc.data().paid, date: doc.data().date, timestamp: doc.data().timestamp }));
-    recs.sort((a,b) => b.timestamp - a.timestamp);
-    hList.innerHTML = recs.map(r => `<div class="flex justify-between items-center p-3 rounded-xl border-l-4 ${r.type==='SALE'?'bg-rose-50 border-rose-500':'bg-emerald-50 border-emerald-500'} shadow-sm"><div><p class="font-black text-[9px] uppercase italic">${r.type==='SALE'?'Billing':'Cash Recv'}</p><p class="text-[8px] text-slate-500">${r.date}</p></div><p class="font-black text-sm ${r.type==='SALE'?'text-rose-600':'text-emerald-600'}">${r.type==='SALE'?'+':'-'} Rs ${r.amount}</p></div>`).join('');
-}
+function printReceipt(s) {
+    document.getElementById('rStoreName').innerText = settings.name; 
+    document.getElementById('rStorePhone').innerText = settings.phone;
+    document.getElementById('rDateTime').innerText = s.date + " " + (s.time || ""); 
+    document.getElementById('rCustDetails').innerText = `${s.customer} (${s.mob})`;
+    
+    document.getElementById('rItemsList').innerHTML = (s.items || []).map(i => `
+        <div style="display:flex; justify-content:space-between; font-size: 11px; text-transform: uppercase; margin-bottom: 2px;">
+            <span>${i.name} x${i.qty}</span> 
+            <span>${i.subtotal}</span>
+        </div>`).join('');
+        
+    document.getElementById('rItemsTotal').innerText = s.itemsSum || s.grandTotal;
+    document.getElementById('rPrevBal').innerText = s.prevBal || 0; 
+    document.getElementById('rGrandTotal').innerText = s.grandTotal;
+    document.getElementById('rPaid').innerText = s.paid || 0; 
+    document.getElementById('rNetBal').innerText = s.finalBal;
 
-function renderReports() {
-    let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
-    let monthlyData = {};
-    prods.forEach(p => stockAsset += (Number(p.cost) || 0) * (Number(p.stock) || 0));
-    sales.filter(s => s.status === "COMPLETED").forEach(s => {
-        let m = s.date.split('/')[0] + '/' + s.date.split('/')[2];
-        if(!monthlyData[m]) monthlyData[m] = { sales: 0, exp: 0, profit: 0 };
-        sSum += Number(s.itemsSum || s.grandTotal);
-        monthlyData[m].sales += Number(s.itemsSum || s.grandTotal);
-        if(s.items) s.items.forEach(i => {
-            let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase());
-            totalProfit += (Number(i.price) - (p ? Number(p.cost) : Number(i.price))) * i.qty;
-        });
-    });
-    expenses.forEach(e => {
-        let m = e.date.split('/')[0] + '/' + e.date.split('/')[2];
-        if(!monthlyData[m]) monthlyData[m] = { sales: 0, exp: 0, profit: 0 };
-        eSum += Number(e.amt); monthlyData[m].exp += Number(e.amt);
-    });
-    document.getElementById('repStats').innerHTML = `
-        <div class="bg-blue-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Stock Asset</p><span class="text-3xl font-black">Rs ${stockAsset.toLocaleString()}</span></div>
-        <div class="bg-indigo-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Zakat (2.5%)</p><span class="text-3xl font-black">Rs ${(stockAsset * 0.025).toLocaleString()}</span></div>
-        <div class="bg-emerald-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Net Profit</p><span class="text-3xl font-black">Rs ${(totalProfit - eSum).toLocaleString()}</span></div>`;
-}
-
-// --- REMAINING UTILS (Stock, History, DarkMode, Search) ---
-function updateStats() {
-    let today = new Date().toLocaleDateString(), profit = 0, itemsMap = {};
-    let tSales = sales.filter(s => s.status === "COMPLETED" && s.date === today);
-    let tExp = expenses.filter(e => e.date === today).reduce((a,b) => a + Number(b.amt), 0);
-    tSales.forEach(s => { if(s.items) s.items.forEach(i => {
-        let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase());
-        profit += (Number(i.price) - (p ? Number(p.cost) : Number(i.price))) * i.qty;
-        itemsMap[i.name] = (itemsMap[i.name] || 0) + i.qty;
-    })});
-    document.getElementById('dailyProfitVal').innerText = (profit - tExp).toFixed(0);
-}
-
+    if(settings.logo) { 
+        document.getElementById('rLogo').src = settings.logo; 
+        document.getElementById('rLogo').style.display="block"; 
+    } else {
+        document.getElementById('rLogo').style.display="none"; 
+    }
+    
+    window.print();
+    }
+    // --- REMAINING UTILS (KEEPING ORIGINAL LOGIC) ---
 function searchCustomer(q) {
     const list = document.getElementById('custSearchList'); if(!q) { list.classList.add('hidden'); return; }
     const ms = Object.keys(customers).filter(k => k.includes(q) || customers[k].name.toLowerCase().includes(q.toLowerCase()));
@@ -431,20 +407,92 @@ function switchTab(t) { document.querySelectorAll('.flex-1.p-6, .flex-1.p-10').f
 function toggleDarkMode() { document.getElementById('mainBody').classList.toggle('dark-mode'); }
 function checkAccess() { if(document.getElementById('accessCode').value === settings.pin) document.getElementById('lockScreen').style.display='none'; }
 function handleProductImage(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { currentProductImage = e.target.result; document.getElementById('itemImgPreview').src = e.target.result; document.getElementById('itemImgPreview').classList.remove('hidden'); }; reader.readAsDataURL(input.files[0]); } }
-async function saveProduct() { let n = document.getElementById('listPName').value.toLowerCase().trim(), s = parseInt(document.getElementById('listPStock').value), c = parseFloat(document.getElementById('listPCost').value), p = parseFloat(document.getElementById('listPPrice').value); if(n) { await db.collection("products").doc(n).set({name:n, stock:s, cost:c, price:p, image: currentProductImage || ""}, {merge:true}); alert("Stock Updated!"); } }
-function renderProductList() { document.getElementById('prodListBody').innerHTML = prods.map(p => `<tr class="border-b"><td class="p-2"><img src="${p.image || ''}" class="w-10 h-10 rounded-xl mx-auto object-cover"></td><td class="p-4 font-black italic uppercase">${p.name}</td><td>${p.stock}</td><td>${p.cost}</td><td>${p.price}</td><td class="no-print"><button onclick="deleteProd('${p.name}')" class="text-rose-500"><i class="fas fa-trash"></i></button></td></tr>`).join(''); }
-function renderHistory() { const completed = sales.filter(s => s.status === "COMPLETED"); document.getElementById('historyList').innerHTML = completed.map(s => `<div class="bg-white p-6 rounded-[2.5rem] border shadow flex justify-between items-center group"><div><b class="uppercase italic">${s.customer}</b><br><small>${s.date}</small></div><div class="text-right"><div class="font-black text-blue-600">Rs ${s.grandTotal}</div><div class="flex gap-2 mt-2 no-print"><button onclick="prepareReceipt(${JSON.stringify(s).replace(/"/g, '&quot;')}); window.print();" class="text-slate-400 p-2"><i class="fas fa-print"></i></button><button onclick="deleteSale('${s.id}')" class="text-rose-600 p-2"><i class="fas fa-trash-alt"></i></button></div></div></div>`).join(''); }
-async function receivePayment() { const mob = prompt("Customer Mobile:"); if(!mob) return; const custDoc = await db.collection("customers").doc(mob).get(); if(!custDoc.exists) return; const amt = Number(prompt(`Shop: ${custDoc.data().name}\nEnter Paid Amount:`)); if(amt > 0) { const newB = Number(custDoc.data().balance) - amt; await db.collection("customers").doc(mob).update({ balance: newB }); await db.collection("payments").add({ mob, customerName: custDoc.data().name, paid: amt, date: new Date().toLocaleDateString(), timestamp: Date.now() }); } }
+async function saveProduct() { let n = document.getElementById('listPName').value.toLowerCase().trim(), s = parseInt(document.getElementById('listPStock').value), c = parseFloat(document.getElementById('listPCost').value), p = parseFloat(document.getElementById('listPPrice').value); if(n) { await db.collection("products").doc(n).set({name:n, stock:s, cost:c, price:p, image: currentProductImage || ""}, {merge:true}); alert("Updated!"); location.reload(); } }
+function renderProductList() { document.getElementById('prodListBody').innerHTML = prods.map(p => `<tr class="border-b"><td class="p-2"><img src="${p.image || ''}" class="w-10 h-10 rounded-xl mx-auto shadow object-cover"></td><td class="p-4 font-black italic uppercase">${p.name}</td><td>${p.stock}</td><td>${p.cost}</td><td>${p.price}</td><td><button onclick="deleteProd('${p.name}')" class="text-rose-500"><i class="fas fa-trash"></i></button></td></tr>`).join(''); }
+async function deleteProd(n) { if(confirm("Delete Product?")) await db.collection("products").doc(n.toLowerCase()).delete(); }
+function renderHistory() { const completed = sales.filter(s => s.status === "COMPLETED"); document.getElementById('historyList').innerHTML = completed.map(s => `<div class="bg-white p-6 rounded-[2.5rem] border shadow flex justify-between items-center group"><div><b class="uppercase italic">${s.customer}</b><br><small>${s.date}</small></div><div class="text-right"><div class="font-black text-blue-600">Rs ${s.grandTotal}</div><div class="flex gap-2 mt-2"><button onclick="printReceipt(${JSON.stringify(s).replace(/"/g, '&quot;')})" class="text-slate-400 p-2"><i class="fas fa-print"></i></button><button onclick="deleteSale('${s.id}')" class="text-rose-600 p-2"><i class="fas fa-trash-alt"></i></button></div></div></div>`).join(''); }
+async function deleteSale(id) { if(confirm("Are you sure?")) await db.collection("sales").doc(id).delete(); }
+async function clearAllHistory() { if(confirm("Clear All?")) { const snap = await db.collection("sales").get(); snap.forEach(doc => doc.ref.delete()); } }
 async function addExpense() { let n = document.getElementById('expNote').value, a = document.getElementById('expAmt').value; if(n && a) { await db.collection("expenses").add({note:n, amt:a, date: new Date().toLocaleDateString(), timestamp: Date.now()}); location.reload(); } }
 function renderExpenses() { document.getElementById('expenseList').innerHTML = expenses.map(e => `<div class="bg-white p-4 rounded-xl border-l-8 border-rose-500 flex justify-between font-black uppercase italic shadow-sm"><span>${e.note}</span><span>Rs ${e.amt}</span></div>`).join(''); }
-function applySettings() {
-    document.getElementById('sideName').innerText = settings.name; document.getElementById('pStoreName').innerText = settings.name;
-    document.getElementById('pStorePhone').innerText = settings.phone;
-    ['sideLogo', 'logoPreview', 'lockLogo'].forEach(id => { const el = document.getElementById(id); if(settings.logo) { el.src = settings.logo; el.classList.remove('hidden'); } });
+function renderCustLedger(filter = "") {
+    const list = document.getElementById('custLedgerList'); list.innerHTML = "";
+    let marketCredit = 0;
+    Object.keys(customers).forEach(k => {
+        let bal = Number(customers[k].balance) || 0; marketCredit += bal;
+        if(k.includes(filter) || customers[k].name.toLowerCase().includes(filter.toLowerCase())) {
+            list.innerHTML += `<div class="bg-white p-8 rounded-[3.5rem] border shadow-xl relative group"><button onclick="deleteCustomer('${k}')" class="absolute top-6 right-6 text-rose-500 opacity-0 group-hover:opacity-100"><i class="fas fa-trash"></i></button><b class="uppercase italic">${customers[k].name}</b><br><small>${k}</small><div class="text-3xl font-black text-rose-600 my-4 italic">Rs ${bal}</div><div class="flex flex-col gap-2"><div class="flex gap-2"><button onclick="sendReminder('${k}')" class="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-black text-[10px] uppercase italic shadow-lg">Reminder</button><button onclick="selectCustomer('${k}'); switchTab('billing');" class="flex-1 bg-[#0f172a] text-white py-3 rounded-2xl font-black text-[10px] uppercase italic shadow-lg">Bill</button></div><button onclick="viewCustomerDetails('${k}', '${customers[k].name}')" class="w-full bg-blue-100 text-blue-700 py-3 rounded-2xl font-black text-[10px] uppercase italic">View Statement</button></div></div>`;
+        }
+    });
+    document.getElementById('totalMarketCredit').innerText = marketCredit.toLocaleString();
 }
-async function saveSettings() { settings.name = document.getElementById('setStoreName').value; settings.phone = document.getElementById('setStorePhone').value; settings.pin = document.getElementById('setStorePIN').value; await db.collection("settings").doc("main").set(settings); alert("Saved!"); }
-function checkLowStock() { let isLow = prods.some(p => p.stock < 10); document.getElementById('lowStockWarning').classList.toggle('hidden', !isLow); }
+function renderReports() {
+    let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
+    let monthlyData = {};
+    const completed = sales.filter(s => s.status === "COMPLETED");
+    prods.forEach(p => stockAsset += (Number(p.cost) || 0) * (Number(p.stock) || 0));
+    completed.forEach(s => {
+        let m = s.date.split('/')[0] + '/' + s.date.split('/')[2];
+        if(!monthlyData[m]) monthlyData[m] = { sales: 0, exp: 0, profit: 0 };
+        sSum += Number(s.itemsSum || s.grandTotal);
+        monthlyData[m].sales += Number(s.itemsSum || s.grandTotal);
+        if(s.items) s.items.forEach(i => {
+            let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase());
+            let pAmt = (Number(i.price) - (p ? Number(p.cost) : Number(i.price))) * i.qty;
+            totalProfit += pAmt; monthlyData[m].profit += pAmt;
+        });
+    });
+    expenses.forEach(e => {
+        let m = e.date.split('/')[0] + '/' + e.date.split('/')[2];
+        if(!monthlyData[m]) monthlyData[m] = { sales: 0, exp: 0, profit: 0 };
+        eSum += Number(e.amt); monthlyData[m].exp += Number(e.amt);
+    });
+    document.getElementById('repStats').innerHTML = `
+        <div class="bg-blue-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Stock Asset</p><span class="text-3xl font-black italic">Rs ${stockAsset.toLocaleString()}</span></div>
+        <div class="bg-indigo-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Zakat (2.5%)</p><span class="text-3xl font-black italic">Rs ${(stockAsset * 0.025).toLocaleString()}</span></div>
+        <div class="bg-emerald-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Net Profit</p><span class="text-3xl font-black italic">Rs ${(totalProfit - eSum).toLocaleString()}</span></div>
+    `;
+}
+function updateStats() {
+    let today = new Date().toLocaleDateString(), profit = 0, todayExp = expenses.filter(e => e.date === today).reduce((a,b) => a + Number(b.amt), 0);
+    sales.filter(s => s.status === "COMPLETED" && s.date === today).forEach(s => {
+        if(s.items) s.items.forEach(i => {
+            let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase());
+            profit += (Number(i.price) - (p ? Number(p.cost) : Number(i.price))) * i.qty;
+        });
+    });
+    document.getElementById('dailyProfitVal').innerText = (profit - todayExp).toFixed(0);
+}
+function handleLogo(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { settings.logo = e.target.result; applySettings(); }; reader.readAsDataURL(input.files[0]); } }
+function removeLogo() { settings.logo = ""; applySettings(); }
+function applySettings() {
+    document.getElementById('sideName').innerText = settings.name; 
+    ['sideLogo', 'logoPreview', 'rLogo', 'lockLogo'].forEach(id => { 
+        const el = document.getElementById(id); 
+        if(settings.logo) { el.src = settings.logo; el.classList.remove('hidden'); el.style.display="block"; } 
+        else { el.classList.add('hidden'); el.style.display="none"; } 
+    });
+}
+async function saveSettings() { settings.name = document.getElementById('setStoreName').value; settings.phone = document.getElementById('setStorePhone').value; settings.pin = document.getElementById('setStorePIN').value; await db.collection("settings").doc("main").set(settings); alert("Settings Updated!"); }
+function checkLowStock() { let isLow = prods.some(p => p.stock < 10); document.getElementById('lowStockWarning')?.classList.toggle('hidden', !isLow); }
+function sendReminder(mob) { let txt = `*${settings.name}*\nYour Balance: *Rs ${customers[mob].balance}*. Pay soon.`; window.open(`https://wa.me/92${mob.substring(1)}?text=${encodeURIComponent(txt)}`); }
+function deleteCustomer(id) { if(confirm("Delete Customer?")) db.collection("customers").doc(id).delete(); }
 function closeModal() { document.getElementById('detailModal').classList.add('hidden'); }
+async function viewCustomerDetails(mob, name) {
+    document.getElementById('modalCustName').innerText = name;
+    document.getElementById('modalCustPhone').innerText = mob;
+    document.getElementById('detailModal').classList.remove('hidden');
+    const hList = document.getElementById('modalHistoryList');
+    hList.innerHTML = "Loading...";
+    const custDoc = await db.collection("customers").doc(mob).get();
+    document.getElementById('modalCurrentBal').innerText = "Rs " + (custDoc.data().balance || 0).toLocaleString();
+    const salesSnap = await db.collection("sales").where("mob", "==", mob).where("status", "==", "COMPLETED").get();
+    let recs = salesSnap.docs.map(doc => ({ type: 'SALE', amount: doc.data().itemsSum || doc.data().grandTotal, date: doc.data().date, timestamp: doc.data().timestamp }));
+    const paySnap = await db.collection("payments").where("mob", "==", mob).get();
+    paySnap.forEach(doc => recs.push({ type: 'PAYMENT', amount: doc.data().paid, date: doc.data().date, timestamp: doc.data().timestamp }));
+    recs.sort((a,b) => b.timestamp - a.timestamp);
+    hList.innerHTML = recs.map(r => `<div class="flex justify-between p-2 border-b text-xs"><span>${r.date} - ${r.type}</span><span class="${r.type==='SALE'?'text-red-500':'text-green-500'}">Rs ${r.amount}</span></div>`).join('');
+}
 
 init();
 </script>
