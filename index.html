@@ -250,6 +250,10 @@
                 <label class="block text-[10px] font-black italic mb-1 uppercase">Booker Name</label>
                 <input type="text" id="bName" placeholder="ENTER NAME" class="w-full p-4 border-4 border-black rounded-2xl font-black italic uppercase bg-gray-50 outline-none focus:bg-indigo-50">
             </div>
+            <div class="space-y-1">
+    <label class="block text-[10px] font-black italic mb-1 uppercase">Area / Route</label>
+    <input type="text" id="bArea" placeholder="E.G. MODEL TOWN" class="w-full p-4 border-4 border-black rounded-2xl uppercase font-black italic mb-4">
+            </div>
             
             <div>
                 <label class="block text-[10px] font-black italic mb-1 uppercase">Cash Collected (RS)</label>
@@ -504,24 +508,86 @@ function toggleDarkMode() { document.getElementById('mainBody').classList.toggle
 function checkAccess() { if(document.getElementById('accessCode').value === settings.pin) document.getElementById('lockScreen').style.display='none'; }
 function handleProductImage(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { currentProductImage = e.target.result; document.getElementById('itemImgPreview').src = e.target.result; document.getElementById('itemImgPreview').classList.remove('hidden'); }; reader.readAsDataURL(input.files[0]); } }
 async function saveProduct() { let n = document.getElementById('listPName').value.toLowerCase().trim(), s = parseInt(document.getElementById('listPStock').value), c = parseFloat(document.getElementById('listPCost').value), p = parseFloat(document.getElementById('listPPrice').value); if(n) { await db.collection("products").doc(n).set({name:n, stock:s, cost:c, price:p, image: currentProductImage || ""}, {merge:true}); alert("Updated!"); location.reload(); } }
-function renderProductList() { document.getElementById('prodListBody').innerHTML = prods.map(p => `<tr class="border-b"><td class="p-2"><img src="${p.image || ''}" class="w-10 h-10 rounded-xl mx-auto shadow object-cover"></td><td class="p-4 font-black italic uppercase">${p.name}</td><td>${p.stock}</td><td>${p.cost}</td><td>${p.price}</td><td><button onclick="deleteProd('${p.name}')" class="text-rose-500"><i class="fas fa-trash"></i></button></td></tr>`).join(''); }
+function renderProductList() {
+    document.getElementById('prodListBody').innerHTML = prods.map(p => {
+        // Logic: Stock aur Profit calculate karna
+        const stockCount = Number(p.stock) || 0;
+        const costPrice = Number(p.cost) || 0;
+        const salePrice = Number(p.price) || 0;
+        
+        const profit = salePrice - costPrice;
+        const marginPercent = costPrice > 0 ? ((profit / costPrice) * 100).toFixed(1) : 0;
+        
+        // Alert styling
+        const isLow = stockCount <= 10;
+        const rowClass = isLow ? 'bg-red-50 text-red-800' : 'hover:bg-gray-50';
+        const alertLabel = isLow ? '<span class="text-[9px] font-bold block text-red-600">⚠️ LOW STOCK</span>' : '';
+
+        return `
+            <tr class="border-b transition-colors ${rowClass}">
+                <td class="p-2">
+                    <img src="${p.image || ''}" class="w-12 h-12 rounded-lg mx-auto shadow-sm object-cover border">
+                </td>
+                <td class="p-4 font-black italic uppercase">
+                    ${p.name}
+                    ${alertLabel}
+                </td>
+                <td class="p-4 text-center font-bold">${stockCount}</td>
+                <td class="p-4 text-center text-gray-600">Rs ${costPrice}</td>
+                <td class="p-4 text-center text-blue-700 font-bold">Rs ${salePrice}</td>
+                <td class="p-4 text-center">
+                    <div class="text-emerald-600 font-bold">Rs ${profit}</div>
+                    <div class="text-[10px] text-emerald-500">${marginPercent}% Margin</div>
+                </td>
+                <td class="p-4 text-center">
+                    <button onclick="deleteProd('${p.name}')" class="text-rose-500 hover:scale-125 p-2 transition-transform">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
+    }).join('');
+}
+
 async function deleteProd(n) { if(confirm("Delete Product?")) await db.collection("products").doc(n.toLowerCase()).delete(); }
 function renderHistory() { const completed = sales.filter(s => s.status === "COMPLETED"); document.getElementById('historyList').innerHTML = completed.map(s => `<div class="bg-white p-6 rounded-[2.5rem] border shadow flex justify-between items-center group"><div><b class="uppercase italic">${s.customer}</b><br><small>${s.date}</small></div><div class="text-right"><div class="font-black text-blue-600">Rs ${s.grandTotal}</div><div class="flex gap-2 mt-2"><button onclick="printReceipt(${JSON.stringify(s).replace(/"/g, '&quot;')})" class="text-slate-400 p-2"><i class="fas fa-print"></i></button><button onclick="deleteSale('${s.id}')" class="text-rose-600 p-2"><i class="fas fa-trash-alt"></i></button></div></div></div>`).join(''); }
 async function deleteSale(id) { if(confirm("Are you sure?")) await db.collection("sales").doc(id).delete(); }
 async function clearAllHistory() { if(confirm("Clear All?")) { const snap = await db.collection("sales").get(); snap.forEach(doc => doc.ref.delete()); } }
 async function addExpense() { let n = document.getElementById('expNote').value, a = document.getElementById('expAmt').value; if(n && a) { await db.collection("expenses").add({note:n, amt:a, date: new Date().toLocaleDateString(), timestamp: Date.now()}); location.reload(); } }
 function renderExpenses() { document.getElementById('expenseList').innerHTML = expenses.map(e => `<div class="bg-white p-4 rounded-xl border-l-8 border-rose-500 flex justify-between font-black uppercase italic shadow-sm"><span>${e.note}</span><span>Rs ${e.amt}</span></div>`).join(''); }
-function renderCustLedger(filter = "") {
-    const list = document.getElementById('custLedgerList'); list.innerHTML = "";
+function renderCustLedger(filter = "", areaFilter = "") {
+    const list = document.getElementById('custLedgerList');
+    list.innerHTML = "";
     let marketCredit = 0;
+
     Object.keys(customers).forEach(k => {
-        let bal = Number(customers[k].balance) || 0; marketCredit += bal;
-        if(k.includes(filter) || customers[k].name.toLowerCase().includes(filter.toLowerCase())) {
-            list.innerHTML += `<div class="bg-white p-8 rounded-[3.5rem] border shadow-xl relative group"><button onclick="deleteCustomer('${k}')" class="absolute top-6 right-6 text-rose-500 opacity-0 group-hover:opacity-100"><i class="fas fa-trash"></i></button><b class="uppercase italic">${customers[k].name}</b><br><small>${k}</small><div class="text-3xl font-black text-rose-600 my-4 italic">Rs ${bal}</div><div class="flex flex-col gap-2"><div class="flex gap-2"><button onclick="sendReminder('${k}')" class="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-black text-[10px] uppercase italic shadow-lg">Reminder</button><button onclick="selectCustomer('${k}'); switchTab('billing');" class="flex-1 bg-[#0f172a] text-white py-3 rounded-2xl font-black text-[10px] uppercase italic shadow-lg">Bill</button></div><button onclick="viewCustomerDetails('${k}', '${customers[k].name}')" class="w-full bg-blue-100 text-blue-700 py-3 rounded-2xl font-black text-[10px] uppercase italic">View Statement</button></div></div>`;
+        const c = customers[k];
+        
+        // Search aur Area check karne ki logic
+        const matchesSearch = k.includes(filter) || c.name.toLowerCase().includes(filter.toLowerCase());
+        const matchesArea = areaFilter === "" || (c.area && c.area.toUpperCase() === areaFilter.toUpperCase());
+
+        if (matchesSearch && matchesArea) {
+            let bal = Number(c.balance) || 0;
+            marketCredit += bal;
+
+            list.innerHTML += `
+                <div class="bg-white p-6 rounded-[2.5rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative mb-4">
+                    <span class="absolute top-4 right-6 bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-[10px] font-black border-2 border-black uppercase">
+                        ${c.area || 'GENERAL'}
+                    </span>
+                    <b class="uppercase italic text-slate-700 text-lg">${c.name}</b><br>
+                    <small class="text-slate-400 font-bold">${k}</small>
+                    <div class="text-3xl font-black text-rose-600 my-3">Rs ${bal.toLocaleString()}</div>
+                    <button onclick="viewCustomerDetails('${k}', '${c.name}')" class="w-full bg-black text-white py-3 rounded-xl font-black text-xs uppercase hover:bg-slate-800 transition-all">
+                        View Statement
+                    </button>
+                </div>`;
         }
     });
+    // Market ka total credit update
     document.getElementById('totalMarketCredit').innerText = marketCredit.toLocaleString();
-    }
+}
+    
         // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
@@ -727,40 +793,73 @@ function calcComm() {
     let comm = (Number(cash) * 0.005); 
     document.getElementById('commDisplay').innerText = "Rs " + comm.toLocaleString();
 }
+async function downloadBookerReport() {
+    // 1. Database se sara data uthana
+    const snap = await db.collection("booker_sales").get();
+    const data = snap.docs.map(doc => doc.data());
 
+    if (data.length === 0) return alert("Bhai, koi record nahi mila!");
+
+    // 2. Excel ke columns set karna (Area shamil hai)
+    const reportData = data.map(e => ({
+        'DATE': e.date || '---',
+        'BOOKER NAME': e.name || '---',
+        'AREA / ROUTE': e.area || 'GENERAL', // Yeh naya column hai
+        'RECOVERY (RS)': e.recovery || 0,
+        'COMMISSION (RS)': e.commission || 0
+    }));
+
+    // 3. Excel file tayyar karna
+    const worksheet = XLSX.utils.json_to_sheet(reportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Recovery_Report");
+    
+    // 4. File download
+    XLSX.writeFile(workbook, "Booker_Recovery_Report.xlsx");
+}
+    
 // 2. Booker Data Save karne ki logic
 async function saveBookerEntry() {
+    // 1. Inputs se data uthana
     let name = document.getElementById('bName').value;
+    let area = document.getElementById('bArea').value; // Naya Area field
     let cash = document.getElementById('bCash').value;
+    
+    // Commission calculation (0.5%)
     let comm = (Number(cash) * 0.005);
 
+    // 2. Validation: Check karna ke data khali na ho
     if(!name || !cash || cash <= 0) {
-        return alert("Bhai, Booker ka naam aur cash lazmi likhein!");
+        return alert("Bhai, Booker ka Naam aur Amount lazmi likhein!");
     }
 
     try {
+        // 3. Database (Firebase) mein data bhejna
         await db.collection("booker_sales").add({
             name: name.toUpperCase(),
+            area: (area || "GENERAL").toUpperCase(), // Agar area khali ho toh 'GENERAL' save hoga
             recovery: Number(cash),
             commission: comm,
             date: new Date().toLocaleDateString('en-GB'),
             timestamp: Date.now()
         });
 
-        alert("Zabardast! Booker ka record aur Rs. " + comm + " commission save ho gaya.");
-        
-        // Form khali karne ke liye
+        alert("Record Saved! Area: " + (area || "GENERAL") + " | Comm: Rs. " + comm);
+
+        // 4. Form ko reset (khali) karna
         document.getElementById('bName').value = '';
+        document.getElementById('bArea').value = ''; 
         document.getElementById('bCash').value = '';
         document.getElementById('commDisplay').innerText = 'Rs 0';
-        
+
     } catch (error) {
-        console.error("Error: ", error);
-        alert("Data save nahi hua, internet check karein.");
+        console.error("Error saving data: ", error);
+        alert("Data save nahi hua. Internet check karein.");
     }
 }
+    
     // Step 5: Data Clear karne ki logic
-async function clearBookerData() {
+async function clearasync 
     let pass = prompt("Admin Password Likhein (Data Saaf Karne Ke Liye):");
     
     if(pass === "786") { 
