@@ -478,7 +478,28 @@ function searchCustomer(q) {
     list.classList.remove('hidden');
 }
 function selectCustomer(mob) { document.getElementById('cMob').value = mob; document.getElementById('cName').value = customers[mob].name; document.getElementById('cSearchInput').value = customers[mob].name; document.getElementById('prevBalVal').innerText = customers[mob].balance; document.getElementById('prevBalShow').classList.remove('hidden'); document.getElementById('custSearchList').classList.add('hidden'); calcTotal(); }
-function switchTab(t) { document.querySelectorAll('.flex-1.p-6, .flex-1.p-10').forEach(el => el.classList.add('hidden-tab')); document.getElementById(t+'Tab').classList.remove('hidden-tab'); if(t==='reports') renderReports(); if(t==='cust') renderCustLedger(); }
+function switchTab(t) {
+    // 1. Pehle saari default tabs ko chhupao (hidden-tab class ke zariye)
+    document.querySelectorAll('.flex-1.p-6, .flex-1.p-10').forEach(el => el.classList.add('hidden-tab'));
+    
+    // 2. Booker wali div ko bhi chhupao agar wo exist karti hai
+    const bookerDiv = document.getElementById('booker');
+    if (bookerDiv) bookerDiv.classList.add('hidden');
+
+    // 3. Check karein ke click 'booker' par hua hai ya kisi aur tab par
+    if (t === 'booker') {
+        if (bookerDiv) bookerDiv.classList.remove('hidden');
+    } else {
+        // Agar billing ya products wagera hai toh unke aakhir mein 'Tab' laga kar dikhao
+        const targetTab = document.getElementById(t + 'Tab');
+        if (targetTab) targetTab.classList.remove('hidden-tab');
+    }
+
+    // 4. Reports aur Ledger render karne ki logic
+    if (t === 'reports') renderReports();
+    if (t === 'cust') renderCustLedger();
+}
+    
 function toggleDarkMode() { document.getElementById('mainBody').classList.toggle('dark-mode'); }
 function checkAccess() { if(document.getElementById('accessCode').value === settings.pin) document.getElementById('lockScreen').style.display='none'; }
 function handleProductImage(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { currentProductImage = e.target.result; document.getElementById('itemImgPreview').src = e.target.result; document.getElementById('itemImgPreview').classList.remove('hidden'); }; reader.readAsDataURL(input.files[0]); } }
