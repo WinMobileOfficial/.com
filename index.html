@@ -87,6 +87,11 @@
         <button onclick="switchTab('expenses')" class="w-full text-left p-4 hover:bg-rose-600 rounded-2xl flex items-center gap-3"><i class="fas fa-wallet w-5"></i> Expenses</button>
         <button onclick="switchTab('reports')" class="w-full text-left p-4 hover:bg-emerald-600 rounded-2xl flex items-center gap-3"><i class="fas fa-chart-line w-5"></i> Reports</button>
         <button onclick="switchTab('settings')" class="w-full text-left p-4 hover:bg-indigo-600 rounded-2xl flex items-center gap-3"><i class="fas fa-cog w-5"></i> Settings</button>
+  <button onclick="switchTab('booker')" class="w-full text-left p-4 hover:bg-indigo-600 rounded-2xl flex items-center shadow-md transition-all mb-2">
+    <i class="fas fa-user-tie w-8 text-yellow-400"></i>
+    <span class="font-black italic uppercase text-[12px]">Booker Recovery</span>
+  </button>
+        
     </nav>
 </div>
 
@@ -233,6 +238,45 @@
             <h3 class="text-xl font-black uppercase italic text-rose-600 mb-4 border-b pb-2">Monthly Summary</h3>
             <div id="monthlySummary" class="space-y-3"></div>
         </div>
+    </div>
+    <div id="booker" class="tab-content hidden animate__animated animate__fadeIn px-4 overflow-y-auto">
+    <div class="bg-white p-6 rounded-3xl shadow-2xl border-4 border-black mb-6">
+        <h2 class="text-2xl font-black italic uppercase mb-6 text-center text-indigo-900 underline decoration-yellow-400">
+            Booker Cash Recovery
+        </h2>
+        
+        <div class="space-y-5">
+            <div>
+                <label class="block text-[10px] font-black italic mb-1 uppercase">Booker Name</label>
+                <input type="text" id="bName" placeholder="ENTER NAME" class="w-full p-4 border-4 border-black rounded-2xl font-black italic uppercase bg-gray-50 outline-none focus:bg-indigo-50">
+            </div>
+            
+            <div>
+                <label class="block text-[10px] font-black italic mb-1 uppercase">Cash Collected (RS)</label>
+                <input type="number" id="bCash" oninput="calcComm()" placeholder="AMOUNT" class="w-full p-4 border-4 border-black rounded-2xl font-black italic uppercase bg-gray-50 text-2xl text-indigo-700 outline-none">
+            </div>
+            
+            <div class="bg-indigo-900 text-white p-5 rounded-2xl border-4 border-yellow-400 text-center shadow-lg">
+                <p class="font-black uppercase text-[12px] text-yellow-400 italic mb-1">Commission Earned (0.5%)</p>
+                <p id="commDisplay" class="text-4xl font-black italic tracking-tighter">Rs 0</p>
+            </div>
+            
+            <button onclick="saveBookerEntry()" class="w-full bg-black text-white p-6 rounded-2xl font-black italic uppercase shadow-xl hover:bg-gray-800 flex items-center justify-center gap-3 border-b-8 border-gray-600 active:scale-95 transition-all">
+                <i class="fas fa-save text-yellow-400"></i> Save Record
+            </button>
+            <button onclick="downloadBookerReport()" class="w-full bg-emerald-100 text-emerald-800 p-4 rounded-2xl font-black italic uppercase border-2 border-emerald-800 hover:bg-emerald-800 hover:text-white transition-all flex items-center justify-center gap-2 shadow-md mb-4 mt-4">
+    <i class="fas fa-file-excel"></i> Download Booker Report (Excel)
+            </button>
+            
+            <div class="mt-8 pt-6 border-t-4 border-dashed border-gray-200">
+    <p class="text-[10px] font-black italic text-red-600 uppercase text-center mb-2">Danger Zone (Admin Only)</p>
+    <button onclick="clearBookerData()" class="w-full bg-red-50 text-red-700 p-4 rounded-2xl font-black italic uppercase border-2 border-red-700 hover:bg-red-700 hover:text-white transition-all flex items-center justify-center gap-2 shadow-md">
+        <i class="fas fa-trash-alt text-sm"></i> Clear All Booker Data
+    </button>
+            </div>
+            
+        </div>
+    </div>
     </div>
     
     <div id="settingsTab" class="flex-1 p-10 hidden-tab overflow-y-auto">
@@ -656,6 +700,112 @@ async function viewCustomerDetails(mob, name) {
     XLSX.utils.book_append_sheet(wb, ws, "Report");
     XLSX.writeFile(wb, `GM_Agency_${type}_Report.xlsx`);
     }
+// 1. Commission calculation (0.5%)
+function calcComm() {
+    let cash = document.getElementById('bCash').value || 0;
+    let comm = (Number(cash) * 0.005); 
+    document.getElementById('commDisplay').innerText = "Rs " + comm.toLocaleString();
+}
+
+// 2. Booker Data Save karne ki logic
+async function saveBookerEntry() {
+    let name = document.getElementById('bName').value;
+    let cash = document.getElementById('bCash').value;
+    let comm = (Number(cash) * 0.005);
+
+    if(!name || !cash || cash <= 0) {
+        return alert("Bhai, Booker ka naam aur cash lazmi likhein!");
+    }
+
+    try {
+        await db.collection("booker_sales").add({
+            name: name.toUpperCase(),
+            recovery: Number(cash),
+            commission: comm,
+            date: new Date().toLocaleDateString('en-GB'),
+            timestamp: Date.now()
+        });
+
+        alert("Zabardast! Booker ka record aur Rs. " + comm + " commission save ho gaya.");
+        
+        // Form khali karne ke liye
+        document.getElementById('bName').value = '';
+        document.getElementById('bCash').value = '';
+        document.getElementById('commDisplay').innerText = 'Rs 0';
+        
+    } catch (error) {
+        console.error("Error: ", error);
+        alert("Data save nahi hua, internet check karein.");
+    }
+}
+    // Step 5: Data Clear karne ki logic
+async function clearBookerData() {
+    let pass = prompt("Admin Password Likhein (Data Saaf Karne Ke Liye):");
+    
+    if(pass === "786") { 
+        let confirmDelete = confirm("Hoshiyar! Kya aap waqai sara Booker record delete karna chahte hain? Ye wapas nahi ayega!");
+        
+        if(confirmDelete) {
+            try {
+                const snapshot = await db.collection("booker_sales").get();
+                const batch = db.batch();
+                
+                snapshot.docs.forEach((doc) => {
+                    batch.delete(doc.ref);
+                });
+                
+                await batch.commit();
+                alert("Mubarak ho! Booker ka sara record saaf ho gaya.");
+                
+            } catch (error) {
+                console.error("Error clearing data: ", error);
+                alert("Data clear nahi ho saka! Internet check karein.");
+            }
+        }
+    } else {
+        alert("Ghalat Password! Aap ko ijazat nahi hai.");
+    }
+}
+    // Step 2: Booker Excel Report Logic
+async function downloadBookerReport() {
+    try {
+        const snap = await db.collection("booker_sales").orderBy("timestamp", "desc").get();
+        let reportData = [];
+        let totalRec = 0;
+        let totalCom = 0;
+
+        snap.forEach(doc => {
+            let d = doc.data();
+            reportData.push({
+                'Date': d.date,
+                'Booker Name': d.name,
+                'Recovery Cash': d.recovery,
+                'Commission (0.5%)': d.commission
+            });
+            totalRec += d.recovery;
+            totalCom += d.commission;
+        });
+
+        if(reportData.length === 0) return alert("Bhai, filhal koi record maujood nahi hai!");
+
+        // Total Summary Line
+        reportData.push({}); // Khali line gap ke liye
+        reportData.push({
+            'Booker Name': 'GRAND TOTAL:', 
+            'Recovery Cash': totalRec, 
+            'Commission (0.5%)': totalCom
+        });
+
+        const ws = XLSX.utils.json_to_sheet(reportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Booker Report");
+        XLSX.writeFile(wb, `Booker_Report_${new Date().toLocaleDateString()}.xlsx`);
+
+    } catch (e) {
+        console.error(e);
+        alert("Report download nahi ho saki!");
+    }
+}
     
 
 init();
