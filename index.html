@@ -195,6 +195,20 @@
     <div id="reportsTab" class="flex-1 p-10 hidden-tab overflow-y-auto bg-slate-50">
         <h2 class="text-3xl font-black mb-6 italic uppercase border-b-4 border-emerald-500 inline-block">Business Reports</h2>
         <div id="repStats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 text-white italic font-black uppercase"></div>
+    
+      <div class="grid grid-cols-3 gap-3 mb-10 no-print">
+    <button onclick="downloadBackup('DAILY')" class="bg-blue-600 text-white p-3 rounded-xl font-black italic text-[10px] uppercase shadow-md">
+        <i class="fas fa-file-excel"></i><br>Daily Backup
+    </button>
+    <button onclick="downloadBackup('WEEKLY')" class="bg-indigo-600 text-white p-3 rounded-xl font-black italic text-[10px] uppercase shadow-md">
+        <i class="fas fa-calendar-week"></i><br>Weekly Backup
+    </button>
+    <button onclick="downloadBackup('MONTHLY')" class="bg-emerald-600 text-white p-3 rounded-xl font-black italic text-[10px] uppercase shadow-md">
+        <i class="fas fa-file-archive"></i><br>Monthly Backup
+    </button>
+      </div>
+        
+    
         
         <div class="bg-white p-8 rounded-[3rem] border-2 shadow-xl mb-10">
             <h3 class="text-xl font-black uppercase italic text-blue-600 mb-4 border-b pb-2">
@@ -546,53 +560,88 @@ async function viewCustomerDetails(mob, name) {
     const hList = document.getElementById('modalHistoryList');
     hList.innerHTML = "Loading...";
 
-    const custDoc = await db.collection("customers").doc(mob).get();
-    document.getElementById('modalCurrentBal').innerText = "Rs " + (custDoc.data().balance || 0).toLocaleString();
-
-    // Sales fetch karna aur items ka naam nikalna
     const salesSnap = await db.collection("sales").where("mob", "==", mob).where("status", "==", "COMPLETED").get();
     let recs = salesSnap.docs.map(doc => {
         let data = doc.data();
-        // Item Names aur Qty ko join karna
-        let itemNames = data.items ? data.items.map(i => `${i.name} (${i.qty})`).join(", ") : "SALE";
-        return { 
-            type: 'SALE', 
-            amount: data.itemsSum || data.grandTotal, 
-            date: data.date, 
-            timestamp: data.timestamp,
-            details: itemNames 
-        };
+        let itemNames = data.items ? data.items.map(i => `${i.name}(${i.qty})`).join(", ") : "SALE";
+        return { type: 'SALE', dr: data.itemsSum || data.grandTotal, cr: 0, date: data.date, timestamp: data.timestamp, details: itemNames };
     });
 
-    // Payments fetch karna
     const paySnap = await db.collection("payments").where("mob", "==", mob).get();
     paySnap.forEach(doc => {
         let data = doc.data();
-        recs.push({ 
-            type: 'PAYMENT', 
-            amount: data.paid, 
-            date: data.date, 
-            timestamp: data.timestamp,
-            details: "CASH RECEIVED" 
-        });
+        recs.push({ type: 'PAYMENT', dr: 0, cr: data.paid, date: data.date, timestamp: data.timestamp, details: "CASH RECEIVED" });
     });
 
-    recs.sort((a, b) => b.timestamp - a.timestamp);
+    // Purani entries pehle (Balance calculate karne ke liye)
+    recs.sort((a, b) => a.timestamp - b.timestamp);
 
-    // List render karna (Items ke saath)
-    hList.innerHTML = recs.map(r => `
-        <div class="flex flex-col p-2 border-b text-[11px] uppercase italic font-bold">
+    let runningBal = 0;
+    let finalHtml = recs.map(r => {
+        runningBal += (r.dr - r.cr);
+        return `
+        <div class="flex flex-col p-2 border-b text-[10px] uppercase italic font-bold">
             <div class="flex justify-between items-center">
-                <span class="text-slate-500">${r.date} - ${r.type}</span>
-                <span class="${r.type === 'SALE' ? 'text-rose-600' : 'text-emerald-600'}">Rs ${r.amount}</span>
+                <span class="text-slate-500">${r.date}</span>
+                <span class="text-blue-600">BAL: RS ${runningBal}</span>
             </div>
-            <div class="text-[9px] text-blue-600 mt-1 font-black opacity-80">
-                ${r.details}
+            <div class="flex justify-between mt-1">
+                <span class="opacity-70">${r.details}</span>
+                <span class="${r.dr > 0 ? 'text-rose-600' : 'text-emerald-600'}">
+                    ${r.dr > 0 ? '+'+r.dr : '-'+r.cr}
+                </span>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).reverse().join(''); // Display ke liye naya record upar
+
+    hList.innerHTML = finalHtml;
+    document.getElementById('modalCurrentBal').innerText = "Rs " + runningBal.toLocaleString();
 }
     
+    async function downloadBackup(type) {
+    let allSales = [];
+    let snap = await db.collection("sales").get();
+    let now = Date.now();
+    let dayMs = 24 * 60 * 60 * 1000;
+
+    snap.forEach(doc => {
+        let s = doc.data();
+        let diff = now - s.timestamp;
+        let include = false;
+        
+        if(type === 'DAILY' && diff <= dayMs) include = true;
+        else if(type === 'WEEKLY' && diff <= dayMs * 7) include = true;
+        else if(type === 'MONTHLY' && diff <= dayMs * 30) include = true;
+        else if(type === 'FULL') include = true;
+
+        if(include) {
+            // Profit = Sale Total - Cost Price Total
+            let costPriceTotal = s.items ? s.items.reduce((acc, i) => acc + ((Number(i.cp) || 0) * i.qty), 0) : 0;
+            let saleProfit = (s.itemsSum || 0) - costPriceTotal;
+
+            allSales.push({
+                'Date': s.date || '',
+                'Customer': s.customer || 'N/A',
+                'Mobile': s.mob || 'N/A',
+                'Items': s.items ? s.items.map(i => `${i.name}(${i.qty})`).join(", ") : "",
+                'Sale Value': s.itemsSum || 0,
+                'Khareed Value': costPriceTotal,
+                'Net Profit': saleProfit,
+                'Received': s.paid || 0,
+                'Status': s.status || ''
+            });
+        }
+    });
+
+    if(allSales.length === 0) return alert("Data nahi mila!");
+
+    let ws = XLSX.utils.json_to_sheet(allSales);
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Report");
+    XLSX.writeFile(wb, `GM_Agency_${type}_Report.xlsx`);
+    }
+    
+
 init();
 </script>
 </body>
