@@ -251,6 +251,17 @@
                 <input type="text" id="bName" placeholder="ENTER NAME" class="w-full p-4 border-4 border-black rounded-2xl font-black italic uppercase bg-gray-50 outline-none focus:bg-indigo-50">
             </div>
             <div class="space-y-1">
+                <div class="mb-6 mt-4">
+    <label class="block text-[10px] font-black italic mb-1 uppercase text-slate-500 text-center">Route Wise Filter</label>
+    <select id="areaFilter" onchange="renderCustLedger(document.getElementById('ledgerSearchInput').value, this.value)" class="w-full p-4 border-4 border-black rounded-2xl font-black italic uppercase bg-yellow-50 outline-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-center">
+        <option value="">-- ALL AREAS (MUKAMMAL LIST) --</option>
+        <option value="MODEL TOWN">MODEL TOWN</option>
+        <option value="GULBERG">GULBERG</option>
+        <option value="MAIN MARKET">MAIN MARKET</option>
+        <option value="DHA">DHA PHASE</option>
+    </select>
+                </div>
+                
     <label class="block text-[10px] font-black italic mb-1 uppercase">Area / Route</label>
     <input type="text" id="bArea" placeholder="E.G. MODEL TOWN" class="w-full p-4 border-4 border-black rounded-2xl uppercase font-black italic mb-4">
             </div>
