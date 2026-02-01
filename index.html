@@ -91,8 +91,7 @@
     <i class="fas fa-user-tie w-8 text-yellow-400"></i>
     <span class="font-black italic uppercase text-[12px]">Booker Recovery</span>
   </button>
-        
-    </nav>
+  </nav>
 </div>
 
 <div class="flex-1 flex flex-col bg-white overflow-hidden relative no-print">
@@ -212,10 +211,7 @@
         <i class="fas fa-file-archive"></i><br>Monthly Backup
     </button>
       </div>
-        
-    
-        
-        <div class="bg-white p-8 rounded-[3rem] border-2 shadow-xl mb-10">
+      <div class="bg-white p-8 rounded-[3rem] border-2 shadow-xl mb-10">
             <h3 class="text-xl font-black uppercase italic text-blue-600 mb-4 border-b pb-2">
                 <i class="fas fa-shopping-basket mr-2"></i> Today's Item-wise Sales
             </h3>
@@ -233,8 +229,7 @@
                 </table>
             </div>
         </div>
-
-        <div class="bg-white p-8 rounded-[3rem] border-2 shadow-xl mb-10">
+<div class="bg-white p-8 rounded-[3rem] border-2 shadow-xl mb-10">
             <h3 class="text-xl font-black uppercase italic text-rose-600 mb-4 border-b pb-2">Monthly Summary</h3>
             <div id="monthlySummary" class="space-y-3"></div>
         </div>
@@ -251,17 +246,6 @@
                 <input type="text" id="bName" placeholder="ENTER NAME" class="w-full p-4 border-4 border-black rounded-2xl font-black italic uppercase bg-gray-50 outline-none focus:bg-indigo-50">
             </div>
             <div class="space-y-1">
-                <div class="mb-6 mt-4">
-    <label class="block text-[10px] font-black italic mb-1 uppercase text-slate-500 text-center">Route Wise Filter</label>
-    <select id="areaFilter" onchange="renderCustLedger(document.getElementById('ledgerSearchInput').value, this.value)" class="w-full p-4 border-4 border-black rounded-2xl font-black italic uppercase bg-yellow-50 outline-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-center">
-        <option value="">-- ALL AREAS (MUKAMMAL LIST) --</option>
-        <option value="MODEL TOWN">MODEL TOWN</option>
-        <option value="GULBERG">GULBERG</option>
-        <option value="MAIN MARKET">MAIN MARKET</option>
-        <option value="DHA">DHA PHASE</option>
-    </select>
-                </div>
-                
     <label class="block text-[10px] font-black italic mb-1 uppercase">Area / Route</label>
     <input type="text" id="bArea" placeholder="E.G. MODEL TOWN" class="w-full p-4 border-4 border-black rounded-2xl uppercase font-black italic mb-4">
             </div>
@@ -362,7 +346,7 @@ async function init() {
     db.collection("expenses").orderBy("timestamp", "desc").onSnapshot(snap => { expenses = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); renderExpenses(); updateStats(); });
     initPendingTracker();
 }
-// --- BOOKER SYSTEM ---
+    // --- BOOKER SYSTEM ---
 function initPendingTracker() {
     db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
         const badge = document.getElementById('pendingBadge');
@@ -484,8 +468,8 @@ function printReceipt(s) {
     }
     
     window.print();
-}
-// --- REMAINING UTILS (KEEPING ORIGINAL LOGIC) ---
+    }
+    // --- REMAINING UTILS (KEEPING ORIGINAL LOGIC) ---
 function searchCustomer(q) {
     const list = document.getElementById('custSearchList'); if(!q) { list.classList.add('hidden'); return; }
     const ms = Object.keys(customers).filter(k => k.includes(q) || customers[k].name.toLowerCase().includes(q.toLowerCase()));
@@ -567,17 +551,14 @@ async function addExpense() { let n = document.getElementById('expNote').value, 
 function renderExpenses() { document.getElementById('expenseList').innerHTML = expenses.map(e => `<div class="bg-white p-4 rounded-xl border-l-8 border-rose-500 flex justify-between font-black uppercase italic shadow-sm"><span>${e.note}</span><span>Rs ${e.amt}</span></div>`).join(''); }
 function renderCustLedger(filter = "", areaFilter = "") {
     const list = document.getElementById('custLedgerList');
-    if (!list) return; // Check if element exists
     list.innerHTML = "";
     let marketCredit = 0;
 
     Object.keys(customers).forEach(k => {
         const c = customers[k];
         
-        // 1. Search Logic
+        // Search aur Area check karne ki logic
         const matchesSearch = k.includes(filter) || c.name.toLowerCase().includes(filter.toLowerCase());
-        
-        // 2. Area Logic
         const matchesArea = areaFilter === "" || (c.area && c.area.toUpperCase() === areaFilter.toUpperCase());
 
         if (matchesSearch && matchesArea) {
@@ -592,19 +573,16 @@ function renderCustLedger(filter = "", areaFilter = "") {
                     <b class="uppercase italic text-slate-700 text-lg">${c.name}</b><br>
                     <small class="text-slate-400 font-bold">${k}</small>
                     <div class="text-3xl font-black text-rose-600 my-3">Rs ${bal.toLocaleString()}</div>
-                    <button onclick="viewCustomerDetails('${k}', '${c.name}')" class="w-full bg-black text-white py-3 rounded-xl font-black text-xs uppercase">
+                    <button onclick="viewCustomerDetails('${k}', '${c.name}')" class="w-full bg-black text-white py-3 rounded-xl font-black text-xs uppercase hover:bg-slate-800 transition-all">
                         View Statement
                     </button>
                 </div>`;
         }
     });
-    
-    const totalEl = document.getElementById('totalMarketCredit');
-    if (totalEl) totalEl.innerText = marketCredit.toLocaleString();
-}
-    
-    
-        // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
+    // Market ka total credit update
+    document.getElementById('totalMarketCredit').innerText = marketCredit.toLocaleString();
+    }
+    // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let monthlyData = {};
@@ -618,8 +596,7 @@ function renderReports() {
         let m = s.date.split('/')[0] + '/' + s.date.split('/')[2];
         if(!monthlyData[m]) monthlyData[m] = { sales: 0, exp: 0, profit: 0 };
         
-        sSum += Number(s.itemsSum || s.
-grandTotal);
+        sSum += Number(s.itemsSum || s.grandTotal);
         monthlyData[m].sales += Number(s.itemsSum || s.grandTotal);
 
         if(s.items) s.items.forEach(i => {
@@ -720,8 +697,7 @@ async function viewCustomerDetails(mob, name) {
         let data = doc.data();
         recs.push({ type: 'PAYMENT', dr: 0, cr: data.paid, date: data.date, timestamp: data.timestamp, details: "CASH RECEIVED" });
     });
-
-    // Purani entries pehle (Balance calculate karne ke liye)
+// Purani entries pehle (Balance calculate karne ke liye)
     recs.sort((a, b) => a.timestamp - b.timestamp);
 
     let runningBal = 0;
@@ -792,8 +768,7 @@ async function viewCustomerDetails(mob, name) {
     });
 
     let totalGrossProfit = allSales.reduce((sum, s) => sum + s['Net Profit'], 0);
-    
-    // Excel sheet ke aakhir mein Summary lines
+// Excel sheet ke aakhir mein Summary lines
     allSales.push({'Date': '---', 'Items': 'TOTAL EXPENSES:', 'Net Profit': totalExp * -1});
     allSales.push({'Date': '---', 'Items': 'FINAL BACHAT (CLEAN PROFIT):', 'Net Profit': totalGrossProfit - totalExp});
         
@@ -903,7 +878,7 @@ async function clearasync
         alert("Ghalat Password! Aap ko ijazat nahi hai.");
     }
 }
-    // Step 2: Booker Excel Report Logic
+// Step 2: Booker Excel Report Logic
 async function downloadBookerReport() {
     try {
         const snap = await db.collection("booker_sales").orderBy("timestamp", "desc").get();
