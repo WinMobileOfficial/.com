@@ -567,14 +567,17 @@ async function addExpense() { let n = document.getElementById('expNote').value, 
 function renderExpenses() { document.getElementById('expenseList').innerHTML = expenses.map(e => `<div class="bg-white p-4 rounded-xl border-l-8 border-rose-500 flex justify-between font-black uppercase italic shadow-sm"><span>${e.note}</span><span>Rs ${e.amt}</span></div>`).join(''); }
 function renderCustLedger(filter = "", areaFilter = "") {
     const list = document.getElementById('custLedgerList');
+    if (!list) return; // Check if element exists
     list.innerHTML = "";
     let marketCredit = 0;
 
     Object.keys(customers).forEach(k => {
         const c = customers[k];
         
-        // Search aur Area check karne ki logic
+        // 1. Search Logic
         const matchesSearch = k.includes(filter) || c.name.toLowerCase().includes(filter.toLowerCase());
+        
+        // 2. Area Logic
         const matchesArea = areaFilter === "" || (c.area && c.area.toUpperCase() === areaFilter.toUpperCase());
 
         if (matchesSearch && matchesArea) {
@@ -589,15 +592,17 @@ function renderCustLedger(filter = "", areaFilter = "") {
                     <b class="uppercase italic text-slate-700 text-lg">${c.name}</b><br>
                     <small class="text-slate-400 font-bold">${k}</small>
                     <div class="text-3xl font-black text-rose-600 my-3">Rs ${bal.toLocaleString()}</div>
-                    <button onclick="viewCustomerDetails('${k}', '${c.name}')" class="w-full bg-black text-white py-3 rounded-xl font-black text-xs uppercase hover:bg-slate-800 transition-all">
+                    <button onclick="viewCustomerDetails('${k}', '${c.name}')" class="w-full bg-black text-white py-3 rounded-xl font-black text-xs uppercase">
                         View Statement
                     </button>
                 </div>`;
         }
     });
-    // Market ka total credit update
-    document.getElementById('totalMarketCredit').innerText = marketCredit.toLocaleString();
+    
+    const totalEl = document.getElementById('totalMarketCredit');
+    if (totalEl) totalEl.innerText = marketCredit.toLocaleString();
 }
+    
     
         // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
@@ -613,7 +618,8 @@ function renderReports() {
         let m = s.date.split('/')[0] + '/' + s.date.split('/')[2];
         if(!monthlyData[m]) monthlyData[m] = { sales: 0, exp: 0, profit: 0 };
         
-        sSum += Number(s.itemsSum || s.grandTotal);
+        sSum += Number(s.itemsSum || s.
+grandTotal);
         monthlyData[m].sales += Number(s.itemsSum || s.grandTotal);
 
         if(s.items) s.items.forEach(i => {
