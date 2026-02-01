@@ -632,7 +632,23 @@ async function viewCustomerDetails(mob, name) {
             });
         }
     });
+    // Expenses fetch karne ki logic
+    const expSnap = await db.collection("expenses").get();
+    let totalExp = 0;
+    expSnap.forEach(doc => {
+        let e = doc.data();
+        let diff = now - e.timestamp;
+        if((type==='DAILY' && diff<=dayMs) || (type==='WEEKLY' && diff<=dayMs*7) || (type==='MONTHLY' && diff<=dayMs*30) || type==='FULL') {
+            totalExp += Number(e.amount || 0);
+        }
+    });
 
+    let totalGrossProfit = allSales.reduce((sum, s) => sum + s['Net Profit'], 0);
+    
+    // Excel sheet ke aakhir mein Summary lines
+    allSales.push({'Date': '---', 'Items': 'TOTAL EXPENSES:', 'Net Profit': totalExp * -1});
+    allSales.push({'Date': '---', 'Items': 'FINAL BACHAT (CLEAN PROFIT):', 'Net Profit': totalGrossProfit - totalExp});
+        
     if(allSales.length === 0) return alert("Data nahi mila!");
 
     let ws = XLSX.utils.json_to_sheet(allSales);
