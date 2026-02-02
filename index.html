@@ -597,7 +597,7 @@ async function deleteCustomer(phone) {
             .get();
 
         if (snap.empty) {
-            alert("Is customer (" + phone + ") ka koi bill nahi mila!");
+            alert("Is customer ka koi bill nahi mila!");
             return;
         }
 
@@ -609,17 +609,23 @@ async function deleteCustomer(phone) {
         results.sort((a, b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
         
         const lastSale = results[0];
+        
+        // Ledger se 6500 uthane ke liye ye line zaroori hai
+        lastSale.finalBal = customers[phone]?.balance || lastSale.finalBal;
+        
         currentSale = lastSale;
 
-        // YAHAN TABDEELI HAI: true likhne se 6500 wala balance ayega
-        printReceipt(lastSale, true); 
-
+        if (typeof printReceipt === "function") {
+            printReceipt(lastSale);
+        } else {
+            alert("Bill Mil Gaya!\nCustomer: " + lastSale.customer + "\nTotal: Rs " + lastSale.grandTotal);
+        }
     } catch (e) {
-        console.error("Reprint Error:", e);
-        alert("System Error: Index check karein.");
+        alert("Error: Index check karein.");
     }
-    }
-    
+}
+
+
     
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
