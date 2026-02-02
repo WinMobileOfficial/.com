@@ -606,38 +606,49 @@ async function deleteCustomer(phone) {
             (s.customerPhone && s.customerPhone.toString().includes(sPhone))
         );
 
-        let saleToPrint = null;
+        let s = matched.length > 0 ? matched[0] : null;
 
-        if (matched.length > 0) {
-            saleToPrint = matched[0];
-        } else {
-            let msg = "Exact bill nahi mila. Aakhri bills ye hain:\n";
+        if (!s) {
             const last5 = allSales.slice(0, 5);
-            last5.forEach((s, i) => {
-                msg += `${i + 1}: ${s.customerName} - Rs ${s.grandTotal}\n`;
-            });
+            let msg = "Exact bill nahi mila. Aakhri bills:\n";
+            last5.forEach((b, i) => msg += `${i + 1}: ${b.customerName} - Rs ${b.grandTotal}\n`);
             const choice = prompt(msg + "\nKaunsa print karna hai? (1-5)");
-            if (choice && last5[choice - 1]) {
-                saleToPrint = last5[choice - 1];
-            }
+            if (choice && last5[choice - 1]) s = last5[choice - 1];
         }
 
-        if (saleToPrint) {
-            // ERROR FIX: Agar modal nahi mil raha toh direct print function use karein
-            if (typeof printBill === "function") {
-                printBill(saleToPrint);
-            } else {
-                // Agar aapka function 'generateBill' ya 'showBill' hai toh wo yahan likhein
-                alert("System print function mil gaya hai magar connect nahi ho raha. Refresh karke check karein.");
-                console.log("Sale Data Found:", saleToPrint);
-            }
+        if (s) {
+            // --- Naya Direct Print Logic (Kisi aur function ki zaroorat nahi) ---
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head><title>AL-HAFIZ TRADERS - BILL</title></head>
+                <body style="font-family: monospace; padding: 20px; width: 300px;">
+                    <h3 style="text-align:center;">AL-HAFIZ TRADERS</h3>
+                    <p>Date: ${s.date || 'N/A'}<br>Bill #: ${s.id.slice(-5)}</p>
+                    <hr>
+                    <p>Cust: ${s.customerName}<br>Phone: ${s.customerPhone}</p>
+                    <hr>
+                    <table style="width:100%">
+                        ${(s.items || []).map(i => `
+                            <tr>
+                                <td>${i.name} x ${i.qty}</td>
+                                <td style="text-align:right;">${i.subtotal}</td>
+                            </tr>`).join('')}
+                    </table>
+                    <hr>
+                    <h4 style="text-align:right;">TOTAL: Rs ${s.grandTotal}</h4>
+                    <p style="text-align:center;">--- Shukriya ---</p>
+                    <script>window.print(); setTimeout(() => window.close(), 500);</script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
         }
     } catch (e) {
-        alert("Error: " + e.message);
+        alert("System Error: " + e.message);
     }
-      }
-    
-    
+}
+
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
