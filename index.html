@@ -528,36 +528,54 @@ function renderCustLedger() {
     list.innerHTML = "";
     let marketCredit = 0;
     
-    // Sirf ek hi search box se naam aur area dhoondo
+    // Search box se jo bhi likha jaye (Naam ya Area)
     const searchTerm = document.getElementById('cLedgerSearch') ? document.getElementById('cLedgerSearch').value.toUpperCase() : "";
 
     Object.keys(customers).forEach(k => {
         const c = customers[k];
         let bal = Number(c.balance) || 0;
         
-        // CHECK: Kya likha hua lafz Naam mein hai YA Area mein?
+        // Check: Kya lafz Naam mein hai YA Area mein?
         const matchesSearch = c.name.toUpperCase().includes(searchTerm) || 
                               (c.area && c.area.toUpperCase().includes(searchTerm));
 
         if (matchesSearch) {
             marketCredit += bal;
             list.innerHTML += `
-                <div class="bg-white p-6 rounded-[2.5rem] border-2 shadow-xl relative mb-4 border-slate-100">
-                    <h4 class="font-black italic uppercase text-[15px] text-slate-800">${c.name}</h4>
-                    <p class="text-[10px] font-bold text-indigo-600 opacity-80">${c.phone} | ${c.area || 'GENERAL'}</p>
+                <div class="bg-white p-5 rounded-[2.5rem] border-2 shadow-xl relative mb-4">
+                    <h4 class="font-black italic uppercase text-[14px]">${c.name}</h4>
+                    <p class="text-[9px] font-bold text-indigo-600">${c.phone} | ${c.area || 'GENERAL'}</p>
                     <h2 class="text-2xl font-black text-rose-600 mt-1">Rs ${bal.toLocaleString()}</h2>
                     
                     <div class="grid grid-cols-2 gap-2 mt-3">
-                        <button onclick="viewCustomerDetails('${k}', '${c.name}')" class="bg-indigo-600 text-white p-2 rounded-xl text-[9px] font-black italic">VIEW</button>
-                        <button onclick="sendReminder('${c.phone}')" class="bg-green-600 text-white p-2 rounded-xl text-[9px] font-black italic">REMINDER</button>
-                        <button onclick="reprintLastBill('${k}')" class="col-span-2 bg-slate-800 text-white p-2 rounded-xl text-[9px] font-black italic">REPRINT LAST BILL</button>
+                        <button onclick="viewCustomerDetails('${k}', '${c.name}')" class="bg-indigo-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">VIEW</button>
+                        
+                        <button onclick="window.open('https://wa.me/92${c.phone.slice(-10)}?text=Dear%20${c.name},%20Your%20Pending%20Balance%20is%20Rs%20${bal}.%20Please%20clear%20it.')" class="bg-green-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REMINDER</button>
+                        
+                        <button onclick="reprintLastBill('${k}')" class="bg-slate-800 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REPRINT</button>
+                        
+                        <button onclick="deleteCustomer('${k}')" class="bg-rose-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">DELETE</button>
                     </div>
                 </div>`;
         }
     });
     document.getElementById('totalMarketCredit').innerText = marketCredit.toLocaleString();
 }
-    
+
+// DELETE FUNCTION (Agar pehle se nahi hai toh iske neechay add kar den)
+async function deleteCustomer(phone) {
+    if(confirm("Kia aap waqai is customer ko delete karna chahte hain? Data wapis nahi aayega!")) {
+        try {
+            await db.collection("customers").doc(phone).delete();
+            delete customers[phone];
+            localStorage.setItem('alhafiz_customers', JSON.stringify(customers));
+            alert("Customer Delete Ho Gaya!");
+            renderCustLedger();
+        } catch (e) {
+            alert("Error: Server se delete nahi ho saka.");
+        }
+    }
+}
     
         // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
