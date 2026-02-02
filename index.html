@@ -583,58 +583,59 @@ async function deleteCustomer(phone) {
 }
     async function reprintLastBill(phone) {
     try {
-        // 1. Database se saari sales mangwao (Simple query, no index needed)
+        // 1. Database se saari sales mangwao (Query simple rakhi hai taake index na maange)
         const snap = await db.collection("sales").get();
-        
-        if (snap.empty) {
-            alert("Database mein koi bhi bill mojud nahi hai!");
-            return;
-        }
+        if (snap.empty) return alert("Database khali hai!");
 
-        // 2. Phone number ke aakhri 7 digits lo (Sabse zyada kamyab tareeka)
-        const safetyDigits = phone.toString().slice(-7);
-
+        // 2. Phone matching (Aakhri 7 digits)
+        const searchPhone = phone.toString().slice(-7);
         let customerSales = [];
+        
         snap.forEach(doc => {
             const data = doc.data();
             const dbPhone = (data.customerPhone || "").toString();
-            
-            // Agar database ke number mein ye digits kahin bhi hain
-            if (dbPhone.includes(safetyDigits)) {
+            if (dbPhone.includes(searchPhone)) {
                 customerSales.push({ ...data, id: doc.id });
             }
         });
 
-        if (customerSales.length === 0) {
-            alert("Customer (" + phone + ") ka bill nahi mila. Check karein ke kya Sales History mein ye number hai?");
-            return;
-        }
+        if (customerSales.length === 0) return alert("Is number (" + phone + ") ka koi bill nahi mila!");
 
-        // 3. Local sorting (Latest bill sabse upar)
-        customerSales.sort((a, b) => {
-            const tA = a.timestamp?.seconds || a.timestamp || 0;
-            const tB = b.timestamp?.seconds || b.timestamp || 0;
-            return tB - tA;
-        });
+        // 3. Sorting (Latest first)
+        customerSales.sort((a, b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
+        const s = customerSales[0];
 
-        const lastSale = customerSales[0];
-
-        // 4. Print karne ka process
+        // 4. PRINT LOGIC (Backup ke saath)
         if (typeof currentSale !== 'undefined') {
-            currentSale = lastSale;
-            
-            // Agar aapke system mein print modal hai toh wo khulega
+            currentSale = s;
+            // Pehle purana tareeka check karo
             if (typeof showPrintModal === "function") {
                 showPrintModal();
+            } else if (typeof printBill === "function") {
+                printBill(s);
             } else {
-                // Agar modal nahi milta toh ye detail dikha dega
-                alert("Bill Mil Gaya!\nCustomer: " + lastSale.customerName + "\nTotal: " + lastSale.grandTotal);
+                // Agar dono nahi milte toh seedha ye Print Window khol dega (Fail-safe)
+                const pWin = window.open('', '_blank');
+                pWin.document.write(`
+                    <body style="font-family:monospace; padding:20px; width:300px;">
+                        <center><h3>AL-HAFIZ TRADERS</h3></center>
+                        <hr>
+                        <p><b>Bill ID:</b> ${s.id.slice(-5)}<br><b>Name:</b> ${s.customerName}</p>
+                        <table style="width:100%">
+                            ${(s.items || []).map(i => `<tr><td>${i.name} x ${i.qty}</td><td align="right">${i.subtotal}</td></tr>`).join('')}
+                        </table>
+                        <hr><h4 align="right">Total: Rs ${s.grandTotal}</h4>
+                        <script>window.print(); setTimeout(()=>window.close(), 500);</script>
+                    </body>
+                `);
+                pWin.document.close();
             }
         }
     } catch (e) {
-        alert("System Error: " + e.message);
+        alert("Error: " + e.message);
     }
     }
+    
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
