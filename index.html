@@ -583,54 +583,39 @@ async function deleteCustomer(phone) {
 }
       async function reprintLastBill(phone) {
     try {
-        const snap = await db.collection("sales").get();
-        if (snap.empty) { return alert("Koi bill nahi mila."); }
+        // 1. Database se aakhri sale uthao
+        const snap = await db.collection("sales")
+            .where("customerPhone", "==", phone)
+            .orderBy("timestamp", "desc")
+            .limit(1)
+            .get();
 
-        let allSales = [];
-        snap.forEach(doc => {
-            let data = doc.data();
-            data.id = doc.id;
-            allSales.push(data);
-        });
-
-        allSales.sort((a, b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
-
-        const cName = (customers[phone]?.name || "").toUpperCase();
-        const sPhone = phone.toString().slice(-7);
-
-        let s = allSales.find(sale => 
-            (sale.customerName && sale.customerName.toUpperCase().includes(cName)) || 
-            (sale.customerPhone && sale.customerPhone.toString().includes(sPhone))
-        );
-
-        if (!s) {
-            alert("Is customer ka exact bill nahi mila. Aakhri save hua bill khul raha hai.");
-            s = allSales[0];
+        if (snap.empty) {
+            alert("Is customer ka koi bill nahi mila!");
+            return;
         }
 
-        if (s && typeof currentSale !== 'undefined') {
-            currentSale = s;
+        const lastSale = snap.docs[0].data();
+        
+        // 2. PURANA FUNCTION JO IMAGE MEIN HAI:
+        // Hum 'currentSale' variable ko update karenge aur modal kholenge
+        if (typeof currentSale !== 'undefined') {
+            currentSale = lastSale;
+            
+            // Ye check karein ke aapka modal kholne wala function kaunsa hai:
+            // Agar 'showPrintModal' kaam nahi kar raha, toh isay 'openPrintPreview' se badlein
             if (typeof showPrintModal === "function") {
                 showPrintModal();
             } else {
-                alert("Bill mil gaya! Name: " + s.customerName + " Total: " + s.grandTotal);
+                // Agar function nahi mil raha toh direct print bhej do
+                printBill(lastSale);
             }
         }
     } catch (e) {
-        alert("System Error: " + e.message);
+        alert("Print Error: " + e.message);
     }
-}
-
-// Ye function lazmi check karein ke neechay mojud ho
-function unlockApp() {
-    const enteredPin = document.getElementById('pinInput').value;
-    if (enteredPin === settings.pin) {
-        document.getElementById('loginOverlay').classList.add('hidden');
-        localStorage.setItem('alhafiz_auth', 'true');
-    } else {
-        alert("Ghalat PIN!");
-    }
-}
+      }
+    
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
