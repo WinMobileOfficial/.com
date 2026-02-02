@@ -214,6 +214,13 @@
             <h3 class="text-xl font-black uppercase italic text-blue-600 mb-4 border-b pb-2">
                 <i class="fas fa-shopping-basket mr-2"></i> Today's Item-wise Sales
             </h3>
+                    <select id="routeFilter" onchange="renderCustLedger(document.getElementById('custSearchInput').value, this.value)" class="w-full p-4 mb-6 border-4 border-black rounded-2xl font-black bg-yellow-400 uppercase italic shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+    <option value="">All Routes (Sab Areas)</option>
+    <option value="Model Town">Model Town</option>
+    <option value="Gulberg">Gulberg</option>
+    <option value="Faisal Town">Faisal Town</option>
+                    </select>
+                    
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
                     <thead class="bg-slate-100 uppercase text-[10px] font-black">
@@ -287,7 +294,9 @@
             <input id="setStoreName" placeholder="SHOP NAME" class="w-full p-4 border-2 rounded-2xl font-black uppercase">
             <input id="setStorePhone" placeholder="CONTACT" class="w-full p-4 border-2 rounded-2xl font-black">
             <input id="setStorePIN" type="password" placeholder="PIN" class="w-full p-4 border-2 rounded-2xl font-black">
-            <button onclick="saveSettings()" class="w-full bg-slate-900 text-white py-6 rounded-3xl font-black uppercase italic text-xl">Save Settings</button>
+         <input type="text" id="custArea" placeholder="Route/Area (e.g. Model Town)" class="w-full p-4 mb-4 border-4 border-black rounded-2xl font-bold uppercase italic shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            
+        <button onclick="saveSettings()" class="w-full bg-slate-900 text-white py-6 rounded-3xl font-black uppercase italic text-xl">Save Settings</button>
         </div>
     </div>
 </div>
