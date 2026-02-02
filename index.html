@@ -583,35 +583,42 @@ async function deleteCustomer(phone) {
 }
     async function reprintLastBill(phone) {
     try {
-        // Index banne ke baad ye query 1 second mein bill nikaal legi
-        const snap = await db.collection("sales")
-            .where("customerPhone", "==", phone)
-            .orderBy("timestamp", "desc")
-            .limit(1)
-            .get();
+        // Hum poori list mangwa kar khud filter karenge taake index ka rora hi khatam ho jaye
+        const snap = await db.collection("sales").get();
+        if (snap.empty) return alert("Database khali hai!");
 
-        if (snap.empty) {
+        // Phone number ke aakhri 7 digits match karein
+        const sPhone = phone.toString().slice(-7);
+        let matches = [];
+
+        snap.forEach(doc => {
+            const data = doc.data();
+            const dbPhone = (data.customerPhone || "").toString();
+            if (dbPhone.includes(sPhone)) {
+                matches.push({ ...data, id: doc.id });
+            }
+        });
+
+        if (matches.length === 0) {
             alert("Is customer ka koi bill nahi mila!");
             return;
         }
 
-        const lastSale = snap.docs[0].data();
-        currentSale = lastSale;
+        // Sabse aakhri bill dhoondo (Manual sorting)
+        matches.sort((a, b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
         
-        // Aapka purana modal function
+        currentSale = matches[0];
+
+        // Bill modal kholo
         if (typeof showPrintModal === "function") {
             showPrintModal();
         } else {
-            alert("Bill mil gaya! Name: " + lastSale.customerName + " | Total: " + lastSale.grandTotal);
+            alert("Bill mil gaya! Name: " + currentSale.customerName + "\nTotal: " + currentSale.grandTotal);
         }
     } catch (e) {
-        // Agar index abhi tak process ho raha ho toh ye error dikhayega
-        alert("Index abhi ban raha hai, thodi der baad check karein.");
-        console.log(e);
+        alert("Error: " + e.message);
     }
     }
-    
-
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
