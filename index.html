@@ -529,61 +529,59 @@ function renderCustLedger() {
     list.innerHTML = "";
     let marketCredit = 0;
     
-    // Search input se value pakro
-    const searchTerm = document.getElementById('cLedgerSearch') ? document.getElementById('cLedgerSearch').value.toUpperCase() : "";
+    // 1. Search input se value pakro
+    const searchTerm = (document.getElementById('cLedgerSearch')?.value || "").toUpperCase();
 
-    // Customers ka data loop karna
+    // 2. Customers ka data check karein
+    if (typeof customers !== 'object' || customers === null) return;
+
     Object.keys(customers).forEach(phoneKey => {
         const c = customers[phoneKey];
-        // Balance ko number mein convert karna taake jamah (sum) ho sakay
-        let bal = Number(c.balance) || 0;
-        
-        // Search filter: Naam ya Area dono check karega
-        const matchesSearch = c.name.toUpperCase().includes(searchTerm) || 
-                              (c.area && c.area.toUpperCase().includes(searchTerm));
+        if (!c) return;
 
-        if (matchesSearch) {
+        let bal = Number(c.balance) || 0;
+        let cName = (c.name || "").toUpperCase();
+        let cArea = (c.area || "GENERAL").toUpperCase();
+        
+        // Search Filter: Naam ya Area dono check karega
+        if (cName.includes(searchTerm) || cArea.includes(searchTerm)) {
             marketCredit += bal;
             list.innerHTML += `
                 <div class="bg-white p-5 rounded-[2.5rem] border-2 shadow-xl relative mb-4 border-slate-100">
                     <h4 class="font-black italic uppercase text-[15px]">${c.name}</h4>
-                    <p class="text-[10px] font-bold text-indigo-600">${c.phone} | ${c.area || 'GENERAL'}</p>
+                    <p class="text-[10px] font-bold text-indigo-600">${phoneKey} | ${c.area || 'GENERAL'}</p>
                     <h2 class="text-2xl font-black text-rose-600 mt-1">Rs ${bal.toLocaleString()}</h2>
                     
                     <div class="grid grid-cols-2 gap-2 mt-3">
                         <button onclick="viewCustomerDetails('${phoneKey}', '${c.name}')" class="bg-indigo-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">VIEW</button>
-                        
-                        <button onclick="window.open('https://wa.me/92${c.phone.slice(-10)}?text=Dear%20${c.name},%20Al-Hafiz%20Traders%20ki%20taraf%20se%20aapka%20balance%20Rs%20${bal}%20hai.')" class="bg-green-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REMINDER</button>
-                        
+                        <button onclick="window.open('https://wa.me/92${phoneKey.slice(-10)}?text=Dear%20${c.name},%20Balance:%20Rs%20${bal}')" class="bg-green-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REMINDER</button>
                         <button onclick="reprintLastBill('${phoneKey}')" class="bg-slate-800 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REPRINT</button>
-                        
                         <button onclick="deleteCustomer('${phoneKey}')" class="bg-rose-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">DELETE</button>
                     </div>
                 </div>`;
         }
     });
     
-    // Total ko screen par dikhana
+    // Total update karna
     const totalDisplay = document.getElementById('totalMarketCredit');
     if (totalDisplay) totalDisplay.innerText = marketCredit.toLocaleString();
 }
 
-// DELETE FUNCTION
+// DELETE FUNCTION (Isko renderCustLedger ke forun baad rakhein)
 async function deleteCustomer(phone) {
-    if(confirm("Kia aap waqai is customer ko delete karna chahte hain? Data wapis nahi aayega!")) {
+    if(confirm("Kia aap waqai is customer ko delete karna chahte hain?")) {
         try {
-            // Firebase (Cloud) se delete
             await db.collection("customers").doc(phone).delete();
-            // Local memory se delete
             delete customers[phone];
             localStorage.setItem('alhafiz_customers', JSON.stringify(customers));
-            alert("Customer Delete Ho Gaya!");
-            renderCustLedger(); // Screen refresh
+            alert("Deleted!");
+            renderCustLedger();
         } catch (e) {
-            alert("Internet Error! Server se delete nahi ho saka.");
+            alert("Error: Server connectivity issue.");
         }
     }
 }
+    
 
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
