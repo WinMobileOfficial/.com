@@ -618,7 +618,8 @@ function applySettings() {
         else { el.classList.add('hidden'); el.style.display="none"; } 
     });
 }
-async function saveSettings() { settings.name = document.getElementById('setStoreName').value; settings.phone = document.getElementById('setStorePhone').value; settings.pin = document.getElementById('setStorePIN').value; await db.collection("settings").doc("main").set(settings); alert("Settings Updated!"); }
+    localStorage.setItem('alhafiz_customers', JSON.stringify(customers));
+    async function saveSettings() { settings.name = document.getElementById('setStoreName').value; settings.phone = document.getElementById('setStorePhone').value; settings.pin = document.getElementById('setStorePIN').value; await db.collection("settings").doc("main").set(settings); alert("Settings Updated!"); }
 function checkLowStock() { let isLow = prods.some(p => p.stock < 10); document.getElementById('lowStockWarning')?.classList.toggle('hidden', !isLow); }
 function sendReminder(mob) { let txt = `*${settings.name}*\nYour Balance: *Rs ${customers[mob].balance}*. Pay soon.`; window.open(`https://wa.me/92${mob.substring(1)}?text=${encodeURIComponent(txt)}`); }
 function deleteCustomer(id) { if(confirm("Delete Customer?")) db.collection("customers").doc(id).delete(); }
@@ -869,8 +870,13 @@ function addNewCustomerFromPOS() {
     alert(name + " hamesha ke liye save ho gaya! Ab refresh kar ke check karen.");
 }
     
-    
+    let savedData = localStorage.getItem('alhafiz_customers');
+if (savedData) {
+    customers = JSON.parse(savedData);
+}
 init();
+    
+
 </script>
 </body>
 </html>
