@@ -637,12 +637,14 @@ function renderReports() {
         monthlyData[m].exp += Number(e.amt);
     });
 
+        // Update Dashboard Stats
     document.getElementById('repStats').innerHTML = `
-        <div class="bg-blue-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Stock Asset</p><span class="text-3xl font-black italic">Rs ${stockAsset.toLocaleString()}</span></div>
-        <div class="bg-indigo-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Zakat (2.5%)</p><span class="text-3xl font-black italic">Rs ${(stockAsset * 0.025).toLocaleString()}</span></div>
-        <div class="bg-emerald-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Net Profit</p><span class="text-3xl font-black italic">Rs ${(totalProfit - eSum).toLocaleString()}</span></div>
+        <div class="bg-blue-600 p-8 rounded-3xl"><p class="text-[9px] text-white/80 uppercase font-black mb-1">Stock Value</p><b class="text-2xl text-white">Rs ${stockValue.toLocaleString()}</b></div>
+        <div class="bg-indigo-600 p-8 rounded-3xl"><p class="text-[9px] text-white/80 uppercase font-black mb-1">Cash in Hand</p><b class="text-2xl text-white">Rs ${cashInHand.toLocaleString()}</b></div>
+        <div class="bg-emerald-600 p-8 rounded-3xl"><p class="text-[9px] text-white/80 uppercase font-black mb-1">Total Profit</p><b class="text-2xl text-white">Rs ${totalProfit.toLocaleString()}</b></div>
     `;
-
+}
+    
     // Monthly Summary Rendering
     document.getElementById('monthlySummary').innerHTML = Object.keys(monthlyData).map(m => `
         <div class="flex justify-between items-center bg-slate-100 p-4 rounded-2xl">
