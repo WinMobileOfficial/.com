@@ -551,20 +551,20 @@ async function addExpense() { let n = document.getElementById('expNote').value, 
 function renderExpenses() { document.getElementById('expenseList').innerHTML = expenses.map(e => `<div class="bg-white p-4 rounded-xl border-l-8 border-rose-500 flex justify-between font-black uppercase italic shadow-sm"><span>${e.note}</span><span>Rs ${e.amt}</span></div>`).join(''); }
 function renderCustLedger(filter = "", areaFilter = "") {
     const list = document.getElementById('custLedgerList');
+    if (!list) return;
     list.innerHTML = "";
     let marketCredit = 0;
 
     Object.keys(customers).forEach(k => {
         const c = customers[k];
-        
-        // Search aur Area check karne ki logic
+        // 1. Search Logic
         const matchesSearch = k.includes(filter) || c.name.toLowerCase().includes(filter.toLowerCase());
+        // 2. Area Logic
         const matchesArea = areaFilter === "" || (c.area && c.area.toUpperCase() === areaFilter.toUpperCase());
 
         if (matchesSearch && matchesArea) {
             let bal = Number(c.balance) || 0;
             marketCredit += bal;
-
             list.innerHTML += `
                 <div class="bg-white p-6 rounded-[2.5rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative mb-4">
                     <span class="absolute top-4 right-6 bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-[10px] font-black border-2 border-black uppercase">
@@ -573,15 +573,17 @@ function renderCustLedger(filter = "", areaFilter = "") {
                     <b class="uppercase italic text-slate-700 text-lg">${c.name}</b><br>
                     <small class="text-slate-400 font-bold">${k}</small>
                     <div class="text-3xl font-black text-rose-600 my-3">Rs ${bal.toLocaleString()}</div>
-                    <button onclick="viewCustomerDetails('${k}', '${c.name}')" class="w-full bg-black text-white py-3 rounded-xl font-black text-xs uppercase hover:bg-slate-800 transition-all">
+                    <button onclick="viewCustomerDetails('${k}', '${c.name}')" class="w-full bg-black text-white py-3 rounded-xl font-black text-xs uppercase">
                         View Statement
                     </button>
                 </div>`;
         }
     });
-    // Market ka total credit update
-    document.getElementById('totalMarketCredit').innerText = marketCredit.toLocaleString();
-    }
+    
+    const totalEl = document.getElementById('totalMarketCredit');
+    if (totalEl) totalEl.innerText = marketCredit.toLocaleString();
+}
+    
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
