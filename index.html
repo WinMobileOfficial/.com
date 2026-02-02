@@ -583,42 +583,41 @@ async function deleteCustomer(phone) {
 }
     async function reprintLastBill(phone) {
     try {
-        // Hum poori list mangwa kar khud filter karenge taake index ka rora hi khatam ho jaye
-        const snap = await db.collection("sales").get();
-        if (snap.empty) return alert("Database khali hai!");
+        // Database se is mobile number ke saare bills mangwao
+        const snap = await db.collection("sales")
+            .where("mob", "==", phone) 
+            .get();
 
-        // Phone number ke aakhri 7 digits match karein
-        const sPhone = phone.toString().slice(-7);
-        let matches = [];
-
-        snap.forEach(doc => {
-            const data = doc.data();
-            const dbPhone = (data.customerPhone || "").toString();
-            if (dbPhone.includes(sPhone)) {
-                matches.push({ ...data, id: doc.id });
-            }
-        });
-
-        if (matches.length === 0) {
-            alert("Is customer ka koi bill nahi mila!");
+        if (snap.empty) {
+            alert("Is customer (" + phone + ") ka koi bill nahi mila!");
             return;
         }
 
-        // Sabse aakhri bill dhoondo (Manual sorting)
-        matches.sort((a, b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
-        
-        currentSale = matches[0];
+        let results = [];
+        snap.forEach(doc => {
+            results.push({ ...doc.data(), id: doc.id });
+        });
 
-        // Bill modal kholo
+        // Latest bill dhoondne ke liye sorting (Naya bill sabse upar)
+        results.sort((a, b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
+        
+        const lastSale = results[0];
+        currentSale = lastSale;
+
+        // Print karne ka tareeka (Aapke system ke functions ke mutabiq)
         if (typeof showPrintModal === "function") {
             showPrintModal();
+        } else if (typeof printReceipt === "function") {
+            printReceipt(lastSale);
         } else {
-            alert("Bill mil gaya! Name: " + currentSale.customerName + "\nTotal: " + currentSale.grandTotal);
+            alert("Bill Mil Gaya!\nCustomer: " + lastSale.customer + "\nTotal: Rs " + lastSale.grandTotal);
         }
     } catch (e) {
-        alert("Error: " + e.message);
+        console.error("Reprint Error:", e);
+        alert("System Error: Index check karein ya thoda intezar karein.");
     }
     }
+    
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
