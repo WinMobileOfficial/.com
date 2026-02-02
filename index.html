@@ -68,7 +68,6 @@
         <div class="p-4 bg-slate-50"><button onclick="window.print()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase italic text-[11px] shadow-lg"><i class="fas fa-print mr-2"></i> Print Statement</button></div>
     </div>
 </div>
-
 <div class="w-72 bg-[#0f172a] text-white flex flex-col no-print shadow-2xl">
     <div class="p-8 text-center border-b border-slate-800">
         <img id="sideLogo" class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-white p-1 object-contain hidden">
@@ -91,7 +90,8 @@
     <i class="fas fa-user-tie w-8 text-yellow-400"></i>
     <span class="font-black italic uppercase text-[12px]">Booker Recovery</span>
   </button>
-  </nav>
+        
+    </nav>
 </div>
 
 <div class="flex-1 flex flex-col bg-white overflow-hidden relative no-print">
@@ -185,7 +185,6 @@
             <tbody id="prodListBody" class="font-bold divide-y italic uppercase text-sm"></tbody>
         </table>
     </div>
-
     <div id="expensesTab" class="flex-1 p-10 hidden-tab overflow-y-auto">
         <h2 class="text-3xl font-black mb-8 italic border-b-4 border-rose-500 inline-block uppercase italic">Shop Expenses</h2>
         <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 max-w-xl mb-8 flex flex-col gap-4">
@@ -211,7 +210,7 @@
         <i class="fas fa-file-archive"></i><br>Monthly Backup
     </button>
       </div>
-      <div class="bg-white p-8 rounded-[3rem] border-2 shadow-xl mb-10">
+                <div class="bg-white p-8 rounded-[3rem] border-2 shadow-xl mb-10">
             <h3 class="text-xl font-black uppercase italic text-blue-600 mb-4 border-b pb-2">
                 <i class="fas fa-shopping-basket mr-2"></i> Today's Item-wise Sales
             </h3>
@@ -229,7 +228,8 @@
                 </table>
             </div>
         </div>
-<div class="bg-white p-8 rounded-[3rem] border-2 shadow-xl mb-10">
+
+        <div class="bg-white p-8 rounded-[3rem] border-2 shadow-xl mb-10">
             <h3 class="text-xl font-black uppercase italic text-rose-600 mb-4 border-b pb-2">Monthly Summary</h3>
             <div id="monthlySummary" class="space-y-3"></div>
         </div>
@@ -244,10 +244,6 @@
             <div>
                 <label class="block text-[10px] font-black italic mb-1 uppercase">Booker Name</label>
                 <input type="text" id="bName" placeholder="ENTER NAME" class="w-full p-4 border-4 border-black rounded-2xl font-black italic uppercase bg-gray-50 outline-none focus:bg-indigo-50">
-            </div>
-            <div class="space-y-1">
-    <label class="block text-[10px] font-black italic mb-1 uppercase">Area / Route</label>
-    <input type="text" id="bArea" placeholder="E.G. MODEL TOWN" class="w-full p-4 border-4 border-black rounded-2xl uppercase font-black italic mb-4">
             </div>
             
             <div>
@@ -328,7 +324,8 @@
 </div>
 
 <script>
-// --- DB INIT ---
+
+    // --- DB INIT ---
 const firebaseConfig = { apiKey: "AIzaSyBP3VrLzUl5AIR2ca1v871cV-cJOMz-SX0", authDomain: "gm-agency-pos.firebaseapp.com", projectId: "gm-agency-pos", storageBucket: "gm-agency-pos.firebasestorage.app", messagingSenderId: "777771332628", appId: "1:777771332628:web:db60e19d9bdcee21f76301" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -346,7 +343,7 @@ async function init() {
     db.collection("expenses").orderBy("timestamp", "desc").onSnapshot(snap => { expenses = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); renderExpenses(); updateStats(); });
     initPendingTracker();
 }
-    // --- BOOKER SYSTEM ---
+// --- BOOKER SYSTEM ---
 function initPendingTracker() {
     db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
         const badge = document.getElementById('pendingBadge');
@@ -468,7 +465,7 @@ function printReceipt(s) {
     }
     
     window.print();
-    }
+                                                            }
     // --- REMAINING UTILS (KEEPING ORIGINAL LOGIC) ---
 function searchCustomer(q) {
     const list = document.getElementById('custSearchList'); if(!q) { list.classList.add('hidden'); return; }
@@ -494,7 +491,7 @@ function switchTab(t) {
         if (targetTab) targetTab.classList.remove('hidden-tab');
     }
 
-    // 4. Reports aur Ledger render karne ki logic
+   // 4. Reports aur Ledger render karne ki logic
     if (t === 'reports') renderReports();
     if (t === 'cust') renderCustLedger();
 }
@@ -503,96 +500,25 @@ function toggleDarkMode() { document.getElementById('mainBody').classList.toggle
 function checkAccess() { if(document.getElementById('accessCode').value === settings.pin) document.getElementById('lockScreen').style.display='none'; }
 function handleProductImage(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { currentProductImage = e.target.result; document.getElementById('itemImgPreview').src = e.target.result; document.getElementById('itemImgPreview').classList.remove('hidden'); }; reader.readAsDataURL(input.files[0]); } }
 async function saveProduct() { let n = document.getElementById('listPName').value.toLowerCase().trim(), s = parseInt(document.getElementById('listPStock').value), c = parseFloat(document.getElementById('listPCost').value), p = parseFloat(document.getElementById('listPPrice').value); if(n) { await db.collection("products").doc(n).set({name:n, stock:s, cost:c, price:p, image: currentProductImage || ""}, {merge:true}); alert("Updated!"); location.reload(); } }
-function renderProductList() {
-    document.getElementById('prodListBody').innerHTML = prods.map(p => {
-        // Logic: Stock aur Profit calculate karna
-        const stockCount = Number(p.stock) || 0;
-        const costPrice = Number(p.cost) || 0;
-        const salePrice = Number(p.price) || 0;
-        
-        const profit = salePrice - costPrice;
-        const marginPercent = costPrice > 0 ? ((profit / costPrice) * 100).toFixed(1) : 0;
-        
-        // Alert styling
-        const isLow = stockCount <= 10;
-        const rowClass = isLow ? 'bg-red-50 text-red-800' : 'hover:bg-gray-50';
-        const alertLabel = isLow ? '<span class="text-[9px] font-bold block text-red-600">⚠️ LOW STOCK</span>' : '';
-
-        return `
-            <tr class="border-b transition-colors ${rowClass}">
-                <td class="p-2">
-                    <img src="${p.image || ''}" class="w-12 h-12 rounded-lg mx-auto shadow-sm object-cover border">
-                </td>
-                <td class="p-4 font-black italic uppercase">
-                    ${p.name}
-                    ${alertLabel}
-                </td>
-                <td class="p-4 text-center font-bold">${stockCount}</td>
-                <td class="p-4 text-center text-gray-600">Rs ${costPrice}</td>
-                <td class="p-4 text-center text-blue-700 font-bold">Rs ${salePrice}</td>
-                <td class="p-4 text-center">
-                    <div class="text-emerald-600 font-bold">Rs ${profit}</div>
-                    <div class="text-[10px] text-emerald-500">${marginPercent}% Margin</div>
-                </td>
-                <td class="p-4 text-center">
-                    <button onclick="deleteProd('${p.name}')" class="text-rose-500 hover:scale-125 p-2 transition-transform">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>`;
-    }).join('');
-}
-
+function renderProductList() { document.getElementById('prodListBody').innerHTML = prods.map(p => `<tr class="border-b"><td class="p-2"><img src="${p.image || ''}" class="w-10 h-10 rounded-xl mx-auto shadow object-cover"></td><td class="p-4 font-black italic uppercase">${p.name}</td><td>${p.stock}</td><td>${p.cost}</td><td>${p.price}</td><td><button onclick="deleteProd('${p.name}')" class="text-rose-500"><i class="fas fa-trash"></i></button></td></tr>`).join(''); }
 async function deleteProd(n) { if(confirm("Delete Product?")) await db.collection("products").doc(n.toLowerCase()).delete(); }
 function renderHistory() { const completed = sales.filter(s => s.status === "COMPLETED"); document.getElementById('historyList').innerHTML = completed.map(s => `<div class="bg-white p-6 rounded-[2.5rem] border shadow flex justify-between items-center group"><div><b class="uppercase italic">${s.customer}</b><br><small>${s.date}</small></div><div class="text-right"><div class="font-black text-blue-600">Rs ${s.grandTotal}</div><div class="flex gap-2 mt-2"><button onclick="printReceipt(${JSON.stringify(s).replace(/"/g, '&quot;')})" class="text-slate-400 p-2"><i class="fas fa-print"></i></button><button onclick="deleteSale('${s.id}')" class="text-rose-600 p-2"><i class="fas fa-trash-alt"></i></button></div></div></div>`).join(''); }
 async function deleteSale(id) { if(confirm("Are you sure?")) await db.collection("sales").doc(id).delete(); }
 async function clearAllHistory() { if(confirm("Clear All?")) { const snap = await db.collection("sales").get(); snap.forEach(doc => doc.ref.delete()); } }
 async function addExpense() { let n = document.getElementById('expNote').value, a = document.getElementById('expAmt').value; if(n && a) { await db.collection("expenses").add({note:n, amt:a, date: new Date().toLocaleDateString(), timestamp: Date.now()}); location.reload(); } }
 function renderExpenses() { document.getElementById('expenseList').innerHTML = expenses.map(e => `<div class="bg-white p-4 rounded-xl border-l-8 border-rose-500 flex justify-between font-black uppercase italic shadow-sm"><span>${e.note}</span><span>Rs ${e.amt}</span></div>`).join(''); }
-function renderCustLedger(filter = "", areaFilter = "") {
-    const list = document.getElementById('custLedgerList');
-    if (!list) return;
-    list.innerHTML = "";
+function renderCustLedger(filter = "") {
+    const list = document.getElementById('custLedgerList'); list.innerHTML = "";
     let marketCredit = 0;
     Object.keys(customers).forEach(k => {
-        const c = customers[k];
-        const matchesSearch = k.includes(filter) || c.name.toLowerCase().includes(filter.toLowerCase());
-        const matchesArea = areaFilter === "" || (c.area && c.area.toUpperCase() === areaFilter.toUpperCase());
-        if (matchesSearch && matchesArea) {
-            let bal = Number(c.balance) || 0;
-            marketCredit += bal;
-            list.innerHTML += `
-                <div class="bg-white p-6 rounded-[2.5rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative mb-4">
-                    <span class="absolute top-4 right-6 bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-[10px] font-black border-2 border-black uppercase">
-                        ${c.area || 'GENERAL'}
-                    </span>
-                    <b class="uppercase italic text-slate-700 text-lg">${c.name}</b><br>
-                    <small class="text-slate-400 font-bold">${k}</small>
-                    <div class="text-3xl font-black text-rose-600 my-3">Rs ${bal.toLocaleString()}</div>
-                    <button onclick="viewCustomerDetails('${k}', '${c.name}')" class="w-full bg-black text-white py-3 rounded-xl font-black text-xs uppercase">
-                        View Statement
-                    </button>
-                </div>`;
+        let bal = Number(customers[k].balance) || 0; marketCredit += bal;
+        if(k.includes(filter) || customers[k].name.toLowerCase().includes(filter.toLowerCase())) {
+            list.innerHTML += `<div class="bg-white p-8 rounded-[3.5rem] border shadow-xl relative group"><button onclick="deleteCustomer('${k}')" class="absolute top-6 right-6 text-rose-500 opacity-0 group-hover:opacity-100"><i class="fas fa-trash"></i></button><b class="uppercase italic">${customers[k].name}</b><br><small>${k}</small><div class="text-3xl font-black text-rose-600 my-4 italic">Rs ${bal}</div><div class="flex flex-col gap-2"><div class="flex gap-2"><button onclick="sendReminder('${k}')" class="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-black text-[10px] uppercase italic shadow-lg">Reminder</button><button onclick="selectCustomer('${k}'); switchTab('billing');" class="flex-1 bg-[#0f172a] text-white py-3 rounded-2xl font-black text-[10px] uppercase italic shadow-lg">Bill</button></div><button onclick="viewCustomerDetails('${k}', '${customers[k].name}')" class="w-full bg-blue-100 text-blue-700 py-3 rounded-2xl font-black text-[10px] uppercase italic">View Statement</button></div></div>`;
         }
     });
-    const totalEl = document.getElementById('totalMarketCredit');
-    if (totalEl) totalEl.innerText = marketCredit.toLocaleString();
-}
-
-function renderReports() {
-    let stockValue = 0;
-    let cashInHand = 0;
-    let totalProfit = 0;
-    
-    document.getElementById('repStats').innerHTML = `
-        <div class="bg-blue-600 p-8 rounded-3xl"><p class="text-[9px] text-white/80 uppercase font-black mb-1">Stock Value</p><b class="text-2xl text-white">Rs ${stockValue.toLocaleString()}</b></div>
-        <div class="bg-indigo-600 p-8 rounded-3xl"><p class="text-[9px] text-white/80 uppercase font-black mb-1">Cash in Hand</p><b class="text-2xl text-white">Rs ${cashInHand.toLocaleString()}</b></div>
-        <div class="bg-emerald-600 p-8 rounded-3xl"><p class="text-[9px] text-white/80 uppercase font-black mb-1">Total Profit</p><b class="text-2xl text-white">Rs ${totalProfit.toLocaleString()}</b></div>
-    `;
-}
-    
-    
-    // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
+    document.getElementById('totalMarketCredit').innerText = marketCredit.toLocaleString();
+    }
+        // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let monthlyData = {};
@@ -623,7 +549,6 @@ function renderReports() {
             }
         });
     });
-
     // Populate the Today's Item-wise Table
     const dailyBody = document.getElementById('dailyItemSalesBody');
     if(Object.keys(dailyItems).length > 0) {
@@ -645,14 +570,12 @@ function renderReports() {
         monthlyData[m].exp += Number(e.amt);
     });
 
-        // Update Dashboard Stats
     document.getElementById('repStats').innerHTML = `
-        <div class="bg-blue-600 p-8 rounded-3xl"><p class="text-[9px] text-white/80 uppercase font-black mb-1">Stock Value</p><b class="text-2xl text-white">Rs ${stockValue.toLocaleString()}</b></div>
-        <div class="bg-indigo-600 p-8 rounded-3xl"><p class="text-[9px] text-white/80 uppercase font-black mb-1">Cash in Hand</p><b class="text-2xl text-white">Rs ${cashInHand.toLocaleString()}</b></div>
-        <div class="bg-emerald-600 p-8 rounded-3xl"><p class="text-[9px] text-white/80 uppercase font-black mb-1">Total Profit</p><b class="text-2xl text-white">Rs ${totalProfit.toLocaleString()}</b></div>
+        <div class="bg-blue-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Stock Asset</p><span class="text-3xl font-black italic">Rs ${stockAsset.toLocaleString()}</span></div>
+        <div class="bg-indigo-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Zakat (2.5%)</p><span class="text-3xl font-black italic">Rs ${(stockAsset * 0.025).toLocaleString()}</span></div>
+        <div class="bg-emerald-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Net Profit</p><span class="text-3xl font-black italic">Rs ${(totalProfit - eSum).toLocaleString()}</span></div>
     `;
-}
-    
+
     // Monthly Summary Rendering
     document.getElementById('monthlySummary').innerHTML = Object.keys(monthlyData).map(m => `
         <div class="flex justify-between items-center bg-slate-100 p-4 rounded-2xl">
@@ -709,7 +632,8 @@ async function viewCustomerDetails(mob, name) {
         let data = doc.data();
         recs.push({ type: 'PAYMENT', dr: 0, cr: data.paid, date: data.date, timestamp: data.timestamp, details: "CASH RECEIVED" });
     });
-// Purani entries pehle (Balance calculate karne ke liye)
+
+    // Purani entries pehle (Balance calculate karne ke liye)
     recs.sort((a, b) => a.timestamp - b.timestamp);
 
     let runningBal = 0;
@@ -778,9 +702,9 @@ async function viewCustomerDetails(mob, name) {
             totalExp += Number(e.amount || 0);
         }
     });
-
-    let totalGrossProfit = allSales.reduce((sum, s) => sum + s['Net Profit'], 0);
-// Excel sheet ke aakhir mein Summary lines
+let totalGrossProfit = allSales.reduce((sum, s) => sum + s['Net Profit'], 0);
+    
+    // Excel sheet ke aakhir mein Summary lines
     allSales.push({'Date': '---', 'Items': 'TOTAL EXPENSES:', 'Net Profit': totalExp * -1});
     allSales.push({'Date': '---', 'Items': 'FINAL BACHAT (CLEAN PROFIT):', 'Net Profit': totalGrossProfit - totalExp});
         
@@ -797,73 +721,40 @@ function calcComm() {
     let comm = (Number(cash) * 0.005); 
     document.getElementById('commDisplay').innerText = "Rs " + comm.toLocaleString();
 }
-async function downloadBookerReport() {
-    // 1. Database se sara data uthana
-    const snap = await db.collection("booker_sales").get();
-    const data = snap.docs.map(doc => doc.data());
 
-    if (data.length === 0) return alert("Bhai, koi record nahi mila!");
-
-    // 2. Excel ke columns set karna (Area shamil hai)
-    const reportData = data.map(e => ({
-        'DATE': e.date || '---',
-        'BOOKER NAME': e.name || '---',
-        'AREA / ROUTE': e.area || 'GENERAL', // Yeh naya column hai
-        'RECOVERY (RS)': e.recovery || 0,
-        'COMMISSION (RS)': e.commission || 0
-    }));
-
-    // 3. Excel file tayyar karna
-    const worksheet = XLSX.utils.json_to_sheet(reportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Recovery_Report");
-    
-    // 4. File download
-    XLSX.writeFile(workbook, "Booker_Recovery_Report.xlsx");
-}
-    
 // 2. Booker Data Save karne ki logic
 async function saveBookerEntry() {
-    // 1. Inputs se data uthana
     let name = document.getElementById('bName').value;
-    let area = document.getElementById('bArea').value; // Naya Area field
     let cash = document.getElementById('bCash').value;
-    
-    // Commission calculation (0.5%)
     let comm = (Number(cash) * 0.005);
 
-    // 2. Validation: Check karna ke data khali na ho
     if(!name || !cash || cash <= 0) {
-        return alert("Bhai, Booker ka Naam aur Amount lazmi likhein!");
+        return alert("Bhai, Booker ka naam aur cash lazmi likhein!");
     }
 
     try {
-        // 3. Database (Firebase) mein data bhejna
         await db.collection("booker_sales").add({
             name: name.toUpperCase(),
-            area: (area || "GENERAL").toUpperCase(), // Agar area khali ho toh 'GENERAL' save hoga
             recovery: Number(cash),
             commission: comm,
             date: new Date().toLocaleDateString('en-GB'),
             timestamp: Date.now()
         });
 
-        alert("Record Saved! Area: " + (area || "GENERAL") + " | Comm: Rs. " + comm);
-
-        // 4. Form ko reset (khali) karna
+        alert("Zabardast! Booker ka record aur Rs. " + comm + " commission save ho gaya.");
+        
+        // Form khali karne ke liye
         document.getElementById('bName').value = '';
-        document.getElementById('bArea').value = ''; 
         document.getElementById('bCash').value = '';
         document.getElementById('commDisplay').innerText = 'Rs 0';
-
+        
     } catch (error) {
-        console.error("Error saving data: ", error);
-        alert("Data save nahi hua. Internet check karein.");
+        console.error("Error: ", error);
+        alert("Data save nahi hua, internet check karein.");
     }
 }
-    
     // Step 5: Data Clear karne ki logic
-async function clearasync 
+async function clearBookerData() {
     let pass = prompt("Admin Password Likhein (Data Saaf Karne Ke Liye):");
     
     if(pass === "786") { 
@@ -890,7 +781,7 @@ async function clearasync
         alert("Ghalat Password! Aap ko ijazat nahi hai.");
     }
 }
-// Step 2: Booker Excel Report Logic
+    // Step 2: Booker Excel Report Logic
 async function downloadBookerReport() {
     try {
         const snap = await db.collection("booker_sales").orderBy("timestamp", "desc").get();
