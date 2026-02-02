@@ -581,6 +581,35 @@ async function deleteCustomer(phone) {
         }
     }
 }
+   async function reprintLastBill(phone) {
+    try {
+        // Firebase se is customer ki sabse aakhri sale dhoondo
+        const snap = await db.collection("sales")
+            .where("customerPhone", "==", phone)
+            .orderBy("timestamp", "desc")
+            .limit(1)
+            .get();
+
+        if (snap.empty) {
+            alert("Is customer ka koi purana bill nahi mila!");
+            return;
+        }
+
+        const lastSale = snap.docs[0].data();
+        
+        // Bill ka data global variable mein set karein taake printer modal ko mil sake
+        if (typeof currentSale !== 'undefined') {
+            currentSale = lastSale;
+            // Print wala modal (dabba) dikhayen
+            showPrintModal(); 
+        } else {
+            // Direct print agar modal nahi hai
+            printBill(lastSale);
+        }
+    } catch (e) {
+        alert("Bill Reprint Error: " + e.message);
+    }
+   }
     
 
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
