@@ -583,11 +583,9 @@ async function deleteCustomer(phone) {
 }
       async function reprintLastBill(phone) {
     try {
-        // 1. Database se aakhri sale uthao
+        // 1. Index ke jhamely se bachne ke liye sirf phone number se data mangwao
         const snap = await db.collection("sales")
             .where("customerPhone", "==", phone)
-            .orderBy("timestamp", "desc")
-            .limit(1)
             .get();
 
         if (snap.empty) {
@@ -595,20 +593,31 @@ async function deleteCustomer(phone) {
             return;
         }
 
-        const lastSale = snap.docs[0].data();
-        
-        // 2. PURANA FUNCTION JO IMAGE MEIN HAI:
-        // Hum 'currentSale' variable ko update karenge aur modal kholenge
+        // 2. Data ko local array mein jama karein
+        let results = [];
+        snap.forEach(doc => {
+            let data = doc.data();
+            data.id = doc.id;
+            results.push(data);
+        });
+
+        // 3. Local memory mein sorting karein (Latest bill sabse upar)
+        results.sort((a, b) => {
+            const timeA = a.timestamp?.seconds || a.timestamp || 0;
+            const timeB = b.timestamp?.seconds || b.timestamp || 0;
+            return timeB - timeA;
+        });
+
+        const lastSale = results[0];
+
+        // 4. Modal kholne ka process
         if (typeof currentSale !== 'undefined') {
             currentSale = lastSale;
-            
-            // Ye check karein ke aapka modal kholne wala function kaunsa hai:
-            // Agar 'showPrintModal' kaam nahi kar raha, toh isay 'openPrintPreview' se badlein
             if (typeof showPrintModal === "function") {
                 showPrintModal();
             } else {
-                // Agar function nahi mil raha toh direct print bhej do
-                printBill(lastSale);
+                // Agar modal function nahi mil raha toh alert mein dikha do
+                alert("Bill Mil Gaya!\nCustomer: " + lastSale.customerName + "\nTotal: " + lastSale.grandTotal);
             }
         }
     } catch (e) {
