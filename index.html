@@ -834,29 +834,41 @@ async function downloadBookerReport() {
     
 function addNewCustomerFromPOS() {
     const nameInput = document.getElementById('cSearchInput');
-    const name = nameInput ? nameInput.value : "";
+    const name = nameInput ? nameInput.value.trim().toUpperCase() : "";
     
     if (!name) { 
         alert("Pehle Search Box mein Naam likhen!"); 
         return; 
     }
     
-    const phone = prompt("Customer '" + name.toUpperCase() + "' ka Mobile Number likhen:");
+    const phone = prompt("Customer '" + name + "' ka Mobile Number likhen:");
     if (!phone) return;
+    
+    // Agar number pehle se hai toh duplicate nahi karega
+    if (customers[phone]) {
+        alert("Ye Number pehle se '" + customers[phone].name + "' ke naam par save hai!");
+        return;
+    }
     
     const area = prompt("Area/Route likhen (e.g. Model Town):", "GENERAL");
 
-    // Naya data object mein save karna
+    // 1. Data save karna
     customers[phone] = { 
-        name: name.toUpperCase(), 
+        name: name, 
         phone: phone, 
         balance: 0, 
         area: area ? area.toUpperCase() : 'GENERAL' 
     };
     
-    applySettings(); // Permanently save karne ke liye
-    alert(name.toUpperCase() + " save ho gaya! Ab dobara search karen.");
+    // 2. Browser ki permanent memory (localStorage) mein daalna
+    localStorage.setItem('alhafiz_customers', JSON.stringify(customers));
+    
+    // 3. Screen update karna
+    if (typeof applySettings === "function") applySettings();
+    
+    alert(name + " hamesha ke liye save ho gaya! Ab refresh kar ke check karen.");
 }
+    
     
 init();
 </script>
