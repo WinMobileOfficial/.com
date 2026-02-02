@@ -586,51 +586,49 @@ async function deleteCustomer(phone) {
         // 1. Database se saari sales mangwao
         const snap = await db.collection("sales").get();
         if (snap.empty) {
-            alert("Database mein abhi koi bill nahi hai.");
+            alert("Database mein koi bill nahi mila.");
             return;
         }
 
-        // 2. Ledger se is customer ka naam uthao matching ke liye
-        const cName = customers[phone]?.name?.toUpperCase() || "";
-        const shortPhone = phone.toString().slice(-7); // Aakhri 7 digit safe matching ke liye
-
-        let customerSales = [];
+        let allSales = [];
         snap.forEach(doc => {
-            const data = doc.data();
-            const sName = (data.customerName || "").toUpperCase();
-            const sPhone = (data.customerPhone || "").toString();
-            
-            // 3. Match by Name YA Match by Phone (Dono check karega)
-            if ((cName !== "" && sName === cName) || sPhone.includes(shortPhone)) {
-                customerSales.push(data);
-            }
+            let data = doc.data();
+            data.id = doc.id; // ID save karein
+            allSales.push(data);
         });
 
-        if (customerSales.length === 0) {
-            alert("Is customer ka koi bill nahi mila. Shayad bill kisi aur naam ya number se save hua hai.");
-            return;
-        }
+        // 2. Time ke mutabiq sort karein (Latest first)
+        allSales.sort((a, b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
 
-        // 4. Sabse aakhri bill dhoondo (Time ke mutabiq)
-        customerSales.sort((a, b) => {
-            const tA = a.timestamp?.seconds || a.timestamp || 0;
-            const tB = b.timestamp?.seconds || b.timestamp || 0;
-            return tB - tA;
-        });
+        // 3. Customer ka naam aur phone match karne ki koshish
+        const cName = customers[phone]?.name?.toUpperCase() || "";
+        const sPhone = phone.toString().slice(-7);
 
-        const lastSale = customerSales[0];
-        
-        // 5. Bill modal kholo
-        if (typeof currentSale !== 'undefined') {
-            currentSale = lastSale;
-            if (typeof showPrintModal === "function") {
+        const matched = allSales.filter(s => 
+            (s.customerName && s.customerName.toUpperCase().includes(cName)) || 
+            (s.customerPhone && s.customerPhone.toString().includes(sPhone))
+        );
+
+        // 4. Agar automatic mil jaye toh forun dikhayen
+        if (matched.length > 0) {
+            currentSale = matched[0];
+            showPrintModal();
+        } else {
+            // 5. AGAR NA MILE: Toh user ko aakhri 5 bills ki list dikhayen select karne ke liye
+            let msg = "Customer ka exact bill nahi mila. Aakhri bills ye hain, number batayein:\n\n";
+            const last5 = allSales.slice(0, 5);
+            last5.forEach((s, i) => {
+                msg += `${i + 1}: ${s.customerName} - Rs ${s.grandTotal} (${s.date || ''})\n`;
+            });
+
+            const choice = prompt(msg + "\nKaunsa bill print karna hai? (1 se 5 tak number likhein)");
+            if (choice && last5[choice - 1]) {
+                currentSale = last5[choice - 1];
                 showPrintModal();
-            } else {
-                alert("Bill mil gaya hai magar modal function nahi mila. Refresh karein.");
             }
         }
     } catch (e) {
-        alert("System Error: " + e.message);
+        alert("Error: " + e.message);
     }
       }
     
