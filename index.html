@@ -456,31 +456,36 @@ async function processBill() {
 }
 
 function printReceipt(s) {
-    document.getElementById('rStoreName').innerText = settings.name; 
+    document.getElementById('rStoreName').innerText = settings.name;
     document.getElementById('rStorePhone').innerText = settings.phone;
-    document.getElementById('rDateTime').innerText = s.date + " " + (s.time || ""); 
-    document.getElementById('rCustDetails').innerText = `${s.customer} (${s.mob})`;
-    
+    document.getElementById('rDateTime').innerText = s.date + " " + (s.time || "");
+    document.getElementById('rCustDetails').innerText = s.customer + " (" + (s.mob || s.nob) + ")";
+
     document.getElementById('rItemsList').innerHTML = (s.items || []).map(i => `
         <div style="display:flex; justify-content:space-between; font-size: 11px; text-transform: uppercase; margin-bottom: 2px;">
             <span>${i.name} x${i.qty}</span> 
             <span>${i.subtotal}</span>
         </div>`).join('');
-        
-    document.getElementById('rItemsTotal').innerText = s.itemsSum || s.grandTotal;
-    document.getElementById('rPrevBal').innerText = s.prevBal || 0; 
-    document.getElementById('rGrandTotal').innerText = s.grandTotal;
-    document.getElementById('rPaid').innerText = s.paid || 0; 
-    document.getElementById('rNetBal').innerText = s.finalBal;
 
-    if(settings.logo) { 
-        document.getElementById('rLogo').src = settings.logo; 
-        document.getElementById('rLogo').style.display="block"; 
+    document.getElementById('rItemsTotal').innerText = s.itemsSum || s.grandTotal;
+    document.getElementById('rPrevBal').innerText = s.prevBal || 0;
+    document.getElementById('rGrandTotal').innerText = s.grandTotal;
+    document.getElementById('rPaid').innerText = s.paid || 0;
+
+    // Yahan tabdeeli ki hai taake 6500 wala balance Ledger se uthaye
+    let currentBalance = customers[s.mob || s.nob]?.balance || s.finalBal;
+    document.getElementById('rNetBal').innerText = currentBalance;
+
+    if(settings.logo) {
+        document.getElementById('rLogo').src = settings.logo;
+        document.getElementById('rLogo').style.display = "block";
     } else {
-        document.getElementById('rLogo').style.display="none"; 
+        document.getElementById('rLogo').style.display = "none";
     }
-    
+
     window.print();
+        }
+            
                                                             }
     // --- REMAINING UTILS (KEEPING ORIGINAL LOGIC) ---
 function searchCustomer(q) {
