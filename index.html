@@ -160,15 +160,12 @@
         </div>
         <div class="flex justify-between items-center mb-8"><h2 class="text-3xl font-black italic border-b-4 border-blue-500 uppercase">Customer Ledger</h2><input id="ledgerSearchInput" oninput="renderCustLedger(this.value)" placeholder="SEARCH LEDGER..." class="p-4 border-2 rounded-2xl font-black w-80 outline-none"></div>
      <div class="px-4 mb-4">
-    <select id="areaFilter" onchange="renderCustLedger()" class="w-full p-4 rounded-[2rem] border-2 bg-white font-black italic uppercase text-[12px] shadow-lg border-indigo-600 text-indigo-900">
-        <option value="">SAB AREAS (ALL)</option>
-        <option value="GENERAL">GENERAL</option>
-        <option value="MODEL TOWN">MODEL TOWN</option>
-        <option value="DEFENCE">DEFENCE</option>
-    </select>
+    <input type="text" id="cLedgerSearch" oninput="renderCustLedger()" 
+           placeholder="SEARCH NAME OR AREA (e.g. MODEL TOWN)..." 
+           class="w-full p-5 rounded-[2.5rem] border-2 bg-white font-black italic uppercase text-[12px] shadow-lg border-indigo-600 outline-none">
      </div>
         
-        <div id="custLedgerList" class="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
+         <div id="custLedgerList" class="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
     </div>
 
     <div id="historyTab" class="flex-1 p-10 hidden-tab overflow-y-auto">
@@ -531,28 +528,29 @@ function renderCustLedger() {
     list.innerHTML = "";
     let marketCredit = 0;
     
-    // 1. Dabba se Area pakro
-    const selectedArea = document.getElementById('areaFilter').value;
-    // 2. Search box se Naam pakro (purana logic)
+    // Sirf ek hi search box se naam aur area dhoondo
     const searchTerm = document.getElementById('cLedgerSearch') ? document.getElementById('cLedgerSearch').value.toUpperCase() : "";
 
     Object.keys(customers).forEach(k => {
         const c = customers[k];
         let bal = Number(c.balance) || 0;
         
-        // Filter Check: Kya customer Area aur Search dono match karta hai?
-        const matchesArea = selectedArea === "" || c.area === selectedArea;
-        const matchesSearch = c.name.toUpperCase().includes(searchTerm);
+        // CHECK: Kya likha hua lafz Naam mein hai YA Area mein?
+        const matchesSearch = c.name.toUpperCase().includes(searchTerm) || 
+                              (c.area && c.area.toUpperCase().includes(searchTerm));
 
-        if (matchesArea && matchesSearch) {
+        if (matchesSearch) {
             marketCredit += bal;
             list.innerHTML += `
                 <div class="bg-white p-6 rounded-[2.5rem] border-2 shadow-xl relative mb-4 border-slate-100">
                     <h4 class="font-black italic uppercase text-[15px] text-slate-800">${c.name}</h4>
                     <p class="text-[10px] font-bold text-indigo-600 opacity-80">${c.phone} | ${c.area || 'GENERAL'}</p>
-                    <div class="flex justify-between items-end mt-2">
-                        <h2 class="text-2xl font-black text-rose-600">Rs ${bal.toLocaleString()}</h2>
-                        <button onclick="viewCustomerDetails('${k}', '${c.name}')" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black italic shadow-md">VIEW</button>
+                    <h2 class="text-2xl font-black text-rose-600 mt-1">Rs ${bal.toLocaleString()}</h2>
+                    
+                    <div class="grid grid-cols-2 gap-2 mt-3">
+                        <button onclick="viewCustomerDetails('${k}', '${c.name}')" class="bg-indigo-600 text-white p-2 rounded-xl text-[9px] font-black italic">VIEW</button>
+                        <button onclick="sendReminder('${c.phone}')" class="bg-green-600 text-white p-2 rounded-xl text-[9px] font-black italic">REMINDER</button>
+                        <button onclick="reprintLastBill('${k}')" class="col-span-2 bg-slate-800 text-white p-2 rounded-xl text-[9px] font-black italic">REPRINT LAST BILL</button>
                     </div>
                 </div>`;
         }
