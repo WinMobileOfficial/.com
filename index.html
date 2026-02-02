@@ -583,7 +583,6 @@ async function deleteCustomer(phone) {
 }
       async function reprintLastBill(phone) {
     try {
-        // 1. Database se saari sales mangwao
         const snap = await db.collection("sales").get();
         if (snap.empty) {
             alert("Database mein koi bill nahi mila.");
@@ -593,14 +592,12 @@ async function deleteCustomer(phone) {
         let allSales = [];
         snap.forEach(doc => {
             let data = doc.data();
-            data.id = doc.id; // ID save karein
+            data.id = doc.id;
             allSales.push(data);
         });
 
-        // 2. Time ke mutabiq sort karein (Latest first)
         allSales.sort((a, b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
 
-        // 3. Customer ka naam aur phone match karne ki koshish
         const cName = customers[phone]?.name?.toUpperCase() || "";
         const sPhone = phone.toString().slice(-7);
 
@@ -609,22 +606,30 @@ async function deleteCustomer(phone) {
             (s.customerPhone && s.customerPhone.toString().includes(sPhone))
         );
 
-        // 4. Agar automatic mil jaye toh forun dikhayen
+        let saleToPrint = null;
+
         if (matched.length > 0) {
-            currentSale = matched[0];
-            showPrintModal();
+            saleToPrint = matched[0];
         } else {
-            // 5. AGAR NA MILE: Toh user ko aakhri 5 bills ki list dikhayen select karne ke liye
-            let msg = "Customer ka exact bill nahi mila. Aakhri bills ye hain, number batayein:\n\n";
+            let msg = "Exact bill nahi mila. Aakhri bills ye hain:\n";
             const last5 = allSales.slice(0, 5);
             last5.forEach((s, i) => {
-                msg += `${i + 1}: ${s.customerName} - Rs ${s.grandTotal} (${s.date || ''})\n`;
+                msg += `${i + 1}: ${s.customerName} - Rs ${s.grandTotal}\n`;
             });
-
-            const choice = prompt(msg + "\nKaunsa bill print karna hai? (1 se 5 tak number likhein)");
+            const choice = prompt(msg + "\nKaunsa print karna hai? (1-5)");
             if (choice && last5[choice - 1]) {
-                currentSale = last5[choice - 1];
-                showPrintModal();
+                saleToPrint = last5[choice - 1];
+            }
+        }
+
+        if (saleToPrint) {
+            // ERROR FIX: Agar modal nahi mil raha toh direct print function use karein
+            if (typeof printBill === "function") {
+                printBill(saleToPrint);
+            } else {
+                // Agar aapka function 'generateBill' ya 'showBill' hai toh wo yahan likhein
+                alert("System print function mil gaya hai magar connect nahi ho raha. Refresh karke check karein.");
+                console.log("Sale Data Found:", saleToPrint);
             }
         }
     } catch (e) {
