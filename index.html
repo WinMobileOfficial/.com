@@ -112,7 +112,8 @@
             <div class="w-80 space-y-4 overflow-y-auto pr-2">
                 <div class="bg-slate-50 p-6 rounded-[2.5rem] border-2 shadow-xl">
                     <input id="cSearchInput" oninput="searchCustomer(this.value)" placeholder="SEARCH CUSTOMER" class="w-full border-2 p-4 rounded-2xl mb-2 font-black outline-none uppercase italic">
-                    <div id="custSearchList" class="hidden absolute w-64 bg-white border-2 rounded-2xl shadow-2xl z-50 max-h-48 overflow-y-auto"></div>
+                     <button onclick="addNewCustomerFromPOS()" class="w-full bg-emerald-600 text-white py-2 rounded-xl font-black text-[10px] uppercase mb-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black">+ Add New Customer</button>
+                      <div id="custSearchList" class="hidden absolute w-64 bg-white border-2 rounded-2xl shadow-2xl z-50 max-h-48 overflow-y-auto"></div>
                     <div class="grid grid-cols-2 gap-2 mb-2">
                         <input id="cName" readonly placeholder="NAME" class="w-full border-2 p-3 rounded-xl bg-slate-100 font-bold uppercase text-[10px]">
                         <input id="cMob" readonly placeholder="PHONE" class="w-full border-2 p-3 rounded-xl bg-slate-100 font-bold text-[10px]">
@@ -831,7 +832,32 @@ async function downloadBookerReport() {
     }
 }
     
+function addNewCustomerFromPOS() {
+    const nameInput = document.getElementById('cSearchInput');
+    const name = nameInput ? nameInput.value : "";
+    
+    if (!name) { 
+        alert("Pehle Search Box mein Naam likhen!"); 
+        return; 
+    }
+    
+    const phone = prompt("Customer '" + name.toUpperCase() + "' ka Mobile Number likhen:");
+    if (!phone) return;
+    
+    const area = prompt("Area/Route likhen (e.g. Model Town):", "GENERAL");
 
+    // Naya data object mein save karna
+    customers[phone] = { 
+        name: name.toUpperCase(), 
+        phone: phone, 
+        balance: 0, 
+        area: area ? area.toUpperCase() : 'GENERAL' 
+    };
+    
+    applySettings(); // Permanently save karne ke liye
+    alert(name.toUpperCase() + " save ho gaya! Ab dobara search karen.");
+}
+    
 init();
 </script>
 </body>
