@@ -472,8 +472,7 @@ async function processBill() {
     document.getElementById('rGrandTotal').innerText = s.grandTotal;
     document.getElementById('rPaid').innerText = s.paid || 0; 
 
-    // AGAR Ledger se print ho raha hai toh Taza Balance (6500), 
-    // WARNA History se ho raha hai toh Bill wala Balance (600)
+    // AGAR Ledger se reprint ho raha hai toh 6500 dikhao, warna purana bill 600
     if (isLedger) {
         document.getElementById('rNetBal').innerText = customers[s.mob]?.balance || s.finalBal;
     } else {
@@ -490,7 +489,6 @@ async function processBill() {
     window.print();
  }
     
-                                                            }
     // --- REMAINING UTILS (KEEPING ORIGINAL LOGIC) ---
 function searchCustomer(q) {
     const list = document.getElementById('custSearchList'); if(!q) { list.classList.add('hidden'); return; }
