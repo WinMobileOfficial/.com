@@ -583,11 +583,9 @@ async function deleteCustomer(phone) {
 }
     async function reprintLastBill(phone) {
     try {
-        // 1. Database se saari sales mangwao (Query simple rakhi hai taake index na maange)
         const snap = await db.collection("sales").get();
         if (snap.empty) return alert("Database khali hai!");
 
-        // 2. Phone matching (Aakhri 7 digits)
         const searchPhone = phone.toString().slice(-7);
         let customerSales = [];
         
@@ -599,42 +597,38 @@ async function deleteCustomer(phone) {
             }
         });
 
-        if (customerSales.length === 0) return alert("Is number (" + phone + ") ka koi bill nahi mila!");
+        if (customerSales.length === 0) return alert("Is customer ka koi bill nahi mila!");
 
-        // 3. Sorting (Latest first)
         customerSales.sort((a, b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
         const s = customerSales[0];
 
-        // 4. PRINT LOGIC (Backup ke saath)
         if (typeof currentSale !== 'undefined') {
             currentSale = s;
-            // Pehle purana tareeka check karo
             if (typeof showPrintModal === "function") {
                 showPrintModal();
-            } else if (typeof printBill === "function") {
-                printBill(s);
             } else {
-                // Agar dono nahi milte toh seedha ye Print Window khol dega (Fail-safe)
-                const pWin = window.open('', '_blank');
-                pWin.document.write(`
-                    <body style="font-family:monospace; padding:20px; width:300px;">
-                        <center><h3>AL-HAFIZ TRADERS</h3></center>
-                        <hr>
-                        <p><b>Bill ID:</b> ${s.id.slice(-5)}<br><b>Name:</b> ${s.customerName}</p>
-                        <table style="width:100%">
-                            ${(s.items || []).map(i => `<tr><td>${i.name} x ${i.qty}</td><td align="right">${i.subtotal}</td></tr>`).join('')}
-                        </table>
-                        <hr><h4 align="right">Total: Rs ${s.grandTotal}</h4>
-                        <script>window.print(); setTimeout(()=>window.close(), 500);</script>
-                    </body>
-                `);
-                pWin.document.close();
+                alert("Bill Mil Gaya!\nCustomer: " + s.customerName + "\nTotal: " + s.grandTotal);
             }
         }
     } catch (e) {
         alert("Error: " + e.message);
     }
+}
+
+// --- UNLOCK FUNCTION (Iska hona zaroori hai web kholne ke liye) ---
+function unlockApp() {
+    const pinInput = document.getElementById('pinInput');
+    const enteredPin = pinInput ? pinInput.value : "";
+    
+    if (enteredPin === settings.pin) {
+        document.getElementById('loginOverlay').classList.add('hidden');
+        localStorage.setItem('alhafiz_auth', 'true');
+    } else {
+        alert("Ghalat PIN!");
     }
+}
+
+// File ka aakhir (End of script)
     
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
