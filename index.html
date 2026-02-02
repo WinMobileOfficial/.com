@@ -525,59 +525,67 @@ async function addExpense() { let n = document.getElementById('expNote').value, 
 function renderExpenses() { document.getElementById('expenseList').innerHTML = expenses.map(e => `<div class="bg-white p-4 rounded-xl border-l-8 border-rose-500 flex justify-between font-black uppercase italic shadow-sm"><span>${e.note}</span><span>Rs ${e.amt}</span></div>`).join(''); }
 function renderCustLedger() {
     const list = document.getElementById('custLedgerList'); 
+    if (!list) return;
     list.innerHTML = "";
     let marketCredit = 0;
     
-    // Search box se jo bhi likha jaye (Naam ya Area)
+    // Search input se value pakro
     const searchTerm = document.getElementById('cLedgerSearch') ? document.getElementById('cLedgerSearch').value.toUpperCase() : "";
 
-    Object.keys(customers).forEach(k => {
-        const c = customers[k];
+    // Customers ka data loop karna
+    Object.keys(customers).forEach(phoneKey => {
+        const c = customers[phoneKey];
+        // Balance ko number mein convert karna taake jamah (sum) ho sakay
         let bal = Number(c.balance) || 0;
         
-        // Check: Kya lafz Naam mein hai YA Area mein?
+        // Search filter: Naam ya Area dono check karega
         const matchesSearch = c.name.toUpperCase().includes(searchTerm) || 
                               (c.area && c.area.toUpperCase().includes(searchTerm));
 
         if (matchesSearch) {
             marketCredit += bal;
             list.innerHTML += `
-                <div class="bg-white p-5 rounded-[2.5rem] border-2 shadow-xl relative mb-4">
-                    <h4 class="font-black italic uppercase text-[14px]">${c.name}</h4>
-                    <p class="text-[9px] font-bold text-indigo-600">${c.phone} | ${c.area || 'GENERAL'}</p>
+                <div class="bg-white p-5 rounded-[2.5rem] border-2 shadow-xl relative mb-4 border-slate-100">
+                    <h4 class="font-black italic uppercase text-[15px]">${c.name}</h4>
+                    <p class="text-[10px] font-bold text-indigo-600">${c.phone} | ${c.area || 'GENERAL'}</p>
                     <h2 class="text-2xl font-black text-rose-600 mt-1">Rs ${bal.toLocaleString()}</h2>
                     
                     <div class="grid grid-cols-2 gap-2 mt-3">
-                        <button onclick="viewCustomerDetails('${k}', '${c.name}')" class="bg-indigo-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">VIEW</button>
+                        <button onclick="viewCustomerDetails('${phoneKey}', '${c.name}')" class="bg-indigo-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">VIEW</button>
                         
-                        <button onclick="window.open('https://wa.me/92${c.phone.slice(-10)}?text=Dear%20${c.name},%20Your%20Pending%20Balance%20is%20Rs%20${bal}.%20Please%20clear%20it.')" class="bg-green-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REMINDER</button>
+                        <button onclick="window.open('https://wa.me/92${c.phone.slice(-10)}?text=Dear%20${c.name},%20Al-Hafiz%20Traders%20ki%20taraf%20se%20aapka%20balance%20Rs%20${bal}%20hai.')" class="bg-green-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REMINDER</button>
                         
-                        <button onclick="reprintLastBill('${k}')" class="bg-slate-800 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REPRINT</button>
+                        <button onclick="reprintLastBill('${phoneKey}')" class="bg-slate-800 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REPRINT</button>
                         
-                        <button onclick="deleteCustomer('${k}')" class="bg-rose-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">DELETE</button>
+                        <button onclick="deleteCustomer('${phoneKey}')" class="bg-rose-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">DELETE</button>
                     </div>
                 </div>`;
         }
     });
-    document.getElementById('totalMarketCredit').innerText = marketCredit.toLocaleString();
+    
+    // Total ko screen par dikhana
+    const totalDisplay = document.getElementById('totalMarketCredit');
+    if (totalDisplay) totalDisplay.innerText = marketCredit.toLocaleString();
 }
 
-// DELETE FUNCTION (Agar pehle se nahi hai toh iske neechay add kar den)
+// DELETE FUNCTION
 async function deleteCustomer(phone) {
     if(confirm("Kia aap waqai is customer ko delete karna chahte hain? Data wapis nahi aayega!")) {
         try {
+            // Firebase (Cloud) se delete
             await db.collection("customers").doc(phone).delete();
+            // Local memory se delete
             delete customers[phone];
             localStorage.setItem('alhafiz_customers', JSON.stringify(customers));
             alert("Customer Delete Ho Gaya!");
-            renderCustLedger();
+            renderCustLedger(); // Screen refresh
         } catch (e) {
-            alert("Error: Server se delete nahi ho saka.");
+            alert("Internet Error! Server se delete nahi ho saka.");
         }
     }
 }
-    
-        // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
+
+    // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let monthlyData = {};
