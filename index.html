@@ -583,50 +583,55 @@ async function deleteCustomer(phone) {
 }
    async function reprintLastBill(phone) {
     try {
-        // Phone number ke aakhri 10 digits pakro taake 0 ya 92 ka masla na ho
-        const shortPhone = phone.slice(-10);
-
-        // Tamam sales mangwao
+        // 1. Database se saari sales mangwao (Chunke data kam hai, ye fast hoga)
         const snap = await db.collection("sales").get();
 
         if (snap.empty) {
-            alert("Database mein koi bhi bill mojud nahi hai!");
+            alert("Database mein abhi tak koi bill save nahi hua!");
             return;
         }
 
-        // Filter: Sirf is customer ki sales nikalna
+        // 2. Phone number ke aakhri 7 digits pakro (Sabse safe tareeka matching ka)
+        const safetyDigits = phone.toString().slice(-7);
+
         let customerSales = [];
         snap.forEach(doc => {
             const data = doc.data();
-            // Agar phone number match kare (chahe 0 se shuru ho ya 92 se)
-            if (data.customerPhone && data.customerPhone.includes(shortPhone)) {
+            const sPhone = (data.customerPhone || "").toString();
+            
+            // Agar bill wala phone number ledger wale number se match kare
+            if (sPhone.includes(safetyDigits)) {
                 customerSales.push(data);
             }
         });
 
         if (customerSales.length === 0) {
-            alert("Is customer ka koi purana bill nahi mila! Baraye meherbani check karein ke kya iska koi bill pehle bana tha?");
+            alert("Is customer ka koi bill nahi mila. Check karein ke kya aapne iska bill banate waqt sahi phone number likha tha?");
             return;
         }
 
-        // Time ke mutabiq sort karke sabse aakhri bill pakro
-        const lastSale = customerSales.sort((a, b) => b.timestamp - a.timestamp)[0];
+        // 3. Sabse aakhri bill dhoondo (Timestamp ke mutabiq)
+        customerSales.sort((a, b) => {
+            const timeA = a.timestamp?.seconds || a.timestamp || 0;
+            const timeB = b.timestamp?.seconds || b.timestamp || 0;
+            return timeB - timeA;
+        });
+
+        const lastSale = customerSales[0];
         
-        // Print Modal kholne ka process
+        // 4. Print Modal kholo
         if (typeof currentSale !== 'undefined') {
             currentSale = lastSale;
             showPrintModal(); 
-        } else if (typeof printBill === "function") {
-            printBill(lastSale);
         } else {
-            alert("Bill mil gaya hai magar print function nahi mil raha.");
+            alert("Bill mil gaya hai magar system print nahi kar pa raha. Refresh karke check karein.");
         }
     } catch (e) {
-        alert("Bill dhoondne mein masla: " + e.message);
+        alert("Reprint Error: " + e.message);
     }
    }
     
-
+    
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
