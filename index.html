@@ -455,37 +455,41 @@ async function processBill() {
     document.getElementById('prevBalVal').innerText = "0"; document.getElementById('prevBalShow').classList.add('hidden');
 }
 
-function printReceipt(s) {
-    document.getElementById('rStoreName').innerText = settings.name;
+ function printReceipt(s, isLedger = false) {
+    document.getElementById('rStoreName').innerText = settings.name; 
     document.getElementById('rStorePhone').innerText = settings.phone;
-    document.getElementById('rDateTime').innerText = s.date + " " + (s.time || "");
-    document.getElementById('rCustDetails').innerText = s.customer + " (" + (s.mob || s.nob) + ")";
-
+    document.getElementById('rDateTime').innerText = s.date + " " + (s.time || ""); 
+    document.getElementById('rCustDetails').innerText = `${s.customer} (${s.mob})`;
+    
     document.getElementById('rItemsList').innerHTML = (s.items || []).map(i => `
         <div style="display:flex; justify-content:space-between; font-size: 11px; text-transform: uppercase; margin-bottom: 2px;">
             <span>${i.name} x${i.qty}</span> 
             <span>${i.subtotal}</span>
         </div>`).join('');
-
+        
     document.getElementById('rItemsTotal').innerText = s.itemsSum || s.grandTotal;
-    document.getElementById('rPrevBal').innerText = s.prevBal || 0;
+    document.getElementById('rPrevBal').innerText = s.prevBal || 0; 
     document.getElementById('rGrandTotal').innerText = s.grandTotal;
-    document.getElementById('rPaid').innerText = s.paid || 0;
+    document.getElementById('rPaid').innerText = s.paid || 0; 
 
-    // Yahan tabdeeli ki hai taake 6500 wala balance Ledger se uthaye
-    let currentBalance = customers[s.mob || s.nob]?.balance || s.finalBal;
-    document.getElementById('rNetBal').innerText = currentBalance;
-
-    if(settings.logo) {
-        document.getElementById('rLogo').src = settings.logo;
-        document.getElementById('rLogo').style.display = "block";
+    // AGAR Ledger se print ho raha hai toh Taza Balance (6500), 
+    // WARNA History se ho raha hai toh Bill wala Balance (600)
+    if (isLedger) {
+        document.getElementById('rNetBal').innerText = customers[s.mob]?.balance || s.finalBal;
     } else {
-        document.getElementById('rLogo').style.display = "none";
+        document.getElementById('rNetBal').innerText = s.finalBal;
     }
 
+    if(settings.logo) { 
+        document.getElementById('rLogo').src = settings.logo; 
+        document.getElementById('rLogo').style.display="block"; 
+    } else {
+        document.getElementById('rLogo').style.display="none"; 
+    }
+    
     window.print();
-        }
-            
+ }
+    
                                                             }
     // --- REMAINING UTILS (KEEPING ORIGINAL LOGIC) ---
 function searchCustomer(q) {
@@ -588,7 +592,6 @@ async function deleteCustomer(phone) {
 }
     async function reprintLastBill(phone) {
     try {
-        // Database se is mobile number ke saare bills mangwao
         const snap = await db.collection("sales")
             .where("mob", "==", phone) 
             .get();
@@ -603,25 +606,20 @@ async function deleteCustomer(phone) {
             results.push({ ...doc.data(), id: doc.id });
         });
 
-        // Latest bill dhoondne ke liye sorting (Naya bill sabse upar)
         results.sort((a, b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
         
         const lastSale = results[0];
         currentSale = lastSale;
 
-        // Print karne ka tareeka (Aapke system ke functions ke mutabiq)
-        if (typeof showPrintModal === "function") {
-            showPrintModal();
-        } else if (typeof printReceipt === "function") {
-            printReceipt(lastSale);
-        } else {
-            alert("Bill Mil Gaya!\nCustomer: " + lastSale.customer + "\nTotal: Rs " + lastSale.grandTotal);
-        }
+        // YAHAN TABDEELI HAI: true likhne se 6500 wala balance ayega
+        printReceipt(lastSale, true); 
+
     } catch (e) {
         console.error("Reprint Error:", e);
-        alert("System Error: Index check karein ya thoda intezar karein.");
+        alert("System Error: Index check karein.");
     }
     }
+    
     
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
