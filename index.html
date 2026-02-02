@@ -583,53 +583,35 @@ async function deleteCustomer(phone) {
 }
     async function reprintLastBill(phone) {
     try {
-        const snap = await db.collection("sales").get();
-        if (snap.empty) return alert("Database khali hai!");
+        // Index banne ke baad ye query 1 second mein bill nikaal legi
+        const snap = await db.collection("sales")
+            .where("customerPhone", "==", phone)
+            .orderBy("timestamp", "desc")
+            .limit(1)
+            .get();
 
-        const searchPhone = phone.toString().slice(-7);
-        let customerSales = [];
+        if (snap.empty) {
+            alert("Is customer ka koi bill nahi mila!");
+            return;
+        }
+
+        const lastSale = snap.docs[0].data();
+        currentSale = lastSale;
         
-        snap.forEach(doc => {
-            const data = doc.data();
-            const dbPhone = (data.customerPhone || "").toString();
-            if (dbPhone.includes(searchPhone)) {
-                customerSales.push({ ...data, id: doc.id });
-            }
-        });
-
-        if (customerSales.length === 0) return alert("Is customer ka koi bill nahi mila!");
-
-        customerSales.sort((a, b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
-        const s = customerSales[0];
-
-        if (typeof currentSale !== 'undefined') {
-            currentSale = s;
-            if (typeof showPrintModal === "function") {
-                showPrintModal();
-            } else {
-                alert("Bill Mil Gaya!\nCustomer: " + s.customerName + "\nTotal: " + s.grandTotal);
-            }
+        // Aapka purana modal function
+        if (typeof showPrintModal === "function") {
+            showPrintModal();
+        } else {
+            alert("Bill mil gaya! Name: " + lastSale.customerName + " | Total: " + lastSale.grandTotal);
         }
     } catch (e) {
-        alert("Error: " + e.message);
+        // Agar index abhi tak process ho raha ho toh ye error dikhayega
+        alert("Index abhi ban raha hai, thodi der baad check karein.");
+        console.log(e);
     }
-}
-
-// --- UNLOCK FUNCTION (Iska hona zaroori hai web kholne ke liye) ---
-function unlockApp() {
-    const pinInput = document.getElementById('pinInput');
-    const enteredPin = pinInput ? pinInput.value : "";
-    
-    if (enteredPin === settings.pin) {
-        document.getElementById('loginOverlay').classList.add('hidden');
-        localStorage.setItem('alhafiz_auth', 'true');
-    } else {
-        alert("Ghalat PIN!");
     }
-}
-
-// File ka aakhir (End of script)
     
+
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
