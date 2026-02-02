@@ -554,14 +554,10 @@ function renderCustLedger(filter = "", areaFilter = "") {
     if (!list) return;
     list.innerHTML = "";
     let marketCredit = 0;
-
     Object.keys(customers).forEach(k => {
         const c = customers[k];
-        // 1. Search Logic
         const matchesSearch = k.includes(filter) || c.name.toLowerCase().includes(filter.toLowerCase());
-        // 2. Area Logic
         const matchesArea = areaFilter === "" || (c.area && c.area.toUpperCase() === areaFilter.toUpperCase());
-
         if (matchesSearch && matchesArea) {
             let bal = Number(c.balance) || 0;
             marketCredit += bal;
@@ -579,10 +575,22 @@ function renderCustLedger(filter = "", areaFilter = "") {
                 </div>`;
         }
     });
-    
     const totalEl = document.getElementById('totalMarketCredit');
     if (totalEl) totalEl.innerText = marketCredit.toLocaleString();
 }
+
+function renderReports() {
+    let stockValue = 0;
+    let cashInHand = 0;
+    let totalProfit = 0;
+    
+    document.getElementById('repStats').innerHTML = `
+        <div class="bg-blue-600 p-8 rounded-3xl"><p class="text-[9px] text-white/80 uppercase font-black mb-1">Stock Value</p><b class="text-2xl text-white">Rs ${stockValue.toLocaleString()}</b></div>
+        <div class="bg-indigo-600 p-8 rounded-3xl"><p class="text-[9px] text-white/80 uppercase font-black mb-1">Cash in Hand</p><b class="text-2xl text-white">Rs ${cashInHand.toLocaleString()}</b></div>
+        <div class="bg-emerald-600 p-8 rounded-3xl"><p class="text-[9px] text-white/80 uppercase font-black mb-1">Total Profit</p><b class="text-2xl text-white">Rs ${totalProfit.toLocaleString()}</b></div>
+    `;
+}
+    
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
