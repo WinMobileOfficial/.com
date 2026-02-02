@@ -584,10 +584,7 @@ async function deleteCustomer(phone) {
       async function reprintLastBill(phone) {
     try {
         const snap = await db.collection("sales").get();
-        if (snap.empty) {
-            alert("Database mein koi bill nahi mila.");
-            return;
-        }
+        if (snap.empty) { return alert("Koi bill nahi mila."); }
 
         let allSales = [];
         snap.forEach(doc => {
@@ -598,57 +595,43 @@ async function deleteCustomer(phone) {
 
         allSales.sort((a, b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
 
-        const cName = customers[phone]?.name?.toUpperCase() || "";
+        const cName = (customers[phone]?.name || "").toUpperCase();
         const sPhone = phone.toString().slice(-7);
 
-        const matched = allSales.filter(s => 
-            (s.customerName && s.customerName.toUpperCase().includes(cName)) || 
-            (s.customerPhone && s.customerPhone.toString().includes(sPhone))
+        let s = allSales.find(sale => 
+            (sale.customerName && sale.customerName.toUpperCase().includes(cName)) || 
+            (sale.customerPhone && sale.customerPhone.toString().includes(sPhone))
         );
 
-        let s = matched.length > 0 ? matched[0] : null;
-
         if (!s) {
-            const last5 = allSales.slice(0, 5);
-            let msg = "Exact bill nahi mila. Aakhri bills:\n";
-            last5.forEach((b, i) => msg += `${i + 1}: ${b.customerName} - Rs ${b.grandTotal}\n`);
-            const choice = prompt(msg + "\nKaunsa print karna hai? (1-5)");
-            if (choice && last5[choice - 1]) s = last5[choice - 1];
+            alert("Is customer ka exact bill nahi mila. Aakhri save hua bill khul raha hai.");
+            s = allSales[0];
         }
 
-        if (s) {
-            // --- Naya Direct Print Logic (Kisi aur function ki zaroorat nahi) ---
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <html>
-                <head><title>AL-HAFIZ TRADERS - BILL</title></head>
-                <body style="font-family: monospace; padding: 20px; width: 300px;">
-                    <h3 style="text-align:center;">AL-HAFIZ TRADERS</h3>
-                    <p>Date: ${s.date || 'N/A'}<br>Bill #: ${s.id.slice(-5)}</p>
-                    <hr>
-                    <p>Cust: ${s.customerName}<br>Phone: ${s.customerPhone}</p>
-                    <hr>
-                    <table style="width:100%">
-                        ${(s.items || []).map(i => `
-                            <tr>
-                                <td>${i.name} x ${i.qty}</td>
-                                <td style="text-align:right;">${i.subtotal}</td>
-                            </tr>`).join('')}
-                    </table>
-                    <hr>
-                    <h4 style="text-align:right;">TOTAL: Rs ${s.grandTotal}</h4>
-                    <p style="text-align:center;">--- Shukriya ---</p>
-                    <script>window.print(); setTimeout(() => window.close(), 500);</script>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
+        if (s && typeof currentSale !== 'undefined') {
+            currentSale = s;
+            if (typeof showPrintModal === "function") {
+                showPrintModal();
+            } else {
+                alert("Bill mil gaya! Name: " + s.customerName + " Total: " + s.grandTotal);
+            }
         }
     } catch (e) {
         alert("System Error: " + e.message);
     }
 }
 
+// Ye function lazmi check karein ke neechay mojud ho
+function unlockApp() {
+    const enteredPin = document.getElementById('pinInput').value;
+    if (enteredPin === settings.pin) {
+        document.getElementById('loginOverlay').classList.add('hidden');
+        localStorage.setItem('alhafiz_auth', 'true');
+    } else {
+        alert("Ghalat PIN!");
+    }
+}
+    
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
