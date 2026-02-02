@@ -583,31 +583,46 @@ async function deleteCustomer(phone) {
 }
    async function reprintLastBill(phone) {
     try {
-        // Index ke baghair dhoondne ka tareeka
-        const snap = await db.collection("sales")
-            .where("customerPhone", "==", phone)
-            .get();
+        // Phone number ke aakhri 10 digits pakro taake 0 ya 92 ka masla na ho
+        const shortPhone = phone.slice(-10);
+
+        // Tamam sales mangwao
+        const snap = await db.collection("sales").get();
 
         if (snap.empty) {
-            alert("Is customer ka koi purana bill nahi mila!");
+            alert("Database mein koi bhi bill mojud nahi hai!");
             return;
         }
 
-        // Saari sales mein se aakhri sale nikalna (Local logic)
-        let allSales = [];
-        snap.forEach(doc => allSales.push(doc.data()));
-        
+        // Filter: Sirf is customer ki sales nikalna
+        let customerSales = [];
+        snap.forEach(doc => {
+            const data = doc.data();
+            // Agar phone number match kare (chahe 0 se shuru ho ya 92 se)
+            if (data.customerPhone && data.customerPhone.includes(shortPhone)) {
+                customerSales.push(data);
+            }
+        });
+
+        if (customerSales.length === 0) {
+            alert("Is customer ka koi purana bill nahi mila! Baraye meherbani check karein ke kya iska koi bill pehle bana tha?");
+            return;
+        }
+
         // Time ke mutabiq sort karke sabse aakhri bill pakro
-        const lastSale = allSales.sort((a, b) => b.timestamp - a.timestamp)[0];
+        const lastSale = customerSales.sort((a, b) => b.timestamp - a.timestamp)[0];
         
+        // Print Modal kholne ka process
         if (typeof currentSale !== 'undefined') {
             currentSale = lastSale;
             showPrintModal(); 
-        } else {
+        } else if (typeof printBill === "function") {
             printBill(lastSale);
+        } else {
+            alert("Bill mil gaya hai magar print function nahi mil raha.");
         }
     } catch (e) {
-        alert("Bill Reprint Error: " + e.message);
+        alert("Bill dhoondne mein masla: " + e.message);
     }
    }
     
