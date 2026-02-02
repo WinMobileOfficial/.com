@@ -581,9 +581,9 @@ async function deleteCustomer(phone) {
         }
     }
 }
-      async function reprintLastBill(phone) {
+    async function reprintLastBill(phone) {
     try {
-        // 1. Database se saari sales mangwao (Query simple rakhi hai taake index na maange)
+        // 1. Database se saari sales mangwao (Simple query, no index needed)
         const snap = await db.collection("sales").get();
         
         if (snap.empty) {
@@ -591,22 +591,22 @@ async function deleteCustomer(phone) {
             return;
         }
 
-        // 2. Phone number ke aakhri 10 digits lo (0 ya 92 ke farq ko khatam karne ke liye)
-        const searchPhone = phone.toString().slice(-10);
+        // 2. Phone number ke aakhri 7 digits lo (Sabse zyada kamyab tareeka)
+        const safetyDigits = phone.toString().slice(-7);
 
         let customerSales = [];
         snap.forEach(doc => {
             const data = doc.data();
             const dbPhone = (data.customerPhone || "").toString();
             
-            // Agar database ka number search number se match kare
-            if (dbPhone.includes(searchPhone)) {
+            // Agar database ke number mein ye digits kahin bhi hain
+            if (dbPhone.includes(safetyDigits)) {
                 customerSales.push({ ...data, id: doc.id });
             }
         });
 
         if (customerSales.length === 0) {
-            alert("Is customer (" + phone + ") ka koi bill nahi mila. Check karein ke sales history mein ye number mojud hai?");
+            alert("Customer (" + phone + ") ka bill nahi mila. Check karein ke kya Sales History mein ye number hai?");
             return;
         }
 
@@ -619,25 +619,22 @@ async function deleteCustomer(phone) {
 
         const lastSale = customerSales[0];
 
-        // 4. Print Modal kholne ka process
+        // 4. Print karne ka process
         if (typeof currentSale !== 'undefined') {
             currentSale = lastSale;
             
-            // Agar modal function kaam nahi kar raha toh ye backup check karein
+            // Agar aapke system mein print modal hai toh wo khulega
             if (typeof showPrintModal === "function") {
                 showPrintModal();
-            } else if (typeof printBill === "function") {
-                printBill(lastSale);
             } else {
-                alert("Bill mil gaya! Name: " + lastSale.customerName + " | Total: " + lastSale.grandTotal);
+                // Agar modal nahi milta toh ye detail dikha dega
+                alert("Bill Mil Gaya!\nCustomer: " + lastSale.customerName + "\nTotal: " + lastSale.grandTotal);
             }
         }
     } catch (e) {
         alert("System Error: " + e.message);
     }
-      }
-    
-    
+    }
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
 function renderReports() {
