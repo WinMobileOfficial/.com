@@ -658,7 +658,7 @@ function renderReports(filterType = 'all') {
 
     const now = new Date();
     
-    // Sales Filter Logic (Daily, Weekly, Monthly)
+    // Filter logic for Daily, Weekly, Monthly
     const filteredSales = sales.filter(s => {
         const sDate = new Date(s.timestamp?.seconds * 1000 || s.date);
         if (filterType === 'daily') {
@@ -670,10 +670,15 @@ function renderReports(filterType = 'all') {
         } else if (filterType === 'monthly') {
             return sDate.getMonth() === now.getMonth() && sDate.getFullYear() === now.getFullYear();
         }
-        return true; // 'all' ke liye
+        return true; 
     });
 
-    // Calculations based on filtered data
+    // Stock calculation (hamesha total hi dikhayega)
+    prods.forEach(p => {
+        stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice) || 0);
+    });
+
+    // Filtered sales and profit calculation
     filteredSales.forEach(s => {
         let val = Number(s.total) || 0;
         let profit = Number(s.profit) || 0;
@@ -691,26 +696,41 @@ function renderReports(filterType = 'all') {
         }
     });
 
-    // Dashboard Update
-    document.getElementById('totalSalesVal').innerText = sSum.toLocaleString();
-    document.getElementById('netProfitVal').innerText = (totalProfit - eSum).toLocaleString();
-    // Stock asset hamesha total hi rahega
-    prods.forEach(p => { stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice) || 0); });
-    document.getElementById('stockAssetVal').innerText = stockAsset.toLocaleString();
+    // Expenses calculation
+    expenses.forEach(e => {
+        eSum += Number(e.amount) || 0;
+    });
+
+    // Dashboard update with safe checks
+    const sD = document.getElementById('totalSalesVal');
+    const eD = document.getElementById('totalExpensesVal');
+    const pD = document.getElementById('netProfitVal');
+    const stD = document.getElementById('stockAssetVal');
+
+    if (sD) sD.innerText = sSum.toLocaleString();
+    if (eD) eD.innerText = eSum.toLocaleString();
+    if (pD) pD.innerText = (totalProfit - eSum).toLocaleString();
+    if (stD) stD.innerText = stockAsset.toLocaleString();
 }
 
-// Monthly Excel Download (Is mein bhi filter logic hai)
+// Monthly Excel Report Fix (Values zero nahi aayengi)
 function downloadMonthlyReport() {
-    let csv = "Date,Customer,Mobile,Items,Sale Value,Profit,Received\n";
+    let csv = "Date,Customer,Mobile,Items,Sale Value,Profit,Received,Status\n";
     sales.forEach(s => {
         let itemsList = (s.items || []).map(i => i.name + "(" + i.qty + ")").join(" | ");
-        csv += `"${s.date}","${s.customer}","${s.mob}","${itemsList}","${s.total || 0}","${s.profit || 0}","${s.paid || 0}"\n`;
+        let saleVal = s.total || 0;
+        let profitVal = s.profit || 0;
+        let paidVal = s.paid || 0;
+        let status = s.status || "COMPLETED";
+        csv += `"${s.date}","${s.customer}","${s.mob}","${itemsList}","${saleVal}","${profitVal}","${paidVal}","${status}"\n`;
     });
     let blob = new Blob([csv], { type: 'text/csv' });
     let a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = "Sales_Report.csv";
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
 }
     
                                 
