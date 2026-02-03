@@ -649,6 +649,9 @@ async function reprintLastBill(phone) {
   }
     
     // --- COMPLETE MASTER REPORTS FUNCTION ---
+    db.collection("sales").onSnapshot(() => { if(typeof renderReports === 'function') renderReports(); });
+db.collection("products").onSnapshot(() => { if(typeof renderReports === 'function') renderReports(); });
+    
 function renderReports(filterType = 'all') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let dailyItems = {};
