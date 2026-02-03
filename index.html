@@ -651,36 +651,69 @@ async function reprintLastBill(phone) {
     
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
-function renderReports() {
+function renderReports(filterType = 'all') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
-    let monthlyData = {};
-    let dailyItems = {}; // Today's item tracking
-    const today = new Date().toLocaleDateString();
+    const reportBody = document.getElementById('reportTableBody');
+    if (reportBody) reportBody.innerHTML = "";
 
-    const completed = sales.filter(s => s.status === "COMPLETED");
-    prods.forEach(p => stockAsset += (Number(p.cost) || 0) * (Number(p.stock) || 0));
-
-    completed.forEach(s => {
-        let m = s.date.split('/')[0] + '/' + s.date.split('/')[2];
-        if(!monthlyData[m]) monthlyData[m] = { sales: 0, exp: 0, profit: 0 };
-        
-        sSum += Number(s.itemsSum || s.grandTotal);
-        monthlyData[m].sales += Number(s.itemsSum || s.grandTotal);
-
-        if(s.items) s.items.forEach(i => {
-            let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase());
-            let pAmt = (Number(i.price) - (p ? Number(p.cost) : Number(i.price))) * i.qty;
-            totalProfit += pAmt; 
-            monthlyData[m].profit += pAmt;
-
-            // Track item sale if date is today
-            if(s.date === today) {
-                if(!dailyItems[i.name]) dailyItems[i.name] = { qty: 0, total: 0 };
-                dailyItems[i.name].qty += Number(i.qty);
-                dailyItems[i.name].total += Number(i.subtotal);
-            }
-        });
+    const now = new Date();
+    
+    // Sales Filter Logic (Daily, Weekly, Monthly)
+    const filteredSales = sales.filter(s => {
+        const sDate = new Date(s.timestamp?.seconds * 1000 || s.date);
+        if (filterType === 'daily') {
+            return sDate.toDateString() === now.toDateString();
+        } else if (filterType === 'weekly') {
+            const weekAgo = new Date();
+            weekAgo.setDate(now.getDate() - 7);
+            return sDate >= weekAgo;
+        } else if (filterType === 'monthly') {
+            return sDate.getMonth() === now.getMonth() && sDate.getFullYear() === now.getFullYear();
+        }
+        return true; // 'all' ke liye
     });
+
+    // Calculations based on filtered data
+    filteredSales.forEach(s => {
+        let val = Number(s.total) || 0;
+        let profit = Number(s.profit) || 0;
+        sSum += val;
+        totalProfit += profit;
+
+        if (reportBody) {
+            reportBody.innerHTML += `
+                <tr class="border-b text-[10px] font-bold uppercase">
+                    <td class="p-2">${s.date}</td>
+                    <td class="p-2">${s.customer}</td>
+                    <td class="p-2 text-blue-600">${val.toLocaleString()}</td>
+                    <td class="p-2 text-emerald-600">${profit.toLocaleString()}</td>
+                </tr>`;
+        }
+    });
+
+    // Dashboard Update
+    document.getElementById('totalSalesVal').innerText = sSum.toLocaleString();
+    document.getElementById('netProfitVal').innerText = (totalProfit - eSum).toLocaleString();
+    // Stock asset hamesha total hi rahega
+    prods.forEach(p => { stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice) || 0); });
+    document.getElementById('stockAssetVal').innerText = stockAsset.toLocaleString();
+}
+
+// Monthly Excel Download (Is mein bhi filter logic hai)
+function downloadMonthlyReport() {
+    let csv = "Date,Customer,Mobile,Items,Sale Value,Profit,Received\n";
+    sales.forEach(s => {
+        let itemsList = (s.items || []).map(i => i.name + "(" + i.qty + ")").join(" | ");
+        csv += `"${s.date}","${s.customer}","${s.mob}","${itemsList}","${s.total || 0}","${s.profit || 0}","${s.paid || 0}"\n`;
+    });
+    let blob = new Blob([csv], { type: 'text/csv' });
+    let a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = "Sales_Report.csv";
+    a.click();
+}
+    
+                                
     // Populate the Today's Item-wise Table
     const dailyBody = document.getElementById('dailyItemSalesBody');
     if(Object.keys(dailyItems).length > 0) {
