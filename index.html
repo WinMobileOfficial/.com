@@ -560,9 +560,9 @@ function renderCustLedger() {
                     <h2 class="text-2xl font-black text-rose-600 mt-1">Rs ${bal.toLocaleString()}</h2>
                     
                     <div class="grid grid-cols-2 gap-2 mt-3">
-                        <button onclick="viewCustomerDetails('${phoneKey}', '${c.name}')" class="bg-indigo-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">VIEW</button>
-                        <button onclick="window.open('https://wa.me/92${phoneKey.slice(-10)}?text=Dear%20${c.name},%20Balance:%20Rs%20${bal}')" class="bg-green-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REMINDER</button>
-                        <button onclick="reprintLastBill('${phoneKey}')" class="bg-slate-800 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REPRINT</button>
+                        <button onclick="viewCustomerDetails('${phoneKey}', '${c.name}')" class="bg-blue-600 text-white p-2 rounded-xl text-xs">VIEW</button>
+                        <button onclick="window.open('https://wa.me/92${phoneKey.slice(-10)}?text=Dear%20${c.name},%20Your%20Balance%20at%20${encodeURIComponent(settings.name)}%20is:%20Rs%20${bal}')" class="bg-indigo-600 text-white p-2 rounded-xl text-xs">REMINDER</button>
+                          <button onclick="reprintLastBill('${phoneKey}')" class="bg-slate-800 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REPRINT</button>
                         <button onclick="deleteCustomer('${phoneKey}')" class="bg-rose-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">DELETE</button>
                     </div>
                 </div>`;
@@ -624,6 +624,43 @@ async function deleteCustomer(phone) {
 }
 
 
+    // 1. Excel Download Function
+function downloadExcel() {
+    const table = document.getElementById("modalHistoryList");
+    let csv = "Date,Description,Amount,Balance\n";
+    
+    table.querySelectorAll('.flex').forEach(row => {
+        const cols = row.querySelectorAll('span');
+        if(cols.length >= 3) {
+            csv += `"${cols[0].innerText}","${cols[1].innerText}","${cols[2].innerText}","${cols[3]?.innerText || ''}"\n`;
+        }
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'Statement.csv');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+// 2. Sahi Print Function (Khali page fix)
+function printFullStatement() {
+    const content = document.getElementById("modalHistoryList").innerHTML;
+    const name = document.querySelector("#detailModal h3").innerText;
+    const bal = document.querySelector("#detailModal h2").innerText;
+    
+    const win = window.open('', '', 'height=700,width=900');
+    win.document.write(`<html><head><title>Statement</title><style>body{font-family:sans-serif;padding:20px;} .row{display:flex;justify-content:space-between;padding:5px;border-bottom:1px solid #eee;}</style></head><body>`);
+    win.document.write(`<h1>${settings.name}</h1><h3>Customer: ${name}</h3><h4>Total Balance: ${bal}</h4><hr>`);
+    win.document.write(content);
+    win.document.write(`</body></html>`);
+    win.document.close();
+    win.print();
+}
     
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
