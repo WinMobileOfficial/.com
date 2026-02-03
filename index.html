@@ -567,19 +567,20 @@ function renderCustLedger() {
 
 async function viewCustomerDetails(phone, name) {
     const list = document.getElementById('modalHistoryList');
-    list.innerHTML = '<p class="text-center p-4 text-xs font-bold italic">Loading Statement...</p>';
+    list.innerHTML = '<p class="text-center p-4 text-xs font-bold italic text-slate-500">Loading Statement...</p>';
     document.getElementById('modalCustName').innerText = name;
     document.getElementById('modalCurrentBal').innerText = "Rs " + (customers[phone]?.balance || 0).toLocaleString();
 
     const snap = await db.collection("ledger").where("mob", "==", phone).orderBy("timestamp", "desc").limit(50).get();
     let historyHTML = "";
+    
     snap.forEach(doc => {
         const d = doc.data();
         historyHTML += `
             <div class="flex justify-between items-center p-3 border-b border-slate-100 text-xs font-bold uppercase">
-                <div class="flex flex-col">
-                    <span class="text-[10px] text-slate-500">${d.date}</span>
-                    <span>${d.desc}</span>
+                <div class="flex flex-col text-left">
+                    <span class="text-[9px] text-slate-500">${d.date}</span>
+                    <span class="text-[10px]">${d.desc}</span>
                 </div>
                 <div class="flex flex-col items-end">
                     <span class="${d.type === 'debit' ? 'text-rose-600' : 'text-emerald-600'}">${d.type === 'debit' ? '+' : '-'}${d.amount}</span>
@@ -588,26 +589,27 @@ async function viewCustomerDetails(phone, name) {
             </div>`;
     });
     
-    // Yahan buttons add ho gaye hain
     list.innerHTML = historyHTML + `
         <div class="grid grid-cols-2 gap-2 mt-4 p-2 border-t-2 border-slate-100">
-            <button onclick="downloadExcel()" class="bg-emerald-600 text-white p-3 rounded-xl font-black uppercase text-[10px] shadow-md">Excel</button>
-            <button onclick="printFullStatement()" class="bg-slate-900 text-white p-3 rounded-xl font-black uppercase text-[10px] shadow-md">Print</button>
+            <button onclick="downloadExcel()" class="bg-emerald-600 text-white p-3 rounded-xl font-black uppercase text-[10px] shadow-md flex items-center justify-center gap-1">Excel</button>
+            <button onclick="printFullStatement()" class="bg-slate-900 text-white p-3 rounded-xl font-black uppercase text-[10px] shadow-md flex items-center justify-center gap-1">Print</button>
         </div>`;
     document.getElementById('detailModal').classList.remove('hidden');
 }
 
 function downloadExcel() {
     let name = document.querySelector("#detailModal h3").innerText;
-    let csv = "Date,Details,Amount,Balance\\n";
+    let csv = "Date,Details,Amount,Balance\n";
     document.querySelectorAll("#modalHistoryList > div").forEach(row => {
         let spans = row.querySelectorAll('span');
-        if(spans.length >= 3) csv += \`"\${spans[0].innerText}","\${spans[1].innerText}","\${spans[2].innerText}","\${spans[3]?.innerText || ''}"\\n\`;
+        if(spans.length >= 3) {
+            csv += `"${spans[0].innerText}","${spans[1].innerText}","${spans[2].innerText}","${spans[3]?.innerText || ''}"\n`;
+        }
     });
     let blob = new Blob([csv], { type: 'text/csv' });
     let a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = \`\${name}_Statement.csv\`;
+    a.download = `${name}_Statement.csv`;
     a.click();
 }
 
@@ -616,7 +618,7 @@ function printFullStatement() {
     let bal = document.querySelector("#detailModal h2").innerText;
     let content = document.getElementById("modalHistoryList").innerHTML;
     let win = window.open('', '', 'height=700,width=900');
-    win.document.write(\`<html><head><style>body{font-family:sans-serif;padding:20px;text-transform:uppercase;} .header{text-align:center;border-bottom:2px solid #000;margin-bottom:20px;} .flex{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;font-size:11px;font-weight:bold;} .text-rose-600{color:#e11d48;} .text-emerald-600{color:#059669;} .text-blue-600{color:#2563eb;}</style></head><body><div class="header"><h1>\${settings.name}</h1><h3>CUSTOMER: \${name}</h3><h4>BALANCE: \${bal}</h4></div>\${content}</body></html>\`);
+    win.document.write('<html><head><title>Statement</title><style>body{font-family:sans-serif;padding:20px;text-transform:uppercase;} .header{text-align:center;border-bottom:2px solid #000;margin-bottom:20px;} .flex{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;font-size:11px;font-weight:bold;} .text-rose-600{color:#e11d48;} .text-emerald-600{color:#059669;} .text-blue-600{color:#2563eb;}</style></head><body><div class="header"><h1>' + settings.name + '</h1><h3>CUSTOMER: ' + name + '</h3><h4>BALANCE: ' + bal + '</h4></div>' + content + '</body></html>');
     win.document.close();
     win.print();
 }
@@ -640,11 +642,11 @@ async function reprintLastBill(phone) {
         let results = [];
         snap.forEach(doc => results.push({ ...doc.data(), id: doc.id }));
         results.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-        if (typeof printReceipt === "function") printReceipt(results[0]);
+        let lastSale = results[0];
+        lastSale.finalBal = customers[phone]?.balance || lastSale.finalBal;
+        if (typeof printReceipt === "function") printReceipt(lastSale);
     } catch (e) { alert("Reprint error."); }
 }
-
-
     
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
