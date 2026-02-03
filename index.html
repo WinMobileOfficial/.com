@@ -648,57 +648,125 @@ async function reprintLastBill(phone) {
     } catch (e) { alert("Reprint error."); }
   }
     
-    
-    
-    // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
-// --- UPDATED RENDER REPORTS WITH DAILY/WEEKLY/MONTHLY FILTERS ---
+    // --- COMPLETE MASTER REPORTS FUNCTION ---
 function renderReports(filterType = 'all') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
+    let dailyItems = {};
+    let monthlyData = {};
     const reportBody = document.getElementById('reportTableBody');
     if (reportBody) reportBody.innerHTML = "";
 
     const now = new Date();
-    
-    const filteredSales = sales.filter(s => {
-        const sDate = new Date(s.timestamp?.seconds * 1000 || s.date);
-        if (filterType === 'daily') return sDate.toDateString() === now.toDateString();
-        if (filterType === 'weekly') {
-            const weekAgo = new Date();
-            weekAgo.setDate(now.getDate() - 7);
-            return sDate >= weekAgo;
+    const todayStr = now.toLocaleDateString();
+
+    // 1. Sales & Daily Items Logic
+    sales.forEach(s => {
+        const sDateObj = new Date(s.timestamp?.seconds * 1000 || s.date);
+        const sMonth = s.date.split('/')[1] + '/' + s.date.split('/')[2]; 
+
+        if(!monthlyData[sMonth]) monthlyData[sMonth] = { sales: 0, exp: 0, profit: 0 };
+        monthlyData[sMonth].sales += Number(s.total) || 0;
+        monthlyData[sMonth].profit += Number(s.profit) || 0;
+
+        if(s.date === todayStr && s.items) {
+            s.items.forEach(item => {
+                if(!dailyItems[item.name]) dailyItems[item.name] = { qty: 0, total: 0 };
+                dailyItems[item.name].qty += Number(item.qty);
+                dailyItems[item.name].total += Number(item.price) * Number(item.qty);
+            });
         }
-        if (filterType === 'monthly') return sDate.getMonth() === now.getMonth() && sDate.getFullYear() === now.getFullYear();
-        return true; 
+
+        let isVisible = true;
+        if (filterType === 'daily') isVisible = (s.date === todayStr);
+        else if (filterType === 'weekly') {
+            const weekAgo = new Date(); weekAgo.setDate(now.getDate() - 7);
+            isVisible = (sDateObj >= weekAgo);
+        } else if (filterType === 'monthly') {
+            isVisible = (sDateObj.getMonth() === now.getMonth() && sDateObj.getFullYear() === now.getFullYear());
+        }
+
+        if(isVisible) {
+            let val = Number(s.total) || 0;
+            let profit = Number(s.profit) || 0;
+            sSum += val;
+            totalProfit += profit;
+            if (reportBody) {
+                reportBody.innerHTML += `
+                    <tr class="border-b text-[10px] font-bold uppercase">
+                        <td class="p-2">${s.date}</td>
+                        <td class="p-2">${s.customer}</td>
+                        <td class="p-2 text-blue-600">${val.toLocaleString()}</td>
+                        <td class="p-2 text-emerald-600">${profit.toLocaleString()}</td>
+                    </tr>`;
+            }
+        }
+    });
+
+    // 2. Expenses & Stock
+    expenses.forEach(e => {
+        let amt = Number(e.amount) || 0;
+        eSum += amt;
+        let eMonth = e.date.split('/')[1] + '/' + e.date.split('/')[2];
+        if(monthlyData[eMonth]) monthlyData[eMonth].exp += amt;
     });
 
     prods.forEach(p => {
         stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice) || 0);
     });
 
-    filteredSales.forEach(s => {
-        let val = Number(s.total) || 0;
-        let profit = Number(s.profit) || 0;
-        sSum += val;
-        totalProfit += profit;
-        if (reportBody) {
-            reportBody.innerHTML += `
-                <tr class="border-b text-[10px] font-bold uppercase">
-                    <td class="p-2">${s.date}</td>
-                    <td class="p-2">${s.customer}</td>
-                    <td class="p-2 text-blue-600">${val.toLocaleString()}</td>
-                    <td class="p-2 text-emerald-600">${profit.toLocaleString()}</td>
-                </tr>`;
-        }
-    });
+    // 3. UI Updates (Stats Boxes)
+    const statsDiv = document.getElementById('repStats');
+    if(statsDiv) {
+        statsDiv.innerHTML = `
+            <div class="bg-blue-600 p-6 rounded-3xl text-white shadow-lg text-center">
+                <p class="text-[9px] uppercase opacity-80">Stock Asset</p>
+                <span class="text-2xl font-black italic">Rs ${stockAsset.toLocaleString()}</span>
+            </div>
+            <div class="bg-indigo-600 p-6 rounded-3xl text-white shadow-lg text-center">
+                <p class="text-[9px] uppercase opacity-80">Zakat (2.5%)</p>
+                <span class="text-2xl font-black italic">Rs ${(stockAsset * 0.025).toLocaleString()}</span>
+            </div>
+            <div class="bg-emerald-600 p-6 rounded-3xl text-white shadow-lg text-center">
+                <p class="text-[9px] uppercase opacity-80">Net Profit</p>
+                <span class="text-2xl font-black italic">Rs ${(totalProfit - eSum).toLocaleString()}</span>
+            </div>
+        `;
+    }
 
-    expenses.forEach(e => { eSum += Number(e.amount) || 0; });
+    // 4. Daily Item Table
+    const dailyBody = document.getElementById('dailyItemSalesBody');
+    if(dailyBody) {
+        dailyBody.innerHTML = Object.keys(dailyItems).length > 0 ? 
+            Object.keys(dailyItems).map(name => `
+                <tr class="border-b text-[11px] font-bold uppercase">
+                    <td class="p-3">${name}</td>
+                    <td class="p-3 text-center text-blue-600">${dailyItems[name].qty}</td>
+                    <td class="p-3 text-right">Rs ${dailyItems[name].total.toLocaleString()}</td>
+                </tr>`).join('') : 
+            '<tr><td colspan="3" class="p-10 text-center italic opacity-30 font-black">No items sold today</td></tr>';
+    }
 
-    if (document.getElementById('totalSalesVal')) document.getElementById('totalSalesVal').innerText = sSum.toLocaleString();
-    if (document.getElementById('totalExpensesVal')) document.getElementById('totalExpensesVal').innerText = eSum.toLocaleString();
-    if (document.getElementById('netProfitVal')) document.getElementById('netProfitVal').innerText = (totalProfit - eSum).toLocaleString();
-    if (document.getElementById('stockAssetVal')) document.getElementById('stockAssetVal').innerText = stockAsset.toLocaleString();
+    // 5. Monthly Summary
+    const monthlyDiv = document.getElementById('monthlySummary');
+    if(monthlyDiv) {
+        monthlyDiv.innerHTML = Object.keys(monthlyData).map(m => `
+            <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl mb-2 border border-slate-100">
+                <span class="font-black uppercase italic text-xs">${m}</span>
+                <div class="text-right">
+                    <p class="text-[9px] opacity-60 font-bold">SALES: Rs ${monthlyData[m].sales.toLocaleString()}</p>
+                    <p class="text-emerald-600 font-black text-xs">PROFIT: Rs ${(monthlyData[m].profit - monthlyData[m].exp).toLocaleString()}</p>
+                </div>
+            </div>`).join('');
+    }
+
+    // Dash update
+    if(document.getElementById('totalSalesVal')) document.getElementById('totalSalesVal').innerText = sSum.toLocaleString();
+    if(document.getElementById('totalExpensesVal')) document.getElementById('totalExpensesVal').innerText = eSum.toLocaleString();
+    if(document.getElementById('netProfitVal')) document.getElementById('netProfitVal').innerText = (totalProfit - eSum).toLocaleString();
+    if(document.getElementById('stockAssetVal')) document.getElementById('stockAssetVal').innerText = stockAsset.toLocaleString();
 }
 
+// Fixed Excel Download
 function downloadMonthlyReport() {
     let csv = "Date,Customer,Mobile,Items,Sale Value,Profit,Received,Status\n";
     sales.forEach(s => {
@@ -711,76 +779,9 @@ function downloadMonthlyReport() {
     a.download = "Sales_Report.csv";
     a.click();
 }
-
-function updateStats() {
-    const today = new Date().toLocaleDateString();
-    let profit = 0, todayExp = 0;
     
-    sales.filter(s => s.status === "COMPLETED" && s.date === today).forEach(s => {
-        if (s.items) {
-            s.items.forEach(i => {
-                let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase());
-                profit += (Number(i.price) - (p ? Number(p.buyPrice) : Number(i.price))) * i.qty;
-            });
-        }
-    });
-
-    expenses.filter(e => e.date === today).forEach(e => { todayExp += Number(e.amount) || 0; });
-
-    const dashBody = document.getElementById('repStats');
-    if (dashBody) {
-        dashBody.innerHTML = `
-            <div class="bg-blue-600 p-4 rounded-3xl text-white shadow-lg">
-                <p class="text-[10px] uppercase font-bold opacity-80">Today Sales</p>
-                <h2 class="text-xl font-black">Rs ${profit.toLocaleString()}</h2>
-            </div>
-            <div class="bg-rose-600 p-4 rounded-3xl text-white shadow-lg">
-                <p class="text-[10px] uppercase font-bold opacity-80">Today Exp</p>
-                <h2 class="text-xl font-black">Rs ${todayExp.toLocaleString()}</h2>
-            </div>
-        `;
-    }
-}
     
-                                
-    // Populate the Today's Item-wise Table
-    const dailyBody = document.getElementById('dailyItemSalesBody');
-    if(Object.keys(dailyItems).length > 0) {
-        dailyBody.innerHTML = Object.keys(dailyItems).map(name => `
-            <tr>
-                <td class="p-3">${name}</td>
-                <td class="p-3 text-center text-blue-600 font-black">${dailyItems[name].qty}</td>
-                <td class="p-3 text-right font-black">Rs ${dailyItems[name].total.toLocaleString()}</td>
-            </tr>
-        `).join('');
-    } else {
-        dailyBody.innerHTML = `<tr><td colspan="3" class="p-10 text-center italic opacity-30 uppercase font-black">No items sold today</td></tr>`;
-    }
 
-    expenses.forEach(e => {
-        let m = e.date.split('/')[0] + '/' + e.date.split('/')[2];
-        if(!monthlyData[m]) monthlyData[m] = { sales: 0, exp: 0, profit: 0 };
-        eSum += Number(e.amt); 
-        monthlyData[m].exp += Number(e.amt);
-    });
-
-    document.getElementById('repStats').innerHTML = `
-        <div class="bg-blue-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Stock Asset</p><span class="text-3xl font-black italic">Rs ${stockAsset.toLocaleString()}</span></div>
-        <div class="bg-indigo-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Zakat (2.5%)</p><span class="text-3xl font-black italic">Rs ${(stockAsset * 0.025).toLocaleString()}</span></div>
-        <div class="bg-emerald-600 p-8 rounded-3xl"><p class="text-[9px] uppercase opacity-80">Net Profit</p><span class="text-3xl font-black italic">Rs ${(totalProfit - eSum).toLocaleString()}</span></div>
-    `;
-
-    // Monthly Summary Rendering
-    document.getElementById('monthlySummary').innerHTML = Object.keys(monthlyData).map(m => `
-        <div class="flex justify-between items-center bg-slate-100 p-4 rounded-2xl">
-            <span class="font-black uppercase italic">${m}</span>
-            <div class="text-right">
-                <p class="text-[10px] opacity-60">SALES: Rs ${monthlyData[m].sales.toLocaleString()}</p>
-                <p class="text-emerald-600 font-black">PROFIT: Rs ${(monthlyData[m].profit - monthlyData[m].exp).toLocaleString()}</p>
-            </div>
-        </div>
-    `).join('');
-}
 
 function updateStats() {
     let today = new Date().toLocaleDateString(), profit = 0, todayExp = expenses.filter(e => e.date === today).reduce((a,b) => a + Number(b.amt), 0);
