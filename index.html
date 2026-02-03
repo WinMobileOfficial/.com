@@ -651,6 +651,7 @@ async function reprintLastBill(phone) {
     
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
+// --- UPDATED RENDER REPORTS WITH DAILY/WEEKLY/MONTHLY FILTERS ---
 function renderReports(filterType = 'all') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     const reportBody = document.getElementById('reportTableBody');
@@ -673,12 +674,12 @@ function renderReports(filterType = 'all') {
         return true; 
     });
 
-    // Stock calculation (hamesha total hi dikhayega)
+    // Stock calculation (Sahi Formula)
     prods.forEach(p => {
         stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice) || 0);
     });
 
-    // Filtered sales and profit calculation
+    // Filtered sales calculation
     filteredSales.forEach(s => {
         let val = Number(s.total) || 0;
         let profit = Number(s.profit) || 0;
