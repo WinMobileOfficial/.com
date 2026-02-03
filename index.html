@@ -535,22 +535,16 @@ function renderCustLedger() {
     if (!list) return;
     list.innerHTML = "";
     let marketCredit = 0;
-    
-    // 1. Search input se value pakro
     const searchTerm = (document.getElementById('cLedgerSearch')?.value || "").toUpperCase();
-
-    // 2. Customers ka data check karein
     if (typeof customers !== 'object' || customers === null) return;
 
     Object.keys(customers).forEach(phoneKey => {
         const c = customers[phoneKey];
         if (!c) return;
-
         let bal = Number(c.balance) || 0;
         let cName = (c.name || "").toUpperCase();
         let cArea = (c.area || "GENERAL").toUpperCase();
         
-        // Search Filter: Naam ya Area dono check karega
         if (cName.includes(searchTerm) || cArea.includes(searchTerm)) {
             marketCredit += bal;
             list.innerHTML += `
@@ -558,23 +552,75 @@ function renderCustLedger() {
                     <h4 class="font-black italic uppercase text-[15px]">${c.name}</h4>
                     <p class="text-[10px] font-bold text-indigo-600">${phoneKey} | ${c.area || 'GENERAL'}</p>
                     <h2 class="text-2xl font-black text-rose-600 mt-1">Rs ${bal.toLocaleString()}</h2>
-                    
                     <div class="grid grid-cols-2 gap-2 mt-3">
-                        <button onclick="viewCustomerDetails('${phoneKey}', '${c.name}')" class="bg-blue-600 text-white p-2 rounded-xl text-xs">VIEW</button>
-                        <button onclick="window.open('https://wa.me/92${phoneKey.slice(-10)}?text=Dear%20${c.name},%20Your%20Balance%20at%20${encodeURIComponent(settings.name)}%20is:%20Rs%20${bal}')" class="bg-indigo-600 text-white p-2 rounded-xl text-xs">REMINDER</button>
-                          <button onclick="reprintLastBill('${phoneKey}')" class="bg-slate-800 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REPRINT</button>
+                        <button onclick="viewCustomerDetails('${phoneKey}', '${c.name}')" class="bg-blue-600 text-white p-2 rounded-xl text-xs font-bold">VIEW</button>
+                        <button onclick="window.open('https://wa.me/92${phoneKey.slice(-10)}?text=*${encodeURIComponent(settings.name)}*%0ADear%20${c.name},%20Your%20Balance%20is:%20Rs%20${bal}')" class="bg-indigo-600 text-white p-2 rounded-xl text-xs font-bold">REMINDER</button>
+                        <button onclick="reprintLastBill('${phoneKey}')" class="bg-slate-800 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REPRINT</button>
                         <button onclick="deleteCustomer('${phoneKey}')" class="bg-rose-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">DELETE</button>
                     </div>
                 </div>`;
         }
     });
-    
-    // Total update karna
     const totalDisplay = document.getElementById('totalMarketCredit');
     if (totalDisplay) totalDisplay.innerText = marketCredit.toLocaleString();
 }
 
-// DELETE FUNCTION (Isko renderCustLedger ke forun baad rakhein)
+async function viewCustomerDetails(phone, name) {
+    const list = document.getElementById('modalHistoryList');
+    list.innerHTML = '<p class="text-center p-4 text-xs font-bold italic">Loading Statement...</p>';
+    document.getElementById('modalCustName').innerText = name;
+    document.getElementById('modalCurrentBal').innerText = "Rs " + (customers[phone]?.balance || 0).toLocaleString();
+
+    const snap = await db.collection("ledger").where("mob", "==", phone).orderBy("timestamp", "desc").limit(50).get();
+    let historyHTML = "";
+    snap.forEach(doc => {
+        const d = doc.data();
+        historyHTML += `
+            <div class="flex justify-between items-center p-3 border-b border-slate-100 text-xs font-bold uppercase">
+                <div class="flex flex-col">
+                    <span class="text-[10px] text-slate-500">${d.date}</span>
+                    <span>${d.desc}</span>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="${d.type === 'debit' ? 'text-rose-600' : 'text-emerald-600'}">${d.type === 'debit' ? '+' : '-'}${d.amount}</span>
+                    <span class="text-[9px] text-blue-600">BAL: ${d.balance}</span>
+                </div>
+            </div>`;
+    });
+    
+    // Yahan buttons add ho gaye hain
+    list.innerHTML = historyHTML + `
+        <div class="grid grid-cols-2 gap-2 mt-4 p-2 border-t-2 border-slate-100">
+            <button onclick="downloadExcel()" class="bg-emerald-600 text-white p-3 rounded-xl font-black uppercase text-[10px] shadow-md">Excel</button>
+            <button onclick="printFullStatement()" class="bg-slate-900 text-white p-3 rounded-xl font-black uppercase text-[10px] shadow-md">Print</button>
+        </div>`;
+    document.getElementById('detailModal').classList.remove('hidden');
+}
+
+function downloadExcel() {
+    let name = document.querySelector("#detailModal h3").innerText;
+    let csv = "Date,Details,Amount,Balance\\n";
+    document.querySelectorAll("#modalHistoryList > div").forEach(row => {
+        let spans = row.querySelectorAll('span');
+        if(spans.length >= 3) csv += \`"\${spans[0].innerText}","\${spans[1].innerText}","\${spans[2].innerText}","\${spans[3]?.innerText || ''}"\\n\`;
+    });
+    let blob = new Blob([csv], { type: 'text/csv' });
+    let a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = \`\${name}_Statement.csv\`;
+    a.click();
+}
+
+function printFullStatement() {
+    let name = document.querySelector("#detailModal h3").innerText;
+    let bal = document.querySelector("#detailModal h2").innerText;
+    let content = document.getElementById("modalHistoryList").innerHTML;
+    let win = window.open('', '', 'height=700,width=900');
+    win.document.write(\`<html><head><style>body{font-family:sans-serif;padding:20px;text-transform:uppercase;} .header{text-align:center;border-bottom:2px solid #000;margin-bottom:20px;} .flex{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;font-size:11px;font-weight:bold;} .text-rose-600{color:#e11d48;} .text-emerald-600{color:#059669;} .text-blue-600{color:#2563eb;}</style></head><body><div class="header"><h1>\${settings.name}</h1><h3>CUSTOMER: \${name}</h3><h4>BALANCE: \${bal}</h4></div>\${content}</body></html>\`);
+    win.document.close();
+    win.print();
+}
+
 async function deleteCustomer(phone) {
     if(confirm("Kia aap waqai is customer ko delete karna chahte hain?")) {
         try {
@@ -583,84 +629,22 @@ async function deleteCustomer(phone) {
             localStorage.setItem('alhafiz_customers', JSON.stringify(customers));
             alert("Deleted!");
             renderCustLedger();
-        } catch (e) {
-            alert("Error: Server connectivity issue.");
-        }
+        } catch (e) { alert("Error deleting customer."); }
     }
 }
-    async function reprintLastBill(phone) {
+
+async function reprintLastBill(phone) {
     try {
-        const snap = await db.collection("sales")
-            .where("mob", "==", phone) 
-            .get();
-
-        if (snap.empty) {
-            alert("Is customer ka koi bill nahi mila!");
-            return;
-        }
-
+        const snap = await db.collection("sales").where("mob", "==", phone).get();
+        if (snap.empty) { alert("Bill nahi mila!"); return; }
         let results = [];
-        snap.forEach(doc => {
-            results.push({ ...doc.data(), id: doc.id });
-        });
-
-        results.sort((a, b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
-        
-        const lastSale = results[0];
-        
-        // Ledger se 6500 uthane ke liye ye line zaroori hai
-        lastSale.finalBal = customers[phone]?.balance || lastSale.finalBal;
-        
-        currentSale = lastSale;
-
-        if (typeof printReceipt === "function") {
-            printReceipt(lastSale);
-        } else {
-            alert("Bill Mil Gaya!\nCustomer: " + lastSale.customer + "\nTotal: Rs " + lastSale.grandTotal);
-        }
-    } catch (e) {
-        alert("Error: Index check karein.");
-    }
+        snap.forEach(doc => results.push({ ...doc.data(), id: doc.id }));
+        results.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+        if (typeof printReceipt === "function") printReceipt(results[0]);
+    } catch (e) { alert("Reprint error."); }
 }
 
 
-    // 1. Excel Download Function
-function downloadExcel() {
-    const table = document.getElementById("modalHistoryList");
-    let csv = "Date,Description,Amount,Balance\n";
-    
-    table.querySelectorAll('.flex').forEach(row => {
-        const cols = row.querySelectorAll('span');
-        if(cols.length >= 3) {
-            csv += `"${cols[0].innerText}","${cols[1].innerText}","${cols[2].innerText}","${cols[3]?.innerText || ''}"\n`;
-        }
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.setAttribute('hidden', '');
-    a.setAttribute('href', url);
-    a.setAttribute('download', 'Statement.csv');
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-}
-
-// 2. Sahi Print Function (Khali page fix)
-function printFullStatement() {
-    const content = document.getElementById("modalHistoryList").innerHTML;
-    const name = document.querySelector("#detailModal h3").innerText;
-    const bal = document.querySelector("#detailModal h2").innerText;
-    
-    const win = window.open('', '', 'height=700,width=900');
-    win.document.write(`<html><head><title>Statement</title><style>body{font-family:sans-serif;padding:20px;} .row{display:flex;justify-content:space-between;padding:5px;border-bottom:1px solid #eee;}</style></head><body>`);
-    win.document.write(`<h1>${settings.name}</h1><h3>Customer: ${name}</h3><h4>Total Balance: ${bal}</h4><hr>`);
-    win.document.write(content);
-    win.document.write(`</body></html>`);
-    win.document.close();
-    win.print();
-}
     
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
