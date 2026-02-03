@@ -649,7 +649,7 @@ async function reprintLastBill(phone) {
   }
     
 // --- COMPLETE MASTER REPORTS FUNCTION (DATE FIX) ---
-function renderReports(filterType = 'all') {
+function renderReports(filterType = 'all', searchTerm = '') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let dailyItems = {};
     let monthlyData = {};
@@ -657,23 +657,20 @@ function renderReports(filterType = 'all') {
     if (reportBody) reportBody.innerHTML = "";
 
     const now = new Date();
-    // Aaj ki date manually format ki taake database se match kare (M/D/YYYY)
     const todayStr = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
 
     sales.forEach(s => {
-        // Date handling
         const sDateStr = s.date || ""; 
-        const sDateParts = sDateStr.split('/');
-        const sMonth = sDateParts[0] + '/' + sDateParts[2]; // e.g., 1/2026
+        const sMonth = sDateStr.split('/')[0] + '/' + sDateStr.split('/')[2];
 
-        // 1. Monthly Summary (Hamesha pichla sara record dikhayega)
-        if(sMonth && sMonth !== "undefined/undefined") {
+        // Monthly Summary logic
+        if(sMonth && !sMonth.includes("undefined")) {
             if(!monthlyData[sMonth]) monthlyData[sMonth] = { sales: 0, exp: 0, profit: 0 };
             monthlyData[sMonth].sales += Number(s.total) || 0;
             monthlyData[sMonth].profit += Number(s.profit) || 0;
         }
 
-        // 2. Daily Item-wise Logic
+        // Daily Items logic
         if(sDateStr === todayStr && s.items) {
             s.items.forEach(item => {
                 if(!dailyItems[item.name]) dailyItems[item.name] = { qty: 0, total: 0 };
@@ -682,15 +679,25 @@ function renderReports(filterType = 'all') {
             });
         }
 
-        // 3. Filter Logic
+        // --- SEARCH & FILTER LOGIC ---
         let isVisible = true;
         const sDateObj = new Date(s.timestamp?.seconds * 1000 || sDateStr);
+        
+        // Filter by Date
         if (filterType === 'daily') isVisible = (sDateStr === todayStr);
         else if (filterType === 'weekly') {
             const weekAgo = new Date(); weekAgo.setDate(now.getDate() - 7);
             isVisible = (sDateObj >= weekAgo);
         } else if (filterType === 'monthly') {
             isVisible = (sDateObj.getMonth() === now.getMonth() && sDateObj.getFullYear() === now.getFullYear());
+        }
+
+        // Filter by Search Term (Customer or Item Name)
+        if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
+            const customerMatch = (s.customer || "").toLowerCase().includes(searchLower);
+            const itemMatch = (s.items || []).some(i => i.name.toLowerCase().includes(searchLower));
+            if (!customerMatch && !itemMatch) isVisible = false;
         }
 
         if(isVisible) {
@@ -710,25 +717,26 @@ function renderReports(filterType = 'all') {
         }
     });
 
-    // 4. Expenses & Stock
+    // Expenses logic
     expenses.forEach(e => {
         let amt = Number(e.amount || e.amt) || 0;
         eSum += amt;
-        const eParts = (e.date || "").split('/');
-        const eMonth = eParts[0] + '/' + eParts[2];
+        const eMonth = e.date.split('/')[0] + '/' + e.date.split('/')[2];
         if(monthlyData[eMonth]) monthlyData[eMonth].exp += amt;
     });
 
+    // Stock Calculation
     prods.forEach(p => {
         stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice || p.cost) || 0);
     });
 
-    // 5. Update UI (All Sections)
+    // Dashboard UI Update
     updateReportUI(stockAsset, totalProfit, eSum, dailyItems, monthlyData, sSum);
 }
 
-// UI ko update karne wala helper function
+// Net Profit Fix: Profit minus Expenses
 function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
+    const netProfit = profit - exp;
     const statsDiv = document.getElementById('repStats');
     if(statsDiv) {
         statsDiv.innerHTML = `
@@ -742,17 +750,11 @@ function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
             </div>
             <div class="bg-emerald-600 p-6 rounded-3xl text-white shadow-lg text-center">
                 <p class="text-[9px] uppercase opacity-80">Net Profit</p>
-                <span class="text-2xl font-black italic">Rs ${(profit - exp).toLocaleString()}</span>
+                <span class="text-2xl font-black italic">Rs ${netProfit.toLocaleString()}</span>
             </div>`;
     }
 
-    const dailyBody = document.getElementById('dailyItemSalesBody');
-    if(dailyBody) {
-        dailyBody.innerHTML = Object.keys(dItems).length > 0 ? 
-            Object.keys(dItems).map(n => `<tr class="border-b text-[11px] font-bold uppercase"><td class="p-3">${n}</td><td class="p-3 text-center text-blue-600">${dItems[n].qty}</td><td class="p-3 text-right">Rs ${dItems[n].total.toLocaleString()}</td></tr>`).join('') : 
-            '<tr><td colspan="3" class="p-10 text-center italic opacity-30 font-black">No items sold today</td></tr>';
-    }
-
+    // Monthly Summary Rendering
     const monthlyDiv = document.getElementById('monthlySummary');
     if(monthlyDiv) {
         monthlyDiv.innerHTML = Object.keys(mData).map(m => `
@@ -764,25 +766,8 @@ function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
                 </div>
             </div>`).join('');
     }
-
-    if(document.getElementById('totalSalesVal')) document.getElementById('totalSalesVal').innerText = sSum.toLocaleString();
-    if(document.getElementById('netProfitVal')) document.getElementById('netProfitVal').innerText = (profit - exp).toLocaleString();
-}
-
-// Download function same rahega
-function downloadMonthlyReport() {
-    let csv = "Date,Customer,Mobile,Items,Sale Value,Profit,Received,Status\n";
-    sales.forEach(s => {
-        let itemsList = (s.items || []).map(i => i.name + "(" + i.qty + ")").join(" | ");
-        csv += `"${s.date}","${s.customer}","${s.mob}","${itemsList}","${s.total || 0}","${s.profit || 0}","${s.paid || 0}","${s.status || 'COMPLETED'}"\n`;
-    });
-    let blob = new Blob([csv], { type: 'text/csv' });
-    let a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = "Sales_Report.csv";
-    a.click();
-    }
-    
+   }
+                                                
 
 
 
