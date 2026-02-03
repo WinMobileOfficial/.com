@@ -553,8 +553,8 @@ function renderCustLedger() {
                     <p class="text-[10px] font-bold text-indigo-600">${phoneKey} | ${c.area || 'GENERAL'}</p>
                     <h2 class="text-2xl font-black text-rose-600 mt-1">Rs ${bal.toLocaleString()}</h2>
                     <div class="grid grid-cols-2 gap-2 mt-3">
-                        <button onclick="viewCustomerDetails('${phoneKey}', '${c.name}')" class="bg-blue-600 text-white p-2 rounded-xl text-xs font-bold">VIEW</button>
-                        <button onclick="window.open('https://wa.me/92${phoneKey.slice(-10)}?text=*${encodeURIComponent(settings.name)}*%0ADear%20${c.name},%20Your%20Balance%20is:%20Rs%20${bal}')" class="bg-indigo-600 text-white p-2 rounded-xl text-xs font-bold">REMINDER</button>
+                        <button onclick="viewCustomerDetails('${phoneKey}', '${c.name}')" class="bg-blue-600 text-white p-2 rounded-xl text-xs font-bold shadow-md">VIEW</button>
+                        <button onclick="window.open('https://wa.me/92${phoneKey.slice(-10)}?text=*${encodeURIComponent(settings.name)}*%0ADear%20${c.name},%20Your%20Balance%20is:%20Rs%20${bal}')" class="bg-indigo-600 text-white p-2 rounded-xl text-xs font-bold shadow-md">REMINDER</button>
                         <button onclick="reprintLastBill('${phoneKey}')" class="bg-slate-800 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">REPRINT</button>
                         <button onclick="deleteCustomer('${phoneKey}')" class="bg-rose-600 text-white p-2 rounded-xl text-[9px] font-black italic shadow-md">DELETE</button>
                     </div>
@@ -567,13 +567,12 @@ function renderCustLedger() {
 
 async function viewCustomerDetails(phone, name) {
     const list = document.getElementById('modalHistoryList');
-    list.innerHTML = '<p class="text-center p-4 text-xs font-bold italic text-slate-500">Loading Statement...</p>';
+    list.innerHTML = '<p class="text-center p-4 text-xs font-bold italic">Loading Statement...</p>';
     document.getElementById('modalCustName').innerText = name;
     document.getElementById('modalCurrentBal').innerText = "Rs " + (customers[phone]?.balance || 0).toLocaleString();
 
     const snap = await db.collection("ledger").where("mob", "==", phone).orderBy("timestamp", "desc").limit(50).get();
     let historyHTML = "";
-    
     snap.forEach(doc => {
         const d = doc.data();
         historyHTML += `
@@ -584,15 +583,16 @@ async function viewCustomerDetails(phone, name) {
                 </div>
                 <div class="flex flex-col items-end">
                     <span class="${d.type === 'debit' ? 'text-rose-600' : 'text-emerald-600'}">${d.type === 'debit' ? '+' : '-'}${d.amount}</span>
-                    <span class="text-[9px] text-blue-600">BAL: ${d.balance}</span>
+                    <span class="text-[9px] text-blue-600 italic">BAL: ${d.balance}</span>
                 </div>
             </div>`;
     });
     
+    // Yahan Excel aur Print dono buttons dal diye hain
     list.innerHTML = historyHTML + `
         <div class="grid grid-cols-2 gap-2 mt-4 p-2 border-t-2 border-slate-100">
-            <button onclick="downloadExcel()" class="bg-emerald-600 text-white p-3 rounded-xl font-black uppercase text-[10px] shadow-md flex items-center justify-center gap-1">Excel</button>
-            <button onclick="printFullStatement()" class="bg-slate-900 text-white p-3 rounded-xl font-black uppercase text-[10px] shadow-md flex items-center justify-center gap-1">Print</button>
+            <button onclick="downloadExcel()" class="bg-emerald-600 text-white p-3 rounded-xl font-black uppercase text-[10px] shadow-lg">Excel</button>
+            <button onclick="printFullStatement()" class="bg-slate-900 text-white p-3 rounded-xl font-black uppercase text-[10px] shadow-lg">Print</button>
         </div>`;
     document.getElementById('detailModal').classList.remove('hidden');
 }
@@ -609,7 +609,7 @@ function downloadExcel() {
     let blob = new Blob([csv], { type: 'text/csv' });
     let a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${name}_Statement.csv`;
+    a.download = name + "_Statement.csv";
     a.click();
 }
 
@@ -646,7 +646,8 @@ async function reprintLastBill(phone) {
         lastSale.finalBal = customers[phone]?.balance || lastSale.finalBal;
         if (typeof printReceipt === "function") printReceipt(lastSale);
     } catch (e) { alert("Reprint error."); }
-}
+  }
+    
     
     
     // --- UPDATED RENDER REPORTS WITH ITEM-WISE SALES ---
