@@ -1104,6 +1104,16 @@ async function approveNow(reqId, custId, amount, name) {
             await ref.update({ balance: newBal });
         }
         // Request ko APPROVED mark karna taake screen se hat jaye
+                // --- REPORT KE LIYE DATA SAVE KARNA (YAHAN ADD KAREIN) ---
+        await db.collection("daily_reports").add({
+            customerName: name,
+            amount: amount,
+            type: "BOOKER_RECOVERY",
+            date: new Date().toLocaleDateString('en-GB'),
+            timestamp: Date.now()
+        });
+        // -------------------------------------------------------
+        
         await db.collection("cash_requests").doc(reqId).update({ status: "APPROVED" });
         alert("✅ Ledger Updated for " + name);
     } catch(e) {
