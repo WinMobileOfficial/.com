@@ -659,33 +659,27 @@ function renderReports(filterType = 'all') {
 
     const now = new Date();
     
-    // Filter logic for Daily, Weekly, Monthly
     const filteredSales = sales.filter(s => {
         const sDate = new Date(s.timestamp?.seconds * 1000 || s.date);
-        if (filterType === 'daily') {
-            return sDate.toDateString() === now.toDateString();
-        } else if (filterType === 'weekly') {
+        if (filterType === 'daily') return sDate.toDateString() === now.toDateString();
+        if (filterType === 'weekly') {
             const weekAgo = new Date();
             weekAgo.setDate(now.getDate() - 7);
             return sDate >= weekAgo;
-        } else if (filterType === 'monthly') {
-            return sDate.getMonth() === now.getMonth() && sDate.getFullYear() === now.getFullYear();
         }
+        if (filterType === 'monthly') return sDate.getMonth() === now.getMonth() && sDate.getFullYear() === now.getFullYear();
         return true; 
     });
 
-    // Stock calculation (Sahi Formula)
     prods.forEach(p => {
         stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice) || 0);
     });
 
-    // Filtered sales calculation
     filteredSales.forEach(s => {
         let val = Number(s.total) || 0;
         let profit = Number(s.profit) || 0;
         sSum += val;
         totalProfit += profit;
-
         if (reportBody) {
             reportBody.innerHTML += `
                 <tr class="border-b text-[10px] font-bold uppercase">
@@ -697,41 +691,55 @@ function renderReports(filterType = 'all') {
         }
     });
 
-    // Expenses calculation
-    expenses.forEach(e => {
-        eSum += Number(e.amount) || 0;
-    });
+    expenses.forEach(e => { eSum += Number(e.amount) || 0; });
 
-    // Dashboard update with safe checks
-    const sD = document.getElementById('totalSalesVal');
-    const eD = document.getElementById('totalExpensesVal');
-    const pD = document.getElementById('netProfitVal');
-    const stD = document.getElementById('stockAssetVal');
-
-    if (sD) sD.innerText = sSum.toLocaleString();
-    if (eD) eD.innerText = eSum.toLocaleString();
-    if (pD) pD.innerText = (totalProfit - eSum).toLocaleString();
-    if (stD) stD.innerText = stockAsset.toLocaleString();
+    if (document.getElementById('totalSalesVal')) document.getElementById('totalSalesVal').innerText = sSum.toLocaleString();
+    if (document.getElementById('totalExpensesVal')) document.getElementById('totalExpensesVal').innerText = eSum.toLocaleString();
+    if (document.getElementById('netProfitVal')) document.getElementById('netProfitVal').innerText = (totalProfit - eSum).toLocaleString();
+    if (document.getElementById('stockAssetVal')) document.getElementById('stockAssetVal').innerText = stockAsset.toLocaleString();
 }
 
-// Monthly Excel Report Fix (Values zero nahi aayengi)
 function downloadMonthlyReport() {
     let csv = "Date,Customer,Mobile,Items,Sale Value,Profit,Received,Status\n";
     sales.forEach(s => {
         let itemsList = (s.items || []).map(i => i.name + "(" + i.qty + ")").join(" | ");
-        let saleVal = s.total || 0;
-        let profitVal = s.profit || 0;
-        let paidVal = s.paid || 0;
-        let status = s.status || "COMPLETED";
-        csv += `"${s.date}","${s.customer}","${s.mob}","${itemsList}","${saleVal}","${profitVal}","${paidVal}","${status}"\n`;
+        csv += `"${s.date}","${s.customer}","${s.mob}","${itemsList}","${s.total || 0}","${s.profit || 0}","${s.paid || 0}","${s.status || 'COMPLETED'}"\n`;
     });
     let blob = new Blob([csv], { type: 'text/csv' });
     let a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = "Sales_Report.csv";
-    document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+}
+
+function updateStats() {
+    const today = new Date().toLocaleDateString();
+    let profit = 0, todayExp = 0;
+    
+    sales.filter(s => s.status === "COMPLETED" && s.date === today).forEach(s => {
+        if (s.items) {
+            s.items.forEach(i => {
+                let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase());
+                profit += (Number(i.price) - (p ? Number(p.buyPrice) : Number(i.price))) * i.qty;
+            });
+        }
+    });
+
+    expenses.filter(e => e.date === today).forEach(e => { todayExp += Number(e.amount) || 0; });
+
+    const dashBody = document.getElementById('repStats');
+    if (dashBody) {
+        dashBody.innerHTML = `
+            <div class="bg-blue-600 p-4 rounded-3xl text-white shadow-lg">
+                <p class="text-[10px] uppercase font-bold opacity-80">Today Sales</p>
+                <h2 class="text-xl font-black">Rs ${profit.toLocaleString()}</h2>
+            </div>
+            <div class="bg-rose-600 p-4 rounded-3xl text-white shadow-lg">
+                <p class="text-[10px] uppercase font-bold opacity-80">Today Exp</p>
+                <h2 class="text-xl font-black">Rs ${todayExp.toLocaleString()}</h2>
+            </div>
+        `;
+    }
 }
     
                                 
