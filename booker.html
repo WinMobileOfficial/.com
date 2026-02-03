@@ -46,25 +46,24 @@
     <div class="p-4 max-w-md mx-auto">
         <div id="orderTab" class="tab-content active-tab space-y-4">
             <div class="bg-white p-5 rounded-[2.2rem] shadow-xl relative border-b-8 border-blue-500">
-                <p class="text-[10px] font-black text-slate-400 mb-2 uppercase italic tracking-tighter"><i class="fas fa-store mr-1"></i> Customer Information</p>
+                <p class="text-[10px] font-black text-slate-400 mb-2 uppercase italic tracking-tighter"><i class="fas fa-store mr-1"></i> Customer Info</p>
                 <div class="relative">
-                    <input id="shopSearch" oninput="searchLedger(this.value)" placeholder="SEARCH SHOP OR TYPE NAME..." class="w-full p-4 border-2 rounded-2xl mb-2 font-black uppercase outline-none bg-slate-50 text-sm italic border-slate-100 focus:border-blue-400 transition-all">
+                    <input id="shopSearch" oninput="searchLedger(this.value)" placeholder="SEARCH SHOP..." class="w-full p-4 border-2 rounded-2xl mb-2 font-black uppercase outline-none bg-slate-50 text-sm italic border-slate-100 focus:border-blue-400">
                     <div id="ledgerResults" class="search-results hidden border"></div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <input id="shopName" placeholder="SHOP NAME" class="w-full p-3 bg-blue-50 rounded-xl font-bold text-[11px] uppercase italic outline-none border border-blue-100">
                     <input id="shopPhone" type="tel" placeholder="PHONE NO" class="w-full p-3 bg-blue-50 rounded-xl font-bold text-[11px] outline-none border border-blue-100">
                 </div>
+                <p id="newCustNotice" class="hidden text-[9px] text-blue-600 font-black mt-2 animate-bounce italic uppercase text-center">✨ New Customer Detected!</p>
             </div>
 
             <div class="bg-white p-5 rounded-[2.2rem] shadow-xl border-b-8 border-slate-300">
-                <p class="text-[10px] font-black text-slate-400 mb-2 uppercase italic tracking-tighter"><i class="fas fa-box-open mr-1"></i> Add Items to Cart</p>
-                <div class="relative mb-2">
-                    <input id="pSearch" oninput="filterProducts(this.value)" placeholder="SEARCH PRODUCT..." class="w-full p-4 border-2 rounded-2xl font-black uppercase outline-none bg-emerald-50 italic text-sm border-emerald-100">
-                    <div id="searchList" class="search-results hidden border"></div>
-                </div>
+                <p class="text-[10px] font-black text-slate-400 mb-2 uppercase italic tracking-tighter"><i class="fas fa-box-open mr-1"></i> Cart Items</p>
+                <input id="pSearch" oninput="filterProducts(this.value)" placeholder="SEARCH PRODUCT..." class="w-full p-4 border-2 rounded-2xl font-black uppercase outline-none bg-emerald-50 italic text-sm mb-2 border-emerald-100">
+                <div id="searchList" class="search-results hidden border"></div>
                 <div class="grid grid-cols-2 gap-2 mb-3">
-                    <div class="bg-slate-100 rounded-2xl p-3 text-center border">
+                    <div class="bg-slate-100 rounded-2xl p-3 text-center">
                         <p class="text-[8px] font-black text-slate-400 uppercase">Rate</p>
                         <input id="pPrice" type="number" readonly value="0" class="w-full bg-transparent font-black text-center outline-none">
                     </div>
@@ -77,12 +76,23 @@
                 <div id="cartItems" class="mt-4 space-y-2 max-h-48 overflow-y-auto pr-1"></div>
             </div>
 
-            <div class="bg-slate-800 p-6 rounded-[2.5rem] shadow-2xl border-2 border-white/5">
-                <div class="flex justify-between items-center mb-5 px-2">
-                    <span class="text-white font-black text-xs italic uppercase">Grand Total:</span>
-                    <span class="text-blue-400 font-black text-3xl italic">Rs <span id="billTotal">0</span></span>
+            <div class="bg-white p-5 rounded-[2.2rem] shadow-xl text-center border-b-8 border-slate-400">
+                <input type="file" id="shopPhoto" accept="image/*" capture="camera" class="hidden" onchange="previewPhoto(this)">
+                <div onclick="document.getElementById('shopPhoto').click()" class="w-full h-28 border-2 border-dashed border-slate-300 rounded-3xl flex items-center justify-center text-slate-400 bg-slate-50 overflow-hidden relative cursor-pointer">
+                    <img id="pImg" class="hidden h-full w-full object-cover">
+                    <div id="camIcon" class="text-center">
+                        <i class="fas fa-camera text-3xl mb-1 text-slate-300"></i>
+                        <p class="text-[9px] font-black uppercase italic">Snap Shop Front</p>
+                    </div>
                 </div>
-                <button id="submitBtn" onclick="finalSubmit()" class="w-full bg-emerald-500 text-slate-900 py-5 rounded-[1.8rem] font-black uppercase italic shadow-lg flex items-center justify-center gap-3">
+            </div>
+
+            <div class="bg-slate-800 p-6 rounded-[2.5rem] shadow-2xl border-2 border-white/5">
+                <div class="flex justify-between items-center mb-5 px-2 text-white font-black italic uppercase tracking-widest">
+                    <span class="text-xs">Grand Total:</span>
+                    <span class="text-blue-400 text-3xl">Rs <span id="billTotal">0</span></span>
+                </div>
+                <button id="submitBtn" onclick="finalSubmit()" class="w-full bg-emerald-500 text-slate-900 py-5 rounded-[1.8rem] font-black uppercase italic shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
                     <i class="fab fa-whatsapp text-xl"></i> Confirm & Send WA
                 </button>
             </div>
@@ -93,8 +103,8 @@
                 <h2 class="font-black text-center mb-4 italic text-slate-800 uppercase tracking-widest border-b pb-2">
                     <i class="fas fa-book-open mr-2 text-indigo-500"></i>Shop Ledger
                 </h2>
-                <input type="text" onkeyup="renderLedger(this.value)" placeholder="SEARCH SHOP..." class="w-full p-4 rounded-2xl bg-slate-100 mb-4 font-black uppercase italic text-xs outline-none border-2 border-slate-50 focus:border-indigo-400">
-                <div id="ledgerScreenList" class="space-y-3 max-h-[60vh] overflow-y-auto pr-1"></div>
+                <input type="text" onkeyup="renderLedger(this.value)" placeholder="SEARCH SHOP..." class="w-full p-4 rounded-2xl bg-slate-100 mb-4 font-black uppercase italic text-xs outline-none">
+                <div id="ledgerScreenList" class="space-y-3 max-h-[60vh] overflow-y-auto"></div>
             </div>
         </div>
 
@@ -122,20 +132,19 @@
 </div>
 
 <script>
-// Firebase Setup
+// CONFIG & FIREBASE
 const firebaseConfig = { apiKey: "AIzaSyBP3VrLzUl5AIR2ca1v871cV-cJOMz-SX0", authDomain: "gm-agency-pos.firebaseapp.com", projectId: "gm-agency-pos", storageBucket: "gm-agency-pos.firebasestorage.app", messagingSenderId: "777771332628", appId: "1:777771332628:web:db60e19d9bdcee21f76301" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-
 const BOSS_WA = "923066442004";
+const IMGBB_KEY = "ac9e20cc7634087a31f0cc92096c23f4";
 let prods = [], ledger = [], cart = [], userLat = "", userLong = "";
 
 function checkPin() {
     if(document.getElementById('bookerPin').value === "0001") {
         document.getElementById('lockScreen').classList.add('hidden');
         document.getElementById('mainApp').classList.remove('hidden');
-        getLocation();
-        init();
+        getLocation(); init();
     } else { alert("❌ WRONG PIN!"); }
 }
 
@@ -143,8 +152,8 @@ function getLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(pos => {
             userLat = pos.coords.latitude; userLong = pos.coords.longitude;
-            document.getElementById('gpsStatus').innerText = "GPS: ACTIVE ✓";
-            document.getElementById('gpsStatus').classList.replace('text-rose-400', 'text-emerald-400');
+            const s = document.getElementById('gpsStatus');
+            s.innerText = "GPS: ACTIVE ✓"; s.classList.replace('text-rose-400', 'text-emerald-400');
         });
     }
 }
@@ -158,26 +167,21 @@ function init() {
     });
 }
 
+// LEDGER & PAYMENT LOGIC
 function renderLedger(filter = "") {
     const list = document.getElementById('ledgerScreenList');
     list.innerHTML = "";
     ledger.filter(c => c.name.toLowerCase().includes(filter.toLowerCase())).forEach(c => {
         const bal = Number(c.balance) || 0;
         list.innerHTML += `
-            <div class="bg-slate-50 p-4 rounded-3xl border-2 shadow-sm mb-2">
+            <div class="bg-slate-50 p-4 rounded-3xl border-2 mb-2">
                 <div class="flex justify-between items-center">
-                    <div>
-                        <p class="font-black uppercase text-[11px] italic">${c.name}</p>
-                        <p class="text-[9px] opacity-50">${c.id}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[8px] uppercase font-black opacity-40">Due</p>
-                        <p class="text-rose-600 font-black italic text-sm">Rs ${bal.toLocaleString()}</p>
-                    </div>
+                    <div><p class="font-black uppercase text-[11px] italic">${c.name}</p><p class="text-[9px] opacity-50">${c.id}</p></div>
+                    <div class="text-right"><p class="text-[8px] uppercase opacity-40 font-black">Balance</p><p class="text-rose-600 font-black text-sm italic">Rs ${bal.toLocaleString()}</p></div>
                 </div>
                 <div class="mt-3 flex gap-2">
-                    <input id="rec-${c.id}" type="number" placeholder="Amt Received" class="flex-1 p-2 bg-white rounded-xl text-[10px] font-black outline-none border border-slate-200">
-                    <button onclick="receivePayment('${c.id}', '${c.name}')" class="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase italic">Pay</button>
+                    <input id="rec-${c.id}" type="number" placeholder="Enter Cash" class="flex-1 p-2 bg-white rounded-xl text-[10px] font-black outline-none border">
+                    <button onclick="receivePayment('${c.id}', '${c.name}')" class="bg-emerald-500 text-white px-5 py-2 rounded-xl text-[10px] font-black italic uppercase shadow-sm">Pay</button>
                 </div>
             </div>`;
     });
@@ -186,24 +190,85 @@ function renderLedger(filter = "") {
 async function receivePayment(id, name) {
     const amt = Number(document.getElementById(`rec-${id}`).value);
     if(!amt || amt <= 0) return alert("Enter Amount!");
-    
     if(confirm(`Receive Rs ${amt} from ${name}?`)) {
         try {
-            const custRef = db.collection("customers").doc(id);
-            const doc = await custRef.get();
-            const currentBal = Number(doc.data().balance) || 0;
-            
-            await custRef.update({ balance: currentBal - amt });
-            
-            // Add to Transactions for Admin
+            const ref = db.collection("customers").doc(id);
+            const doc = await ref.get();
+            await ref.update({ balance: (Number(doc.data().balance) || 0) - amt });
             await db.collection("transactions").add({
-                customer: name, phone: id, amount: amt, date: new Date().toLocaleDateString(), type: "RECEIVED", timestamp: Date.now()
+                customer: name, phone: id, amount: amt, date: new Date().toLocaleDateString(), timestamp: Date.now(), type: "RECEIVED"
             });
-
-            alert("✅ Payment Updated!");
+            alert("✅ PAYMENT UPDATED!");
             document.getElementById(`rec-${id}`).value = "";
-        } catch(e) { alert("Error updating payment."); }
+        } catch(e) { alert("ERROR!"); }
     }
+}
+
+// PHOTO PREVIEW
+function previewPhoto(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('pImg').src = e.target.result;
+            document.getElementById('pImg').classList.remove('hidden');
+            document.getElementById('camIcon').classList.add('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// ORDER FUNCTIONS
+function searchLedger(q) {
+    const res = document.getElementById('ledgerResults');
+    const notice = document.getElementById('newCustNotice');
+    if(!q) { res.classList.add('hidden'); notice.classList.add('hidden'); return; }
+    document.getElementById('shopName').value = q.toUpperCase();
+    const matches = ledger.filter(c => c.name.toLowerCase().includes(q.toLowerCase()));
+    if(matches.length > 0) {
+        notice.classList.add('hidden');
+        res.innerHTML = matches.map(c => `<div class="p-4 border-b font-black text-[11px] uppercase italic" onclick="selectLedger('${c.name}', '${c.id}')">${c.name} <br><span class="text-blue-500 text-[9px]">${c.id}</span></div>`).join('');
+        res.classList.remove('hidden');
+    } else { notice.classList.remove('hidden'); res.classList.add('hidden'); }
+}
+
+function selectLedger(n, p) {
+    document.getElementById('shopName').value = n;
+    document.getElementById('shopPhone').value = p;
+    document.getElementById('shopSearch').value = n;
+    document.getElementById('ledgerResults').classList.add('hidden');
+    document.getElementById('newCustNotice').classList.add('hidden');
+}
+
+function filterProducts(q) {
+    const list = document.getElementById('searchList');
+    if(!q) { list.classList.add('hidden'); return; }
+    const filtered = prods.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
+    list.innerHTML = filtered.map(p => `<div class="p-4 border-b flex justify-between font-black text-[11px] italic bg-white" onclick="selectProduct('${p.name}', ${p.price})"><span>${p.name}</span><span class="text-emerald-600">Rs ${p.price}</span></div>`).join('');
+    list.classList.remove('hidden');
+}
+
+function selectProduct(n, p) {
+    document.getElementById('pSearch').value = n;
+    document.getElementById('pPrice').value = p;
+    document.getElementById('searchList').classList.add('hidden');
+}
+
+function addToCart() {
+    let n = document.getElementById('pSearch').value, p = Number(document.getElementById('pPrice').value), q = Number(document.getElementById('pQty').value);
+    if(n && q > 0) { cart.push({ name: n, price: p, qty: q, subtotal: p*q }); renderCart(); }
+}
+
+function renderCart() {
+    document.getElementById('cartItems').innerHTML = cart.map((i, idx) => `
+        <div class="flex justify-between p-3 bg-slate-50 rounded-xl font-black text-[10px] italic border-l-4 border-blue-500">
+            <span>${i.name} (x${i.qty})</span>
+            <div class="flex gap-3"><span>Rs ${i.subtotal}</span><i onclick="cart.splice(${idx},1); renderCart()" class="fas fa-times text-red-500"></i></div>
+        </div>`).join('');
+    document.getElementById('billTotal').innerText = cart.reduce((s, i) => s + i.subtotal, 0).toLocaleString();
+}
+
+function renderStock() {
+    document.getElementById('stockList').innerHTML = prods.map(p => `<div class="flex justify-between p-4 bg-slate-50 rounded-2xl border font-black text-[11px] italic uppercase"><span>${p.name}</span><span class="${p.stock < 10 ? 'text-red-500' : 'text-emerald-600'}">STK: ${p.stock}</span></div>`).join('');
 }
 
 function showTab(id, btn) {
@@ -211,60 +276,33 @@ function showTab(id, btn) {
     document.getElementById(id).classList.add('active-tab');
     document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active'));
     btn.classList.add('nav-active');
-    if(id === 'ledgerTab') renderLedger();
 }
 
-function searchLedger(q) {
-    const res = document.getElementById('ledgerResults');
-    if(!q) { res.classList.add('hidden'); return; }
-    const matches = ledger.filter(c => c.name.toLowerCase().includes(q.toLowerCase()));
-    res.innerHTML = matches.map(c => `<div class="p-4 border-b font-black text-[11px] uppercase italic bg-white" onclick="selectLedger('${c.name}', '${c.id}')">${c.name} <br><span class="text-blue-500 text-[9px]">${c.id}</span></div>`).join('');
-    res.classList.remove('hidden');
-}
-function selectLedger(n, p) {
-    document.getElementById('shopName').value = n;
-    document.getElementById('shopPhone').value = p;
-    document.getElementById('shopSearch').value = n;
-    document.getElementById('ledgerResults').classList.add('hidden');
-}
-function filterProducts(q) {
-    const list = document.getElementById('searchList');
-    if(!q) { list.classList.add('hidden'); return; }
-    const filtered = prods.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
-    list.innerHTML = filtered.map(p => `<div class="p-4 border-b flex justify-between font-black text-[11px] italic bg-white" onclick="selectProduct('${p.name}', ${p.price})"><span>${p.name}</span><span class="text-emerald-600 font-black">Rs ${p.price}</span></div>`).join('');
-    list.classList.remove('hidden');
-}
-function selectProduct(n, p) {
-    document.getElementById('pSearch').value = n;
-    document.getElementById('pPrice').value = p;
-    document.getElementById('searchList').classList.add('hidden');
-}
-function addToCart() {
-    let n = document.getElementById('pSearch').value, p = Number(document.getElementById('pPrice').value), q = Number(document.getElementById('pQty').value);
-    if(n && q > 0) { cart.push({ name: n, price: p, qty: q, subtotal: p*q }); renderCart(); }
-}
-function renderCart() {
-    document.getElementById('cartItems').innerHTML = cart.map((i, idx) => `<div class="flex justify-between p-3 bg-slate-50 rounded-xl text-[10px] font-black italic"><span>${i.name} (x${i.qty})</span><span>Rs ${i.subtotal}</span></div>`).join('');
-    document.getElementById('billTotal').innerText = cart.reduce((s, i) => s + i.subtotal, 0).toLocaleString();
-}
-function renderStock() {
-    document.getElementById('stockList').innerHTML = prods.map(p => `<div class="flex justify-between p-4 bg-slate-50 rounded-2xl border font-black text-[11px] italic uppercase"><span>${p.name}</span><span class="text-emerald-600">STK: ${p.stock}</span></div>`).join('');
-}
+// FINAL SUBMIT (Order + Upload + WhatsApp)
 async function finalSubmit() {
-    const shop = document.getElementById('shopName').value;
-    const phone = document.getElementById('shopPhone').value;
-    if(!shop || !phone || cart.length === 0) return alert("Fill all details!");
-    
-    let orderId = "GM-" + Date.now().toString().slice(-6);
-    let total = cart.reduce((s, i) => s + i.subtotal, 0);
-    
-    await db.collection("sales").doc(orderId).set({
-        id: orderId, status: "PENDING", customer: shop, mob: phone,
-        date: new Date().toLocaleDateString(), items: [...cart], grandTotal: total
-    });
-    
-    let itemsT = cart.map(i => `• ${i.name} (x${i.qty})`).join('%0A');
-    window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=ORDER:${orderId}%0AShop:${shop}%0ATotal:${total}%0AItems:%0A${itemsT}`;
+    const shop = document.getElementById('shopName').value, phone = document.getElementById('shopPhone').value, photoFile = document.getElementById('shopPhoto').files[0], btn = document.getElementById('submitBtn');
+    if(!shop || !phone || cart.length === 0) return alert("Missing Details!");
+    btn.disabled = true; btn.innerHTML = "PROCESSING...";
+
+    let photoUrl = "No Photo", orderId = "GM-" + Date.now().toString().slice(-6), total = cart.reduce((s, i) => s + i.subtotal, 0);
+
+    try {
+        if(photoFile) {
+            let fd = new FormData(); fd.append("image", photoFile);
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
+            const data = await res.json(); if(data.success) photoUrl = data.data.url;
+        }
+
+        await db.collection("sales").doc(orderId).set({
+            id: orderId, status: "PENDING", customer: shop, mob: phone, date: new Date().toLocaleDateString(),
+            timestamp: Date.now(), items: [...cart], grandTotal: total, img: photoUrl, gps: `http://google.com/maps?q=${userLat},${userLong}`
+        });
+
+        let itemsT = cart.map(i => `• ${i.name} (x${i.qty})`).join('%0A');
+        let waMsg = `📦 *GM ORDER*%0A🆔 *ID:* ${orderId}%0A🏪 *Shop:* ${shop}%0A💰 *Total:* Rs ${total}%0A📸 *Photo:* ${photoUrl}%0A🛒 *Items:*%0A${itemsT}`;
+        window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=${waMsg}`;
+        setTimeout(() => location.reload(), 2000);
+    } catch(e) { alert("SYSTEM ERROR!"); btn.disabled = false; btn.innerHTML = "Confirm & Send WA"; }
 }
 </script>
 </body>
