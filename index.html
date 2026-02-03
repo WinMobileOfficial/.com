@@ -648,10 +648,7 @@ async function reprintLastBill(phone) {
     } catch (e) { alert("Reprint error."); }
   }
     
-    // --- COMPLETE MASTER REPORTS FUNCTION ---
-    db.collection("sales").onSnapshot(() => { if(typeof renderReports === 'function') renderReports(); });
-db.collection("products").onSnapshot(() => { if(typeof renderReports === 'function') renderReports(); });
-    
+// --- COMPLETE MASTER REPORTS FUNCTION (DATE FIX) ---
 function renderReports(filterType = 'all') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let dailyItems = {};
@@ -660,27 +657,35 @@ function renderReports(filterType = 'all') {
     if (reportBody) reportBody.innerHTML = "";
 
     const now = new Date();
-    const todayStr = now.toLocaleDateString();
+    // Aaj ki date manually format ki taake database se match kare (M/D/YYYY)
+    const todayStr = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
 
-    // 1. Sales & Daily Items Logic
     sales.forEach(s => {
-        const sDateObj = new Date(s.timestamp?.seconds * 1000 || s.date);
-        const sMonth = s.date.split('/')[1] + '/' + s.date.split('/')[2]; 
+        // Date handling
+        const sDateStr = s.date || ""; 
+        const sDateParts = sDateStr.split('/');
+        const sMonth = sDateParts[0] + '/' + sDateParts[2]; // e.g., 1/2026
 
-        if(!monthlyData[sMonth]) monthlyData[sMonth] = { sales: 0, exp: 0, profit: 0 };
-        monthlyData[sMonth].sales += Number(s.total) || 0;
-        monthlyData[sMonth].profit += Number(s.profit) || 0;
+        // 1. Monthly Summary (Hamesha pichla sara record dikhayega)
+        if(sMonth && sMonth !== "undefined/undefined") {
+            if(!monthlyData[sMonth]) monthlyData[sMonth] = { sales: 0, exp: 0, profit: 0 };
+            monthlyData[sMonth].sales += Number(s.total) || 0;
+            monthlyData[sMonth].profit += Number(s.profit) || 0;
+        }
 
-        if(s.date === todayStr && s.items) {
+        // 2. Daily Item-wise Logic
+        if(sDateStr === todayStr && s.items) {
             s.items.forEach(item => {
                 if(!dailyItems[item.name]) dailyItems[item.name] = { qty: 0, total: 0 };
                 dailyItems[item.name].qty += Number(item.qty);
-                dailyItems[item.name].total += Number(item.price) * Number(item.qty);
+                dailyItems[item.name].total += (Number(item.price) * Number(item.qty));
             });
         }
 
+        // 3. Filter Logic
         let isVisible = true;
-        if (filterType === 'daily') isVisible = (s.date === todayStr);
+        const sDateObj = new Date(s.timestamp?.seconds * 1000 || sDateStr);
+        if (filterType === 'daily') isVisible = (sDateStr === todayStr);
         else if (filterType === 'weekly') {
             const weekAgo = new Date(); weekAgo.setDate(now.getDate() - 7);
             isVisible = (sDateObj >= weekAgo);
@@ -696,8 +701,8 @@ function renderReports(filterType = 'all') {
             if (reportBody) {
                 reportBody.innerHTML += `
                     <tr class="border-b text-[10px] font-bold uppercase">
-                        <td class="p-2">${s.date}</td>
-                        <td class="p-2">${s.customer}</td>
+                        <td class="p-2">${sDateStr}</td>
+                        <td class="p-2">${s.customer || "Walking"}</td>
                         <td class="p-2 text-blue-600">${val.toLocaleString()}</td>
                         <td class="p-2 text-emerald-600">${profit.toLocaleString()}</td>
                     </tr>`;
@@ -705,71 +710,66 @@ function renderReports(filterType = 'all') {
         }
     });
 
-    // 2. Expenses & Stock
+    // 4. Expenses & Stock
     expenses.forEach(e => {
-        let amt = Number(e.amount) || 0;
+        let amt = Number(e.amount || e.amt) || 0;
         eSum += amt;
-        let eMonth = e.date.split('/')[1] + '/' + e.date.split('/')[2];
+        const eParts = (e.date || "").split('/');
+        const eMonth = eParts[0] + '/' + eParts[2];
         if(monthlyData[eMonth]) monthlyData[eMonth].exp += amt;
     });
 
     prods.forEach(p => {
-        stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice) || 0);
+        stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice || p.cost) || 0);
     });
 
-    // 3. UI Updates (Stats Boxes)
+    // 5. Update UI (All Sections)
+    updateReportUI(stockAsset, totalProfit, eSum, dailyItems, monthlyData, sSum);
+}
+
+// UI ko update karne wala helper function
+function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
     const statsDiv = document.getElementById('repStats');
     if(statsDiv) {
         statsDiv.innerHTML = `
             <div class="bg-blue-600 p-6 rounded-3xl text-white shadow-lg text-center">
                 <p class="text-[9px] uppercase opacity-80">Stock Asset</p>
-                <span class="text-2xl font-black italic">Rs ${stockAsset.toLocaleString()}</span>
+                <span class="text-2xl font-black italic">Rs ${stock.toLocaleString()}</span>
             </div>
             <div class="bg-indigo-600 p-6 rounded-3xl text-white shadow-lg text-center">
                 <p class="text-[9px] uppercase opacity-80">Zakat (2.5%)</p>
-                <span class="text-2xl font-black italic">Rs ${(stockAsset * 0.025).toLocaleString()}</span>
+                <span class="text-2xl font-black italic">Rs ${(stock * 0.025).toLocaleString()}</span>
             </div>
             <div class="bg-emerald-600 p-6 rounded-3xl text-white shadow-lg text-center">
                 <p class="text-[9px] uppercase opacity-80">Net Profit</p>
-                <span class="text-2xl font-black italic">Rs ${(totalProfit - eSum).toLocaleString()}</span>
-            </div>
-        `;
+                <span class="text-2xl font-black italic">Rs ${(profit - exp).toLocaleString()}</span>
+            </div>`;
     }
 
-    // 4. Daily Item Table
     const dailyBody = document.getElementById('dailyItemSalesBody');
     if(dailyBody) {
-        dailyBody.innerHTML = Object.keys(dailyItems).length > 0 ? 
-            Object.keys(dailyItems).map(name => `
-                <tr class="border-b text-[11px] font-bold uppercase">
-                    <td class="p-3">${name}</td>
-                    <td class="p-3 text-center text-blue-600">${dailyItems[name].qty}</td>
-                    <td class="p-3 text-right">Rs ${dailyItems[name].total.toLocaleString()}</td>
-                </tr>`).join('') : 
+        dailyBody.innerHTML = Object.keys(dItems).length > 0 ? 
+            Object.keys(dItems).map(n => `<tr class="border-b text-[11px] font-bold uppercase"><td class="p-3">${n}</td><td class="p-3 text-center text-blue-600">${dItems[n].qty}</td><td class="p-3 text-right">Rs ${dItems[n].total.toLocaleString()}</td></tr>`).join('') : 
             '<tr><td colspan="3" class="p-10 text-center italic opacity-30 font-black">No items sold today</td></tr>';
     }
 
-    // 5. Monthly Summary
     const monthlyDiv = document.getElementById('monthlySummary');
     if(monthlyDiv) {
-        monthlyDiv.innerHTML = Object.keys(monthlyData).map(m => `
+        monthlyDiv.innerHTML = Object.keys(mData).map(m => `
             <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl mb-2 border border-slate-100">
                 <span class="font-black uppercase italic text-xs">${m}</span>
                 <div class="text-right">
-                    <p class="text-[9px] opacity-60 font-bold">SALES: Rs ${monthlyData[m].sales.toLocaleString()}</p>
-                    <p class="text-emerald-600 font-black text-xs">PROFIT: Rs ${(monthlyData[m].profit - monthlyData[m].exp).toLocaleString()}</p>
+                    <p class="text-[9px] opacity-60 font-bold">SALES: Rs ${mData[m].sales.toLocaleString()}</p>
+                    <p class="text-emerald-600 font-black text-xs">PROFIT: Rs ${(mData[m].profit - mData[m].exp).toLocaleString()}</p>
                 </div>
             </div>`).join('');
     }
 
-    // Dash update
     if(document.getElementById('totalSalesVal')) document.getElementById('totalSalesVal').innerText = sSum.toLocaleString();
-    if(document.getElementById('totalExpensesVal')) document.getElementById('totalExpensesVal').innerText = eSum.toLocaleString();
-    if(document.getElementById('netProfitVal')) document.getElementById('netProfitVal').innerText = (totalProfit - eSum).toLocaleString();
-    if(document.getElementById('stockAssetVal')) document.getElementById('stockAssetVal').innerText = stockAsset.toLocaleString();
+    if(document.getElementById('netProfitVal')) document.getElementById('netProfitVal').innerText = (profit - exp).toLocaleString();
 }
 
-// Fixed Excel Download
+// Download function same rahega
 function downloadMonthlyReport() {
     let csv = "Date,Customer,Mobile,Items,Sale Value,Profit,Received,Status\n";
     sales.forEach(s => {
@@ -781,9 +781,9 @@ function downloadMonthlyReport() {
     a.href = URL.createObjectURL(blob);
     a.download = "Sales_Report.csv";
     a.click();
-}
+    }
     
-    
+
 
 
 function updateStats() {
