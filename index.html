@@ -707,7 +707,8 @@ async function reprintLastBill(phone) {
     } catch (e) { alert("Reprint error."); }
   }
     
-// --- COMPLETE MASTER REPORTS FUNCTION (DATE FIX) ---
+
+// --- COMPLETE MASTER REPORTS FUNCTION (DATE & BOOKER FIX) ---
 function renderReports(filterType = 'all', searchTerm = '') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let dailyItems = {};
@@ -716,62 +717,91 @@ function renderReports(filterType = 'all', searchTerm = '') {
     if (reportBody) reportBody.innerHTML = "";
 
     const now = new Date();
-    const todayStr = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
+    // Standard Date Format jo Booker use kar raha hai
+    const todayStr = new Date().toLocaleDateString('en-GB'); 
 
     sales.forEach(s => {
         const sDateStr = s.date || ""; 
-        const sMonth = sDateStr.split('/')[0] + '/' + sDateStr.split('/')[2];
+        // Month splitting fix for different formats
+        const dateParts = sDateStr.split('/');
+        const sMonth = dateParts.length > 2 ? dateParts[1] + '/' + dateParts[2] : "0/0";
         
-        // Profit Calculation Fix: Agar profit zero hai toh khud calculate kare
+        // Profit Calculation: Booker (PENDING) aur Admin (COMPLETED) dono ke liye
         let sProfit = Number(s.profit) || 0;
         if(sProfit === 0 && s.items) {
             s.items.forEach(it => {
                 let pObj = prods.find(x => x.name.toLowerCase() === it.name.toLowerCase());
-                let cost = pObj ? Number(pObj.buyPrice || pObj.cost) : Number(it.price) * 0.7;
+                let cost = pObj ? Number(pObj.buyPrice || pObj.cost || 0) : Number(it.price) * 0.7;
                 sProfit += (Number(it.price) - cost) * Number(it.qty);
             });
         }
 
-        if(sMonth && !sMonth.includes("undefined")) {
+        // Monthly Summary Update
+        if(sMonth && sMonth !== "0/0") {
             if(!monthlyData[sMonth]) monthlyData[sMonth] = { sales: 0, exp: 0, profit: 0 };
-            monthlyData[sMonth].sales += Number(s.total) || 0;
+            monthlyData[sMonth].sales += Number(s.grandTotal || s.itemsSum || 0);
             monthlyData[sMonth].profit += sProfit;
         }
 
-        // Today's Items logic (Fixing Visibility)
+        // Today's Items logic: Booker orders (PENDING) ab yahan dikhen ge
         if(sDateStr === todayStr && s.items) {
             s.items.forEach(item => {
+                const qty = Number(item.qty) || 0;
+                const price = Number(item.price) || 0;
                 if(!dailyItems[item.name]) dailyItems[item.name] = { qty: 0, total: 0 };
-                dailyItems[item.name].qty += Number(item.qty);
-                dailyItems[item.name].total += (Number(item.price) * Number(item.qty));
+                dailyItems[item.name].qty += qty;
+                dailyItems[item.name].total += (price * qty);
             });
         }
 
+        // Visibility Filter (Search aur Daily filter)
         let isVisible = true;
         if (filterType === 'daily') isVisible = (sDateStr === todayStr);
         if (searchTerm) {
             const sLower = searchTerm.toLowerCase();
-            if (!(s.customer || "").toLowerCase().includes(sLower) && 
-                !(s.items || []).some(i => i.name.toLowerCase().includes(sLower))) isVisible = false;
+            const custMatch = (s.customer || "").toLowerCase().includes(sLower);
+            const itemMatch = (s.items || []).some(i => i.name.toLowerCase().includes(sLower));
+            if (!custMatch && !itemMatch) isVisible = false;
         }
 
         if(isVisible) {
-            sSum += Number(s.total) || 0;
+            const billAmt = Number(s.grandTotal || s.itemsSum || 0);
+            sSum += billAmt;
             totalProfit += sProfit;
             if (reportBody) {
-                reportBody.innerHTML += `<tr class="border-b text-[10px] font-bold uppercase"><td class="p-2">${sDateStr}</td><td class="p-2">${s.customer || "Walking"}</td><td class="p-2 text-blue-600">${(Number(s.total)||0).toLocaleString()}</td><td class="p-2 text-emerald-600">${sProfit.toLocaleString()}</td></tr>`;
+                reportBody.innerHTML += `
+                <tr class="border-b text-[10px] font-bold uppercase">
+                    <td class="p-2">${sDateStr}</td>
+                    <td class="p-2">${s.customer || "Walking"} ${s.status === 'PENDING' ? '<span class="text-orange-500">[B]</span>' : ''}</td>
+                    <td class="p-2 text-blue-600">${billAmt.toLocaleString()}</td>
+                    <td class="p-2 text-emerald-600">${sProfit.toLocaleString()}</td>
+                </tr>`;
             }
         }
     });
 
+    // Expenses Calculation
     expenses.forEach(e => {
         let amt = Number(e.amount || e.amt) || 0;
         eSum += amt;
-        const eMonth = (e.date || "").split('/')[0] + '/' + (e.date || "").split('/')[2];
+        const dateParts = (e.date || "").split('/');
+        const eMonth = dateParts.length > 2 ? dateParts[1] + '/' + dateParts[2] : "";
         if(monthlyData[eMonth]) monthlyData[eMonth].exp += amt;
     });
 
-    prods.forEach(p => { stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice || p.cost) || 0); });
+    // Stock Asset Calculation
+    prods.forEach(p => { 
+        stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice || p.cost || 0)); 
+    });
+
+    // Dashboard Elements Update
+    if(document.getElementById('totalStockAsset')) document.getElementById('totalStockAsset').innerText = "Rs " + stockAsset.toLocaleString();
+    if(document.getElementById('totalNetProfit')) document.getElementById('totalNetProfit').innerText = "Rs " + (totalProfit - eSum).toLocaleString();
+    
+    // Today's item list render karein (Agar element ho)
+    renderDailyItemsTable(dailyItems);
+}
+    
 
     // UI Rendering
     updateReportUI(stockAsset, totalProfit, eSum, dailyItems, monthlyData, sSum);
@@ -811,15 +841,29 @@ function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
 }
     
 function updateStats() {
-    let today = new Date().toLocaleDateString(), profit = 0, todayExp = expenses.filter(e => e.date === today).reduce((a,b) => a + Number(b.amt), 0);
-    sales.filter(s => s.status === "COMPLETED" && s.date === today).forEach(s => {
-        if(s.items) s.items.forEach(i => {
-            let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase());
-            profit += (Number(i.price) - (p ? Number(p.cost) : Number(i.price))) * i.qty;
-        });
+    let today = new Date().toLocaleDateString('en-GB'), profit = 0, todayExp = 0;
+    
+    // Expenses calculate karein
+    expenses.filter(e => e.date === today).forEach(e => todayExp += Number(e.amount || 0));
+
+    // Sales filter karein: Ab hum COMPLETED aur PENDING (Booker orders) dono ko ginein ge
+    sales.filter(s => (s.status === "COMPLETED" || s.status === "PENDING") && s.date === today).forEach(s => {
+        if(s.items) {
+            s.items.forEach(i => {
+                let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase());
+                if (p) {
+                    // Profit = (Sale Price - Cost Price) * Quantity
+                    profit += (Number(i.price) - (Number(p.cost) || 0)) * Number(i.qty);
+                }
+            });
+        }
     });
-    document.getElementById('dailyProfitVal').innerText = (profit - todayExp).toFixed(0);
+
+    // Dashboard par update karein
+    const profEl = document.getElementById('dailyProfitVal');
+    if(profEl) profEl.innerText = "Rs " + (profit - todayExp).toLocaleString();
 }
+    
 function handleLogo(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { settings.logo = e.target.result; applySettings(); }; reader.readAsDataURL(input.files[0]); } }
 function removeLogo() { settings.logo = ""; applySettings(); }
 function applySettings() {
