@@ -1063,13 +1063,13 @@ if (localData) {
 // FINAL FIXED: PENDING ORDERS & RECOVERY
 // ==========================================
 
+
 // 1. ORDER BOOKING (Saaman ki List)
-// Yahan hum 'booker_sales' aur 'shop_orders' dono check kar rahe hain
 db.collection("booker_sales").where("status", "==", "PENDING").onSnapshot(snap => {
     const orderArea = document.getElementById('orderListArea');
-    if(!orderArea) return;
+    if (!orderArea) return;
 
-    if(snap.empty) {
+    if (snap.empty) {
         orderArea.innerHTML = `<div class="col-span-full p-10 text-center border-4 border-dashed border-slate-100 rounded-[2rem]">
             <p class="text-slate-400 font-bold uppercase text-[10px]">No New Orders (Check Booker App)</p>
         </div>`;
@@ -1079,7 +1079,6 @@ db.collection("booker_sales").where("status", "==", "PENDING").onSnapshot(snap =
     orderArea.innerHTML = "";
     snap.forEach(doc => {
         const o = doc.data();
-        // Purana format (item1, qty1) ya Naya format (items array) dono handle karega
         orderArea.innerHTML += `
             <div class="bg-white p-6 rounded-[2.5rem] border-2 border-green-100 shadow-lg mb-4">
                 <div class="flex justify-between items-start mb-4">
@@ -1097,13 +1096,23 @@ db.collection("booker_sales").where("status", "==", "PENDING").onSnapshot(snap =
     });
 });
 
-// 2. RECOVERY (Paisa) - Jo sidebar badge (1) dikha raha hai
+// 2. RECOVERY (Paisa)
 db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap => {
     const list = document.getElementById('bookerRequestList');
     const badge = document.getElementById('recoveryBadge');
-    if(badge) { badge.innerText = snap.size; badge.style.display = snap.size > 0 ? 'block' : 'none'; }
-    if(!list) return;
     
+    if (badge) {
+        badge.innerText = snap.size;
+        badge.style.display = snap.size > 0 ? 'block' : 'none';
+    }
+    
+    if (!list) return;
+
+    if (snap.empty) {
+        list.innerHTML = "<p class='text-center py-10 text-slate-400 font-bold uppercase text-[10px]'>No pending recovery.</p>";
+        return;
+    }
+
     list.innerHTML = "";
     snap.forEach(doc => {
         const d = doc.data();
@@ -1120,6 +1129,7 @@ db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap 
             </div>`;
     });
 });
+    
 
 async function completeOrder(id) {
     if(confirm("Mark as Dispatched?")) {
