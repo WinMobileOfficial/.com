@@ -502,7 +502,7 @@ async function processBill() {
 }
     
     
-function printReceipt(s) {
+function printReceipt(s, isLedger = false) {
     document.getElementById('rStoreName').innerText = settings.name; 
     document.getElementById('rStorePhone').innerText = settings.phone;
     document.getElementById('rDateTime').innerText = s.date + " " + (s.time || ""); 
@@ -514,19 +514,27 @@ function printReceipt(s) {
             <span>${i.subtotal}</span>
         </div>`).join('');
         
-    let itemsT = Number(s.itemsSum) || 0;
-    let oldB = Number(s.prevBal) || 0;
-    let paidAmt = Number(s.paid) || 0;
+    // Amounts uthayein (Database se ya Calculations se)
+    let currentBillTotal = Number(s.itemsSum) || Number(s.grandTotal) || 0;
+    let oldBalance = Number(s.prevBal) || 0;
+    let paidAmount = Number(s.paid) || 0;
 
-    document.getElementById('rItemsTotal').innerText = "Rs " + itemsT.toLocaleString();
-    document.getElementById('rPrevBal').innerText = "Rs " + oldB.toLocaleString();
-    document.getElementById('rGrandTotal').innerText = "Rs " + itemsT.toLocaleString();
-    document.getElementById('rPaid').innerText = "Rs " + paidAmt.toLocaleString();
+    document.getElementById('rItemsTotal').innerText = "Rs " + currentBillTotal.toLocaleString();
+    document.getElementById('rPrevBal').innerText = "Rs " + oldBalance.toLocaleString();
+    document.getElementById('rGrandTotal').innerText = "Rs " + currentBillTotal.toLocaleString();
+    document.getElementById('rPaid').innerText = "Rs " + paidAmount.toLocaleString();
 
-    // Sahih Net Balance dikhane ka formula (Chahe Reprint ho ya Naya Bill)
-    // Agar database mein 'finalBal' para hai to wahi dikhao, warna math karo
-    let displayNet = (s.finalBal !== undefined) ? s.finalBal : (oldB + itemsT - paidAmt);
-    document.getElementById('rNetBal').innerText = "Rs " + Number(displayNet).toLocaleString();
+    // NET BALANCE LOGIC
+    let netBalance = 0;
+    if (isLedger) {
+        // Agar Ledger screen se REPRINT ho raha hai
+        netBalance = s.finalBal || (oldBalance + currentBillTotal - paidAmount);
+    } else {
+        // Agar History ya naye bill se print ho raha hai
+        netBalance = oldBalance + currentBillTotal - paidAmount;
+    }
+
+    document.getElementById('rNetBal').innerText = "Rs " + netBalance.toLocaleString();
 
     if(settings.logo) { 
         document.getElementById('rLogo').src = settings.logo; 
@@ -535,7 +543,6 @@ function printReceipt(s) {
         document.getElementById('rLogo').style.display="none"; 
     }
     
-    // Printer render hone ka thora intezar karega
     setTimeout(() => { window.print(); }, 500);
 }
     
