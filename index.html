@@ -418,16 +418,12 @@ async function processBill() {
     let mob = document.getElementById('cMob').value || "0000", cName = document.getElementById('cName').value || "WALKING";
     let total = parseFloat(document.getElementById('totalDisplay').innerText), paid = parseFloat(document.getElementById('paidAmt').value) || 0;
     let itemsSum = cart.reduce((s,i)=>s+i.subtotal, 0), prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0;
-    
-    let sale = { id: Date.now().toString(), status: "COMPLETED", date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), timestamp: Date.now(), customer: cName, mob, items: [...cart], itemsSum, prevBal: prev, grandTotal: total, paid, finalBal: total - paid };
+    let sale = { id: Date.now().toString(), status: "PENDING", date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), timestamp: Date.now(), customer: cName, mob, items: [...cart], itemsSum, prevBal: prev, grandTotal: total, paid: 0, finalBal: total };
     
     await db.collection("sales").doc(sale.id).set(sale);
     await db.collection("customers").doc(mob).set({ name: cName, balance: total - paid }, { merge: true });
     
-    for(let i of cart) { 
-        let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase()); 
-        if(p) db.collection("products").doc(p.name.toLowerCase()).update({stock: p.stock - i.qty}); 
-    }
+    
     
     printReceipt(sale); 
     cart = []; renderCart();
