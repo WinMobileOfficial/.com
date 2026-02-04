@@ -1060,15 +1060,15 @@ if (localData) {
 }
     // ==========================================
 // ==========================================
-// HAJI SAHAB FINAL FIXED SYNC CODE
+// HAJI SAHAB FINAL REPLACEMENT CODE
 // ==========================================
 
 // 1. ORDER BOOKING: Database mein collection 'sales' hai
 db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
     const orderArea = document.getElementById('orderListArea');
     
-    // Fixed: Logic sahi kar di (Agar orderArea NA mile to return karo)
-    if (!orderArea) return;
+    // Sahi Logic: Agar orderArea NA mile to return karo
+    if (!orderArea) return; 
 
     if (snap.empty) {
         orderArea.innerHTML = `<div class="col-span-full p-10 text-center border-4 border-dashed border-slate-100 rounded-[2rem]">
@@ -1086,7 +1086,7 @@ db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
                     <h3 class="font-black text-slate-800 uppercase text-sm">${o.customer || 'Unknown Shop'}</h3>
                     <span class="text-[9px] font-bold text-slate-400">${o.date || 'Today'}</span>
                 </div>
-                <div class="space-y-2 mb-6 bg-green-50 p-4 rounded-2xl">
+                <div class="space-y-2 mb-6 bg-green-50 p-4 rounded-2xl text-left">
                     ${o.items ? o.items.map(i => `
                         <div class="flex justify-between text-[11px] font-black border-b border-dashed border-green-200 pb-1">
                             <span class="text-slate-600">${i.name}</span>
@@ -1098,14 +1098,14 @@ db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
                     <p class="text-[10px] font-black text-slate-400 uppercase">Grand Total</p>
                     <p class="text-lg font-black text-slate-800">Rs ${Number(o.grandTotal || 0).toLocaleString()}</p>
                 </div>
-                <button onclick="completeOrder('${doc.id}')" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all">
+                <button onclick="completeOrder('${doc.id}')" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95">
                     Mark as Dispatched
                 </button>
             </div>`;
     });
 });
 
-// 2. CASH RECOVERY: Paison ki entry (Recovery Badge fix)
+// 2. CASH RECOVERY: Paison ki entry
 db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap => {
     const list = document.getElementById('bookerRequestList');
     const badge = document.getElementById('recoveryBadge');
@@ -1142,7 +1142,7 @@ db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap 
     });
 });
 
-// 3. ACTIONS: Update and Sync
+// FUNCTIONS
 async function completeOrder(id) {
     if(confirm("Mark this order as Dispatched?")) {
         await db.collection("sales").doc(id).update({ status: "DISPATCHED" });
@@ -1151,7 +1151,7 @@ async function completeOrder(id) {
 }
 
 async function approveNow(reqId, custId, amount, name) {
-    if(!confirm("Approve Cash Recovery for " + name + "?")) return;
+    if(!confirm("Approve Cash?")) return;
     try {
         const ref = db.collection("customers").doc(custId);
         const doc = await ref.get();
@@ -1169,15 +1169,12 @@ async function approveNow(reqId, custId, amount, name) {
 }
 
 async function rejectReq(id) {
-    if(confirm("Reject this request?")) { 
-        await db.collection("cash_requests").doc(id).update({ status: "REJECTED" }); 
-    }
+    if(confirm("Reject?")) { await db.collection("cash_requests").doc(id).update({ status: "REJECTED" }); }
 }
 
 init(); 
     
-    
-    
+
 
 </script>
 </body>
