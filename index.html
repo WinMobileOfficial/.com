@@ -1059,103 +1059,99 @@ if (localData) {
     customers = JSON.parse(localData);
 }
     // ==========================================
-// SMART BOOKER RECOVERY SYSTEM (STEP 3)
+// ==========================================
+// SMART BOOKER SYSTEM (FULL SYNC)
 // ==========================================
 
-// 1. REAL-TIME LISTENER: Booker ki requests check karna
-// 1. REAL-TIME LISTENER: Is se card screen par ayega
+// 1. ORDER BOOKING LISTENER (Saaman ki List)
+db.collection("shop_orders").where("status", "==", "PENDING").onSnapshot(snap => {
+    const orderArea = document.getElementById('orderListArea');
+    if(!orderArea) return;
+    if(snap.empty) {
+        orderArea.innerHTML = `<div class="col-span-full p-10 text-center border-4 border-dashed border-slate-100 rounded-[2rem]"><p class="text-slate-400 font-bold uppercase text-[10px]">No New Orders</p></div>`;
+        return;
+    }
+    orderArea.innerHTML = "";
+    snap.forEach(doc => {
+        const o = doc.data();
+        orderArea.innerHTML += `
+            <div class="bg-white p-6 rounded-[2.5rem] border-2 border-green-100 shadow-lg mb-4">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="font-black text-slate-800 uppercase text-sm">${o.customerName}</h3>
+                    <span class="text-[9px] font-bold text-slate-400">${o.date || 'Today'}</span>
+                </div>
+                <div class="space-y-2 mb-6 bg-green-50 p-4 rounded-2xl">
+                    ${o.items ? o.items.map(item => `
+                        <div class="flex justify-between text-[11px] font-black border-b border-dashed border-green-200 pb-1">
+                            <span class="text-slate-600">${item.name}</span>
+                            <span class="text-green-600">x${item.qty}</span>
+                        </div>
+                    `).join('') : 'No items'}
+                </div>
+                <button onclick="dispatchOrder('${doc.id}')" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg">Mark as Dispatched</button>
+            </div>`;
+    });
+});
+
+// 2. CASH RECOVERY LISTENER (Paison ki Entry)
 db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap => {
     const list = document.getElementById('bookerRequestList');
     const badge = document.getElementById('recoveryBadge');
-    const countDisplay = document.getElementById('reqCount');
-    
+    if(badge) { badge.innerText = snap.size; badge.style.display = snap.size > 0 ? 'block' : 'none'; }
+    if(!list) return;
     if(snap.empty) {
-        list.innerHTML = `<div class="col-span-full py-16 text-center bg-slate-50 rounded-[3rem] border-4 border-dashed border-slate-100">
-            <p class="text-slate-300 font-black italic uppercase text-xs">No pending requests from market.</p>
-        </div>`;
-        if(badge) badge.classList.add('hidden');
-        if(countDisplay) countDisplay.innerText = "0";
+        list.innerHTML = "<p class='text-center py-10 text-slate-400 font-bold uppercase text-[10px]'>No pending recovery.</p>";
         return;
     }
-
-    if(badge) {
-        badge.innerText = snap.size;
-        badge.classList.remove('hidden');
-    }
-    if(countDisplay) countDisplay.innerText = snap.size;
     list.innerHTML = "";
-
     snap.forEach(doc => {
         const d = doc.data();
-        // Amount ko safe tarike se nikalna
-        const displayAmount = d.amount ? Number(d.amount).toLocaleString() : '0';
-        
         list.innerHTML += `
-            <div class="bg-white p-6 rounded-[2.5rem] border-2 border-slate-100 shadow-xl relative overflow-hidden mb-4">
-                <div class="absolute top-0 left-0 w-2 h-full bg-indigo-600"></div>
-                <div class="mb-4">
-                    <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">${d.date || 'Today'}</span>
-                    <h4 class="font-black text-indigo-950 uppercase text-sm mt-1">${d.customerName || 'Unknown Shop'}</h4>
+            <div class="bg-white p-6 rounded-[2.5rem] border-2 border-indigo-100 shadow-xl mb-4">
+                <h4 class="font-black text-indigo-900 uppercase text-xs mb-3">${d.customerName}</h4>
+                <div class="bg-indigo-50 p-4 rounded-2xl mb-4 text-center">
+                    <p class="text-2xl font-black text-indigo-700">Rs ${Number(d.amount || 0).toLocaleString()}</p>
                 </div>
-                
-                <div class="bg-indigo-50 p-4 rounded-2xl mb-6">
-                    <p class="text-[9px] font-black text-indigo-400 uppercase mb-1">Cash Collected</p>
-                    <p class="text-2xl font-black text-indigo-900 italic">Rs ${displayAmount}</p>
-                </div>
-
-                <div class="flex gap-3">
-                    <button onclick="approveNow('${doc.id}', '${d.customerId}', ${d.amount}, '${d.customerName}')" 
-                        class="flex-[2] bg-indigo-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all">
-                        Approve & Sync
-                    </button>
-                    <button onclick="rejectReq('${doc.id}')" 
-                        class="flex-1 bg-slate-100 text-rose-500 py-4 rounded-2xl font-black text-[10px] uppercase">
-                        <i class="fas fa-times"></i>
-                    </button>
+                <div class="flex gap-2">
+                    <button onclick="approveNow('${doc.id}', '${d.customerId}', ${d.amount}, '${d.customerName}')" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold text-[10px] uppercase">Approve</button>
+                    <button onclick="rejectReq('${doc.id}')" class="p-3 bg-slate-100 text-rose-500 rounded-xl"><i class="fas fa-times"></i></button>
                 </div>
             </div>`;
     });
 });
-    
 
-// 2. APPROVE FUNCTION: Ledger update aur Report Sync
+// 3. FUNCTIONS (Approve, Reject, Dispatch)
 async function approveNow(reqId, custId, amount, name) {
     if(!confirm("Confirm Cash Recovery for " + name + "?")) return;
-    
     try {
-        // A: Customer ka balance update karna
         const ref = db.collection("customers").doc(custId);
         const doc = await ref.get();
         if(doc.exists) {
             let currentBal = Number(doc.data().balance || 0);
             await ref.update({ balance: currentBal - amount });
         }
-
-        // B: Report ke liye data save karna (Is se report button chalega)
         await db.collection("daily_reports").add({
-            customerName: name,
-            amount: amount,
-            type: "BOOKER_RECOVERY",
-            date: new Date().toLocaleDateString('en-GB'),
-            timestamp: Date.now()
+            customerName: name, amount: amount, type: "BOOKER_RECOVERY",
+            date: new Date().toLocaleDateString('en-GB'), timestamp: Date.now()
         });
-
-        // C: Request ko APPROVED mark karna taake list se hat jaye
         await db.collection("cash_requests").doc(reqId).update({ status: "APPROVED" });
-        
-        alert("✅ Ledger Updated & Record added to Report!");
-    } catch(e) {
-        alert("Sync Error!");
-        console.error(e);
+        alert("✅ Ledger Updated & Saved to Report!");
+    } catch(e) { alert("Sync Error!"); console.error(e); }
+}
+
+async function dispatchOrder(id) {
+    if(confirm("Mark as Dispatched?")) {
+        await db.collection("shop_orders").doc(id).update({ status: "DISPATCHED" });
+        alert("Order Dispatched!");
     }
 }
 
-// 3. REJECT FUNCTION
 async function rejectReq(id) {
     if(confirm("Reject this request?")) {
         await db.collection("cash_requests").doc(id).update({ status: "REJECTED" });
     }
 }
+    
     
     
 init();
