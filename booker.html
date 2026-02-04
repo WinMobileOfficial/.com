@@ -211,8 +211,20 @@ async function finalSubmit() {
             const d = await res.json(); if(d.success) photoUrl = d.data.url;
         }
 
-        await db.collection("sales").doc(orderId).set({ id: orderId, customer: shop, mob: phone, date: getToday(), items: [...cart], grandTotal: total, img: photoUrl, gps: mapLink, timestamp: Date.now() });
-
+        await db.collection("sales").doc(orderId).set({ 
+    id: orderId, 
+    customer: shop, 
+    mob: phone, 
+    date: getToday(), 
+    items: [...cart], 
+    grandTotal: total, 
+    img: photoUrl, 
+    gps: mapLink, 
+    status: "PENDING", 
+    role: "booker", 
+    timestamp: Date.now() 
+});
+        
         let itemsMsg = cart.map(i => `• ${i.name} (x${i.qty})`).join('%0A');
         let waMsg = `🏢 *ORDER RECEIVED*%0A━━━━━━━━━━━━━━━━━━━━%0A🆔 *ID:* ${orderId}%0A🏪 *Shop:* ${shop}%0A💰 *Total:* Rs ${total.toLocaleString()}%0A📸 *Photo:* ${photoUrl}%0A📍 *Location:* ${mapLink}%0A━━━━━━━━━━━━━━━━━━━━%0A🛒 *ITEMS:*%0A${itemsMsg}`;
 
