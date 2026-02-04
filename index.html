@@ -404,64 +404,83 @@ function renderCart() {
     calcTotal(); 
 }
 
-function calcTotal() { 
-    let itemsSum = cart.reduce((s, i) => s + i.subtotal, 0); 
-    // Grand Total sirf aaj ke saaman ki raqam honi chahiye
-    let grand = itemsSum; 
-    document.getElementById('totalDisplay').innerText = grand; 
-
-    let prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0; 
-    let paid = parseFloat(document.getElementById('paidAmt').value) || 0; 
+function calcTotal() {
+    let itemsSum = cart.reduce((s, i) => s + i.subtotal, 0);
+    // TOTAL sirf items ka dikhayein
+    document.getElementById('totalDisplay').innerText = itemsSum;
     
-    // Balance mein (Purana Udhaar + Aaj ka Bill - Paid) dikhayein
-    document.getElementById('balAmt').value = (prev + grand) - paid; 
+    let prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0;
+    let paid = parseFloat(document.getElementById('paidAmt').value) || 0;
+    
+    // Niche balance dabba sahi dikhayein
+    document.getElementById('balAmt').value = (itemsSum + prev) - paid;
 }
     
 async function processBill() {
-    if(!cart.length) return;
-    let mob = document.getElementById('cMob').value || "0000", 
-        cName = document.getElementById('cName').value || "WALKING";
-    
-    // 1. Asli total sirf items ka nikalein
-    let itemsSum = cart.reduce((s,i)=>s+i.subtotal, 0); 
-    let prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0;
-    let paid = parseFloat(document.getElementById('paidAmt').value) || 0;
+    if (!cart.length) return;
 
-    // 2. Naya balance jo ledger mein jayega (Pichla + Aaj ka - Paid)
-    let nayaBalance = (prev + itemsSum) - paid;
+    // 1. Double entry rokne ke liye button ko disable karein
+    const saveBtn = document.querySelector("button[onclick='processBill()']");
+    if (saveBtn) saveBtn.disabled = true;
 
-    let sale = { 
-        id: Date.now().toString(), 
-        status: "PENDING", 
-        date: new Date().toLocaleDateString(), 
-        time: new Date().toLocaleTimeString(), 
-        timestamp: Date.now(), 
-        customer: cName, 
-        mob, 
-        items: [...cart], 
-        itemsSum, 
-        prevBal: prev, 
-        grandTotal: itemsSum, // Yahan 'total' ki jagah 'itemsSum' dalo
-        paid: paid,           // Yahan 0 ki jagah asli 'paid' dalo
-        finalBal: nayaBalance 
-    };
-    
-    // 3. Sales mein save karein
-    await db.collection("sales").doc(sale.id).set(sale);
-    // 4. Ledger mein sahi calculation save karein
-    await db.collection("customers").doc(mob).set({ name: cName, balance: nayaBalance }, { merge: true });
-    
-    printReceipt(sale); 
-    cart = []; renderCart();
-    ['cName','cMob','pSearch','paidAmt','cSearchInput'].forEach(id => {
-        let el = document.getElementById(id);
-        if(el) el.value = "";
-    });
-    document.getElementById('prevBalVal').innerText = "0"; 
-    document.getElementById('prevBalShow').classList.add('hidden');
-        }
-    
+    try {
+        let mob = document.getElementById('cMob').value || "0000";
+        let cName = document.getElementById('cName').value || "WALKING";
 
+        // 2. Calculation (Sirf items ka total aur purana udhaar)
+        let itemsSum = cart.reduce((s, i) => s + i.subtotal, 0);
+        let prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0;
+        let paid = parseFloat(document.getElementById('paidAmt').value) || 0;
+
+        // Sahih Balance Formula
+        let nayaBalance = (prev + itemsSum) - paid;
+
+        let sale = {
+            id: Date.now().toString(),
+            status: "PENDING",
+            date: new Date().toLocaleDateString(),
+            time: new Date().toLocaleTimeString(),
+            timestamp: Date.now(),
+            customer: cName,
+            mob: mob,
+            items: [...cart],
+            itemsSum: itemsSum,
+            prevBal: prev,
+            grandTotal: itemsSum, // Aaj ka bill
+            paid: paid,
+            finalBal: nayaBalance // Ledger balance
+        };
+
+        // 3. Database Updates
+        await db.collection("sales").doc(sale.id).set(sale);
+        await db.collection("customers").doc(mob).set({ 
+            name: cName, 
+            balance: nayaBalance 
+        }, { merge: true });
+
+        // 4. Raseed print karein
+        printReceipt(sale);
+
+        // 5. Form Reset (Sab khali kar dein)
+        cart = [];
+        renderCart();
+        ['cName', 'cMob', 'pSearch', 'paidAmt', 'cSearchInput'].forEach(id => {
+            let el = document.getElementById(id);
+            if (el) el.value = "";
+        });
+        document.getElementById('prevBalVal').innerText = "0";
+        document.getElementById('prevBalShow').classList.add('hidden');
+        if(document.getElementById('totalDisplay')) document.getElementById('totalDisplay').innerText = "0";
+
+    } catch (e) {
+        console.error("Saving Error: ", e);
+        alert("Data save nahi ho saka!");
+    } finally {
+        // Kaam khatam hone par button wapis khol dein
+        if (saveBtn) saveBtn.disabled = false;
+    }
+}
+    
 
  function printReceipt(s, isLedger = false) {
     document.getElementById('rStoreName').innerText = settings.name; 
