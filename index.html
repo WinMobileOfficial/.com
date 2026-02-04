@@ -708,21 +708,24 @@ async function reprintLastBill(phone) {
   }
     
 // --- COMPLETE MASTER REPORTS FUNCTION (FIXED VERSION) ---
+      // --- MASTER REPORTS FUNCTION (LINE 710) ---
 function renderReports(filterType = 'all', searchTerm = '') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let dailyItems = {};
+    let monthlyData = {};
     const reportBody = document.getElementById('reportTableBody');
     if (reportBody) reportBody.innerHTML = "";
 
-    // 1. Aapke system ka asli Date format (M/D/YYYY)
     const now = new Date();
     const todayStr = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
 
     sales.forEach(s => {
         const sDateStr = s.date || ""; 
-        let sProfit = Number(s.profit) || 0;
+        const dateParts = sDateStr.split('/');
+        const sMonth = dateParts.length > 2 ? dateParts[0] + '/' + dateParts[2] : "0/0";
         
         // Profit Calculation (Admin + Booker)
+        let sProfit = Number(s.profit) || 0;
         if(sProfit === 0 && s.items) {
             s.items.forEach(it => {
                 let pObj = prods.find(x => x.name.toLowerCase() === it.name.toLowerCase());
@@ -731,7 +734,14 @@ function renderReports(filterType = 'all', searchTerm = '') {
             });
         }
 
-        // Today's Items logic (Booker orders are PENDING but we show them here)
+        // Monthly Summary Logic
+        if(sMonth && sMonth !== "0/0") {
+            if(!monthlyData[sMonth]) monthlyData[sMonth] = { sales: 0, exp: 0, profit: 0 };
+            monthlyData[sMonth].sales += Number(s.grandTotal || s.itemsSum || 0);
+            monthlyData[sMonth].profit += sProfit;
+        }
+
+        // Booker aur Admin dono ke items "Today Sales" mein shamil karein
         if(sDateStr === todayStr && s.items) {
             s.items.forEach(item => {
                 if(!dailyItems[item.name]) dailyItems[item.name] = { qty: 0, total: 0 };
@@ -744,8 +754,7 @@ function renderReports(filterType = 'all', searchTerm = '') {
         if (filterType === 'daily') isVisible = (sDateStr === todayStr);
         if (searchTerm) {
             const sLower = searchTerm.toLowerCase();
-            if (!(s.customer || "").toLowerCase().includes(sLower) && 
-                !(s.items || []).some(i => i.name.toLowerCase().includes(sLower))) isVisible = false;
+            if (!(s.customer || "").toLowerCase().includes(sLower)) isVisible = false;
         }
 
         if(isVisible) {
@@ -756,7 +765,7 @@ function renderReports(filterType = 'all', searchTerm = '') {
                 reportBody.innerHTML += `
                 <tr class="border-b text-[10px] font-bold uppercase">
                     <td class="p-2">${sDateStr}</td>
-                    <td class="p-2">${s.customer || "Walking"} ${s.status === 'PENDING' ? '<span style="color:orange; font-size:8px;">[BOOKER]</span>' : ''}</td>
+                    <td class="p-2">${s.customer || "Walking"} ${s.status === 'PENDING' ? '<span class="text-orange-500">[BOOKER]</span>' : ''}</td>
                     <td class="p-2 text-blue-600">${billAmt.toLocaleString()}</td>
                     <td class="p-2 text-emerald-600">${sProfit.toLocaleString()}</td>
                 </tr>`;
@@ -764,47 +773,28 @@ function renderReports(filterType = 'all', searchTerm = '') {
         }
     });
 
-    // Expenses Calculation
+    // Expenses aur Stock Asset
     expenses.forEach(e => {
-        if(e.date === todayStr) eSum += Number(e.amount || e.amt || 0);
+        let amt = Number(e.amount || e.amt || 0);
+        if(e.date === todayStr) eSum += amt;
+        const dP = (e.date || "").split('/');
+        const eMonth = dP.length > 2 ? dP[0] + '/' + dP[2] : "";
+        if(monthlyData[eMonth]) monthlyData[eMonth].exp += amt;
     });
 
-    // Stock Asset
     prods.forEach(p => { 
         stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice || p.cost || 0)); 
     });
 
-    if(document.getElementById('totalStockAsset')) document.getElementById('totalStockAsset').innerText = "Rs " + stockAsset.toLocaleString();
-    if(document.getElementById('totalNetProfit')) document.getElementById('totalNetProfit').innerText = "Rs " + (totalProfit - eSum).toLocaleString();
-    
-    // Niche wali table render karein
-    renderDailyItemsTable(dailyItems);
-}
-
-// Today Items Table Render Function
-function renderDailyItemsTable(dailyItems) {
-    const container = document.getElementById('todayItemsList');
-    if(!container) return; 
-
-    if(Object.keys(dailyItems).length === 0) {
-        container.innerHTML = "<tr><td colspan='3' class='text-center p-4'>Aaj koi sale nahi hui</td></tr>";
-        return;
-    }
-
-    container.innerHTML = Object.entries(dailyItems).map(([name, data]) => `
-        <tr class="border-b text-[11px] uppercase font-bold">
-            <td class="p-2">${name}</td>
-            <td class="p-2 text-center">x${data.qty}</td>
-            <td class="p-2 text-right">Rs ${data.total.toLocaleString()}</td>
-        </tr>
-    `).join('');
-                        }
-
+    // Dashboard card par Net Profit update karein
+    const profEl = document.getElementById('dailyProfitVal');
+    if(profEl) profEl.innerText = "Rs " + Math.round(totalProfit - eSum).toLocaleString();
 
     // UI Rendering
     updateReportUI(stockAsset, totalProfit, eSum, dailyItems, monthlyData, sSum);
 }
 
+// --- MASTER UI UPDATE FUNCTION ---
 function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
     const statsDiv = document.getElementById('repStats');
     if(statsDiv) {
@@ -837,38 +827,13 @@ function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
             </div>`).join('');
     }
 }
-    
+
+// --- SIMPLE STATS UPDATE ---
 function updateStats() {
-    try {
-        const now = new Date();
-        const todayStr = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
-        let profit = 0, todayExp = 0;
-
-        // Expenses filter
-        if (typeof expenses !== 'undefined') {
-            expenses.filter(e => e.date === todayStr).forEach(e => {
-                todayExp += Number(e.amount || e.amt || 0);
-            });
-        }
-
-        // Sales filter (Admin + Booker)
-        if (typeof sales !== 'undefined') {
-            sales.filter(s => (s.status === "COMPLETED" || s.status === "PENDING") && s.date === todayStr).forEach(s => {
-                if (s.items) {
-                    s.items.forEach(i => {
-                        // FIX: 'pList' ki jagah aapka asli 'prods' use kiya hai
-                        let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase());
-                        let cost = p ? Number(p.buyPrice || p.cost || 0) : Number(i.price) * 0.7;
-                        profit += (Number(i.price) - cost) * Number(i.qty || 0);
-                    });
-                }
-        
-
-        const profEl = document.getElementById('dailyProfitVal');
-        if (profEl) profEl.innerText = "Rs " + (profit - todayExp).toLocaleString();
-    } catch (e) { console.log("Stats Error skipped"); }
-}
-    
+    // Sirf calculations run karein baghair report table chede
+    renderReports('daily');
+           }
+            
                     
     
 function handleLogo(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { settings.logo = e.target.result; applySettings(); }; reader.readAsDataURL(input.files[0]); } }
