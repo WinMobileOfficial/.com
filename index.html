@@ -843,43 +843,81 @@ async function viewCustomerDetails(mob, name) {
     const hList = document.getElementById('modalHistoryList');
     hList.innerHTML = "Loading...";
 
+    // 1. Database se Card wala asli balance uthayein (Jo 8800 dikha raha hai)
+    const realBalance = Number(customers[mob]?.balance || 0);
+
+    // 2. Sari Sales aur Payments mangwayein
     const salesSnap = await db.collection("sales").where("mob", "==", mob).where("status", "==", "COMPLETED").get();
     let recs = salesSnap.docs.map(doc => {
         let data = doc.data();
         let itemNames = data.items ? data.items.map(i => `${i.name}(${i.qty})`).join(", ") : "SALE";
-        return { type: 'SALE', dr: data.itemsSum || data.grandTotal, cr: 0, date: data.date, timestamp: data.timestamp, details: itemNames };
+        return { 
+            type: 'SALE', 
+            dr: Number(data.itemsSum || data.grandTotal || 0), 
+            cr: 0, 
+            date: data.date, 
+            timestamp: data.timestamp, 
+            details: itemNames 
+        };
     });
 
     const paySnap = await db.collection("payments").where("mob", "==", mob).get();
     paySnap.forEach(doc => {
         let data = doc.data();
-        recs.push({ type: 'PAYMENT', dr: 0, cr: data.paid, date: data.date, timestamp: data.timestamp, details: "CASH RECEIVED" });
+        recs.push({ 
+            type: 'PAYMENT', 
+            dr: 0, 
+            cr: Number(data.paid || 0), 
+            date: data.date, 
+            timestamp: data.timestamp, 
+            details: "CASH RECEIVED" 
+        });
     });
 
-    // Purani entries pehle (Balance calculate karne ke liye)
+    // 3. Purani entries pehle sort karein
     recs.sort((a, b) => a.timestamp - b.timestamp);
 
+    // 4. Calculations check karein
     let runningBal = 0;
+    recs.forEach(r => runningBal += (r.dr - r.cr));
+
+    // Agar calculations 7500 hain aur card 8800, to farq nikal kar adjust karein
+    let diff = realBalance - runningBal;
+    if(diff !== 0) {
+        recs.unshift({
+            type: 'ADJUSTMENT',
+            dr: diff > 0 ? diff : 0,
+            cr: diff < 0 ? Math.abs(diff) : 0,
+            date: 'OPENING',
+            timestamp: 0,
+            details: "PREVIOUS / OPENING BALANCE"
+        });
+    }
+
+    // 5. Final Display logic
+    let displayBal = 0;
     let finalHtml = recs.map(r => {
-        runningBal += (r.dr - r.cr);
+        displayBal += (r.dr - r.cr);
         return `
         <div class="flex flex-col p-2 border-b text-[10px] uppercase italic font-bold">
             <div class="flex justify-between items-center">
                 <span class="text-slate-500">${r.date}</span>
-                <span class="text-blue-600">BAL: RS ${runningBal}</span>
+                <span class="text-blue-600">BAL: RS ${displayBal.toLocaleString()}</span>
             </div>
             <div class="flex justify-between mt-1">
-                <span class="opacity-70">${r.details}</span>
+                <span class="opacity-70 truncate max-w-[70%]">${r.details}</span>
                 <span class="${r.dr > 0 ? 'text-rose-600' : 'text-emerald-600'}">
                     ${r.dr > 0 ? '+'+r.dr : '-'+r.cr}
                 </span>
             </div>
         </div>`;
-    }).reverse().join(''); // Display ke liye naya record upar
+    }).reverse().join(''); 
 
     hList.innerHTML = finalHtml;
-    document.getElementById('modalCurrentBal').innerText = "Rs " + runningBal.toLocaleString();
+    // Header mein hamesha wahi dikhega jo card par hai (8800)
+    document.getElementById('modalCurrentBal').innerText = "Rs " + realBalance.toLocaleString();
 }
+    
     
     async function downloadBackup(type) {
     let allSales = [];
