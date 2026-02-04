@@ -1062,39 +1062,54 @@ if (localData) {
 // ==========================================
 // HAJI SAHAB FINAL MUKAMMAL CODE (SYNCED)
 // ==========================================
+// HAJI SAHAB: Sab mita kar ye naya start karein
+console.log("System Initializing...");
 
+const fetchOrders = () => {
+    const area = document.getElementById('pendingOrdersList');
+    if (!area) return console.error("ID 'pendingOrdersList' missing in HTML!");
 
-// 1. PENDING ORDERS: ID 'pendingOrdersList' aur Collection 'sales'
-// DEBUGGING MODE: Haji Sahab check karne ke liye
-console.log("Checking Database Connection...");
+    db.collection("sales").where("status", "==", "PENDING")
+    .onSnapshot(snap => {
+        console.log("Data received from Firebase. Count: ", snap.size);
+        area.innerHTML = "";
 
-db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
-    console.log("Snapshot received! Orders count: ", snap.size);
-    
-    const orderArea = document.getElementById('pendingOrdersList');
-    
-    if (!orderArea) {
-        alert("Ghalti: HTML mein 'pendingOrdersList' nahi mila!");
-        return;
-    }
+        if (snap.empty) {
+            area.innerHTML = "<div class='text-center p-10 font-bold text-slate-400'>NO PENDING ORDERS IN DATABASE</div>";
+            return;
+        }
 
-    if (snap.empty) {
-        orderArea.innerHTML = "<p class='text-center p-10 font-bold'>Database Empty: 'sales' collection mein PENDING orders nahi hain.</p>";
-        return;
-    }
-
-    // Agar data mila to yahan card banenge
-    orderArea.innerHTML = "";
-    snap.forEach(doc => {
-        const o = doc.data();
-        orderArea.innerHTML += `
-            <div class="bg-white p-5 rounded-3xl border-2 border-emerald-400 mb-4">
-                <h3 class="font-bold">${o.customer || 'Unknown'}</h3>
-                <p class="text-xs text-slate-500">Bill: Rs ${o.grandTotal || 0}</p>
-                <button onclick="completeOrder('${doc.id}')" class="w-full bg-black text-white mt-2 p-2 rounded-xl text-[10px]">DISPATCH</button>
-            </div>`;
+        snap.forEach(doc => {
+            const o = doc.data();
+            area.innerHTML += `
+                <div class="bg-white p-6 rounded-[2rem] border-2 border-emerald-500 shadow-xl mb-4">
+                    <h3 class="font-black text-slate-800">${o.customer || 'No Name'}</h3>
+                    <p class="text-xs font-bold text-emerald-600">Rs ${o.grandTotal || 0}</p>
+                    <div class="my-3 border-t border-dashed border-slate-200"></div>
+                    <button onclick="dispatchNow('${doc.id}')" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold text-[10px] uppercase">
+                        Dispatch Now
+                    </button>
+                </div>`;
+        });
+    }, err => {
+        console.error("Firebase Sync Error: ", err.message);
+        alert("Database Error: " + err.message);
     });
-});
+};
+
+// Dispatch Function
+window.dispatchNow = async (id) => {
+    if(confirm("Dispatch this order?")) {
+        await db.collection("sales").doc(id).update({ status: "DISPATCHED" });
+        alert("Order Dispatched!");
+    }
+};
+
+// Start
+fetchOrders();
+    
+
+
     
     
 
