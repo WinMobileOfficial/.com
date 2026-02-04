@@ -197,49 +197,32 @@ async function saveAndSelectCustomer() {
 
 // ORDER & WA LOGIC
 async function finalSubmit() {
-    const shop = document.getElementById('shopName').value, 
-          phone = document.getElementById('shopPhone').value, 
-          photoFile = document.getElementById('shopPhoto').files[0], 
-          btn = document.getElementById('submitBtn');
-          
-    if(!shop || cart.length === 0) return alert("Select Shop & Add Items!");
-    
-    btn.disabled = true; 
-    btn.innerHTML = "UPLOADING...";
+    // ... baki variables (shop, phone, etc.) ...
 
-    let photoUrl = "No Photo", 
-        orderId = "ALH-" + Date.now().toString().slice(-5), 
-        total = cart.reduce((s, i) => s + i.subtotal, 0);
+    // 1. Pehle Customer ka mojooda balance uthayein taake History mein sahi dikhay
+    let customerDoc = await db.collection("customers").doc(phone).get();
+    let oldBalance = 0;
+    if (customerDoc.exists) {
+        oldBalance = customerDoc.data().balance || 0;
+    }
 
-    const mapLink = userLat ? `http://googleusercontent.com/maps.google.com/q=${userLat},${userLong}` : "GPS: OFF";
+    let total = cart.reduce((s, i) => s + i.subtotal, 0);
 
-    try {
-        if(photoFile) {
-            let fd = new FormData(); fd.append("image", photoFile);
-            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
-            const d = await res.json(); if(d.success) photoUrl = d.data.url;
-        }
-
-        // SIRF SALE SAVE KAREIN (Ledger ko yahan hath nahi lagana)
-        await db.collection("sales").doc(orderId).set({ 
-            id: orderId, 
-            customer: shop, 
-            mob: phone, 
-            date: getToday(), 
-            time: new Date().toLocaleTimeString(),
-            items: [...cart], 
-            itemsSum: total,        
-            grandTotal: total,      
-            prevBal: 0,             
-            paid: 0, 
-            finalBal: total,        
-            img: photoUrl, 
-            gps: mapLink, 
-            status: "PENDING", 
-            role: "booker", 
-            timestamp: Date.now() 
-        });
-        
+    // 2. Sale object mein 'prevBal' lazmi save karein
+    await db.collection("sales").doc(orderId).set({ 
+        id: orderId, 
+        customer: shop, 
+        mob: phone, 
+        date: getToday(), 
+        items: [...cart], 
+        itemsSum: total,        // Bill amount
+        prevBal: oldBalance,    // YE LINE HISTORY KE LIYE ZAROORI HAI
+        grandTotal: total, 
+        finalBal: oldBalance + total, // Net total
+        status: "PENDING", 
+        role: "booker", 
+        timestamp: Date.now() 
+    });
         // WhatsApp wala logic wahi rehne dein
         let itemsMsg = cart.map(i => `• ${i.name} (x${i.qty})`).join('%0A');
         let waMsg = `🏢 *ORDER RECEIVED*%0A━━━━━━━━━━━━━━━━━━━━%0A🆔 *ID:* ${orderId}%0A🏪 *Shop:* ${shop}%0A💰 *Total:* Rs ${total.toLocaleString()}%0A📸 *Photo:* ${photoUrl}%0A📍 *Location:* ${mapLink}%0A━━━━━━━━━━━━━━━━━━━━%0A🛒 *ITEMS:*%0A${itemsMsg}`;
