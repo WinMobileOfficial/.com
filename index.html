@@ -1063,13 +1063,16 @@ if (localData) {
 // ==========================================
 
 // 1. REAL-TIME LISTENER: Booker ki requests check karna
+// 1. REAL-TIME LISTENER: Is se card screen par ayega
 db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap => {
     const list = document.getElementById('bookerRequestList');
     const badge = document.getElementById('recoveryBadge');
     const countDisplay = document.getElementById('reqCount');
     
     if(snap.empty) {
-        list.innerHTML = `<div class="col-span-full py-16 text-center bg-slate-50 rounded-[3rem] border-4 border-dashed border-slate-100"><p class="text-slate-300 font-black italic uppercase text-xs">No pending requests from market.</p></div>`;
+        list.innerHTML = `<div class="col-span-full py-16 text-center bg-slate-50 rounded-[3rem] border-4 border-dashed border-slate-100">
+            <p class="text-slate-300 font-black italic uppercase text-xs">No pending requests from market.</p>
+        </div>`;
         if(badge) badge.classList.add('hidden');
         if(countDisplay) countDisplay.innerText = "0";
         return;
@@ -1084,17 +1087,20 @@ db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap 
 
     snap.forEach(doc => {
         const d = doc.data();
+        // Amount ko safe tarike se nikalna
+        const displayAmount = d.amount ? Number(d.amount).toLocaleString() : '0';
+        
         list.innerHTML += `
-            <div class="bg-white p-6 rounded-[2.5rem] border-2 border-slate-100 shadow-xl hover:border-indigo-500 transition-all duration-300 relative overflow-hidden">
+            <div class="bg-white p-6 rounded-[2.5rem] border-2 border-slate-100 shadow-xl relative overflow-hidden mb-4">
                 <div class="absolute top-0 left-0 w-2 h-full bg-indigo-600"></div>
                 <div class="mb-4">
-                    <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">${d.date}</span>
-                    <h4 class="font-black text-indigo-950 uppercase text-sm mt-1 leading-tight">${d.customerName}</h4>
+                    <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">${d.date || 'Today'}</span>
+                    <h4 class="font-black text-indigo-950 uppercase text-sm mt-1">${d.customerName || 'Unknown Shop'}</h4>
                 </div>
                 
                 <div class="bg-indigo-50 p-4 rounded-2xl mb-6">
                     <p class="text-[9px] font-black text-indigo-400 uppercase mb-1">Cash Collected</p>
-                    <p class="text-2xl font-black text-indigo-900 italic tracking-tighter">Rs ${Number(d.amount).toLocaleString()}</p>
+                    <p class="text-2xl font-black text-indigo-900 italic">Rs ${displayAmount}</p>
                 </div>
 
                 <div class="flex gap-3">
@@ -1110,6 +1116,7 @@ db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap 
             </div>`;
     });
 });
+    
 
 // 2. APPROVE FUNCTION: Ledger update aur Report Sync
 async function approveNow(reqId, custId, amount, name) {
