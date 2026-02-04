@@ -1062,53 +1062,43 @@ if (localData) {
 // ==========================================
 // HAJI SAHAB FINAL MUKAMMAL CODE (SYNCED)
 // ==========================================
-// HAJI SAHAB: Sab mita kar ye naya start karein
-console.log("System Initializing...");
-
-const fetchOrders = () => {
-    const area = document.getElementById('pendingOrdersList');
-    if (!area) return console.error("ID 'pendingOrdersList' missing in HTML!");
-
-    db.collection("sales").where("status", "==", "PENDING")
-    .onSnapshot(snap => {
-        console.log("Data received from Firebase. Count: ", snap.size);
-        area.innerHTML = "";
-
-        if (snap.empty) {
-            area.innerHTML = "<div class='text-center p-10 font-bold text-slate-400'>NO PENDING ORDERS IN DATABASE</div>";
-            return;
-        }
-
-        snap.forEach(doc => {
-            const o = doc.data();
-            area.innerHTML += `
-                <div class="bg-white p-6 rounded-[2rem] border-2 border-emerald-500 shadow-xl mb-4">
-                    <h3 class="font-black text-slate-800">${o.customer || 'No Name'}</h3>
-                    <p class="text-xs font-bold text-emerald-600">Rs ${o.grandTotal || 0}</p>
-                    <div class="my-3 border-t border-dashed border-slate-200"></div>
-                    <button onclick="dispatchNow('${doc.id}')" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold text-[10px] uppercase">
-                        Dispatch Now
-                    </button>
-                </div>`;
-        });
-    }, err => {
-        console.error("Firebase Sync Error: ", err.message);
-        alert("Database Error: " + err.message);
-    });
-};
-
-// Dispatch Function
-window.dispatchNow = async (id) => {
-    if(confirm("Dispatch this order?")) {
-        await db.collection("sales").doc(id).update({ status: "DISPATCHED" });
-        alert("Order Dispatched!");
-    }
-};
-
-// Start
-fetchOrders();
+// 1. PENDING ORDERS: ID 'pendingOrdersList' (Aapke Screenshot ke mutabiq)
+db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
+    // Correct ID from Screenshot 1000480176.jpg
+    const orderArea = document.getElementById('pendingOrdersList');
     
+    // Logic Fix: ! lagana zaroori hai
+    if (!orderArea) return; 
 
+    if (snap.empty) {
+        orderArea.innerHTML = `<div class="col-span-full p-10 text-center border-4 border-dashed border-slate-100 rounded-[2rem]">
+            <p class="text-slate-400 font-black uppercase text-[10px]">No New Orders found</p>
+        </div>`;
+        return;
+    }
+
+    orderArea.innerHTML = "";
+    snap.forEach(doc => {
+        const o = doc.data();
+        orderArea.innerHTML += `
+            <div class="bg-white p-6 rounded-[2.5rem] border-2 border-green-100 shadow-lg mb-4 text-left">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="font-black text-slate-800 uppercase text-sm">${o.customer || 'Shop'}</h3>
+                    <span class="text-[9px] font-bold text-slate-400">${o.date || 'Today'}</span>
+                </div>
+                <div class="space-y-2 mb-6 bg-green-50 p-4 rounded-2xl">
+                    ${o.items ? o.items.map(i => `<div class="flex justify-between text-[11px] font-black border-b border-dashed border-green-200 pb-1"><span>${i.name}</span><span>x${i.qty}</span></div>`).join('') : 'No Items'}
+                </div>
+                <div class="text-center mb-4">
+                   <p class="text-lg font-black text-slate-800">Rs ${Number(o.grandTotal || 0).toLocaleString()}</p>
+                </div>
+                <button onclick="completeOrder('${doc.id}')" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg">
+                    Mark as Dispatched
+                </button>
+            </div>`;
+    });
+});
+    
 
     
     
