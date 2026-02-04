@@ -707,8 +707,7 @@ async function reprintLastBill(phone) {
     } catch (e) { alert("Reprint error."); }
   }
     
-
-// --- COMPLETE MASTER REPORTS FUNCTION (DATE & BOOKER FIX) ---
+// --- COMPLETE MASTER REPORTS FUNCTION ---
 function renderReports(filterType = 'all', searchTerm = '') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let dailyItems = {};
@@ -716,17 +715,13 @@ function renderReports(filterType = 'all', searchTerm = '') {
     const reportBody = document.getElementById('reportTableBody');
     if (reportBody) reportBody.innerHTML = "";
 
-    const now = new Date();
-    // Standard Date Format jo Booker use kar raha hai
     const todayStr = new Date().toLocaleDateString('en-GB'); 
 
     sales.forEach(s => {
         const sDateStr = s.date || ""; 
-        // Month splitting fix for different formats
         const dateParts = sDateStr.split('/');
         const sMonth = dateParts.length > 2 ? dateParts[1] + '/' + dateParts[2] : "0/0";
         
-        // Profit Calculation: Booker (PENDING) aur Admin (COMPLETED) dono ke liye
         let sProfit = Number(s.profit) || 0;
         if(sProfit === 0 && s.items) {
             s.items.forEach(it => {
@@ -736,32 +731,26 @@ function renderReports(filterType = 'all', searchTerm = '') {
             });
         }
 
-        // Monthly Summary Update
         if(sMonth && sMonth !== "0/0") {
             if(!monthlyData[sMonth]) monthlyData[sMonth] = { sales: 0, exp: 0, profit: 0 };
             monthlyData[sMonth].sales += Number(s.grandTotal || s.itemsSum || 0);
             monthlyData[sMonth].profit += sProfit;
         }
 
-        // Today's Items logic: Booker orders (PENDING) ab yahan dikhen ge
         if(sDateStr === todayStr && s.items) {
             s.items.forEach(item => {
-                const qty = Number(item.qty) || 0;
-                const price = Number(item.price) || 0;
                 if(!dailyItems[item.name]) dailyItems[item.name] = { qty: 0, total: 0 };
-                dailyItems[item.name].qty += qty;
-                dailyItems[item.name].total += (price * qty);
+                dailyItems[item.name].qty += Number(item.qty) || 0;
+                dailyItems[item.name].total += (Number(item.price) * Number(item.qty)) || 0;
             });
         }
 
-        // Visibility Filter (Search aur Daily filter)
         let isVisible = true;
         if (filterType === 'daily') isVisible = (sDateStr === todayStr);
         if (searchTerm) {
             const sLower = searchTerm.toLowerCase();
-            const custMatch = (s.customer || "").toLowerCase().includes(sLower);
-            const itemMatch = (s.items || []).some(i => i.name.toLowerCase().includes(sLower));
-            if (!custMatch && !itemMatch) isVisible = false;
+            if (!(s.customer || "").toLowerCase().includes(sLower) && 
+                !(s.items || []).some(i => i.name.toLowerCase().includes(sLower))) isVisible = false;
         }
 
         if(isVisible) {
@@ -780,7 +769,6 @@ function renderReports(filterType = 'all', searchTerm = '') {
         }
     });
 
-    // Expenses Calculation
     expenses.forEach(e => {
         let amt = Number(e.amount || e.amt) || 0;
         eSum += amt;
@@ -789,17 +777,34 @@ function renderReports(filterType = 'all', searchTerm = '') {
         if(monthlyData[eMonth]) monthlyData[eMonth].exp += amt;
     });
 
-    // Stock Asset Calculation
     prods.forEach(p => { 
         stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice || p.cost || 0)); 
     });
 
-    // Dashboard Elements Update
     if(document.getElementById('totalStockAsset')) document.getElementById('totalStockAsset').innerText = "Rs " + stockAsset.toLocaleString();
     if(document.getElementById('totalNetProfit')) document.getElementById('totalNetProfit').innerText = "Rs " + (totalProfit - eSum).toLocaleString();
     
-    // Today's item list render karein (Agar element ho)
+    // MISSING FUNCTION FIXED HERE
     renderDailyItemsTable(dailyItems);
+}
+
+// YE FUNCTION ADD KAREIN (Taki web error na de)
+function renderDailyItemsTable(dailyItems) {
+    const container = document.getElementById('todayItemsList');
+    if(!container) return; 
+
+    if(Object.keys(dailyItems).length === 0) {
+        container.innerHTML = "<tr><td colspan='3' class='text-center p-4'>No Items Today</td></tr>";
+        return;
+    }
+
+    container.innerHTML = Object.entries(dailyItems).map(([name, data]) => `
+        <tr class="border-b text-[11px] uppercase font-bold">
+            <td class="p-2">${name}</td>
+            <td class="p-2 text-center">x${data.qty}</td>
+            <td class="p-2 text-right">Rs ${data.total.toLocaleString()}</td>
+        </tr>
+    `).join('');
 }
     
 
