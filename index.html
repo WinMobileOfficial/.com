@@ -1060,14 +1060,24 @@ if (localData) {
 }
     // ==========================================
 // ==========================================
-// HAJI SAHAB FINAL MUKAMMAL CODE (SYNCED)
+// HAJI SAHAB FINAL REPAIR (TABS + DATA)
 // ==========================================
-// 1. PENDING ORDERS: ID 'pendingOrdersList' (Aapke Screenshot ke mutabiq)
-db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
-    // Correct ID from Screenshot 1000480176.jpg
-    const orderArea = document.getElementById('pendingOrdersList');
+
+// 1. TABS SWITCHING LOGIC (Ye lazmi hai taake screen nazar aaye)
+function showTab(tabId) {
+    // Sab ko chhupao
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+    // Sirf chuni hui screen dikhao
+    const target = document.getElementById(tabId);
+    if(target) target.classList.remove('hidden');
     
-    // Logic Fix: ! lagana zaroori hai
+    // Buttons ka color change karein
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('bg-emerald-600', 'text-white'));
+}
+
+// 2. PENDING ORDERS (Sales Collection)
+db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
+    const orderArea = document.getElementById('pendingOrdersList');
     if (!orderArea) return; 
 
     if (snap.empty) {
@@ -1098,27 +1108,16 @@ db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
             </div>`;
     });
 });
-    
 
-    
-    
-
-// 2. CASH RECOVERY: Paison ki entry
+// 3. CASH RECOVERY
 db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap => {
     const list = document.getElementById('bookerRequestList');
     const badge = document.getElementById('recoveryBadge');
-    
     if (badge) {
         badge.innerText = snap.size;
         badge.style.display = snap.size > 0 ? 'block' : 'none';
     }
-
     if (!list) return;
-
-    if (snap.empty) {
-        list.innerHTML = "<p class='text-center py-10 text-slate-400 font-bold uppercase text-[10px]'>No pending recovery.</p>";
-        return;
-    }
 
     list.innerHTML = "";
     snap.forEach(doc => {
@@ -1131,12 +1130,12 @@ db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap 
                 </div>
                 <div class="flex gap-2">
                     <button onclick="approveNow('${doc.id}', '${d.customerId}', ${d.amount}, '${d.customerName}')" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold text-[10px] uppercase shadow-md">Approve</button>
-                    <button onclick="rejectReq('${doc.id}')" class="p-3 bg-slate-100 text-rose-500 rounded-xl border border-slate-200"><i class="fas fa-times"></i></button>
                 </div>
             </div>`;
     });
 });
 
+// FUNCTIONS
 async function completeOrder(id) {
     if(confirm("Order Dispatch kar dein?")) {
         await db.collection("sales").doc(id).update({ status: "DISPATCHED" });
@@ -1160,11 +1159,7 @@ async function approveNow(reqId, custId, amount, name) {
         await db.collection("cash_requests").doc(reqId).update({ status: "APPROVED" });
         alert("✅ Ledger Updated!");
     } catch(e) { console.error(e); }
-}
-
-async function rejectReq(id) {
-    if(confirm("Reject?")) { await db.collection("cash_requests").doc(id).update({ status: "REJECTED" }); }
-}
+            }
     
 init(); 
     
