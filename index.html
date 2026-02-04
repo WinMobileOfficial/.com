@@ -708,7 +708,7 @@ async function reprintLastBill(phone) {
   }
     
 // --- COMPLETE MASTER REPORTS FUNCTION (FIXED VERSION) --
-    // --- MASTER REPORTS FUNCTION ---
+    // --- MASTER REPORTS FUNCTION (LINE 710) ---
 function renderReports(filterType = 'all', searchTerm = '') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let dailyItems = {};
@@ -721,22 +721,15 @@ function renderReports(filterType = 'all', searchTerm = '') {
 
     sales.forEach(s => {
         const sDateStr = s.date || ""; 
-        const dateParts = sDateStr.split('/');
-        const sMonth = dateParts.length > 2 ? dateParts[0] + '/' + dateParts[2] : "0/0";
-        
         let sProfit = Number(s.profit) || 0;
+        
+        // Booker + Admin Profit Logic
         if(sProfit === 0 && s.items) {
             s.items.forEach(it => {
                 let pObj = prods.find(x => x.name.toLowerCase() === it.name.toLowerCase());
                 let cost = pObj ? Number(pObj.buyPrice || pObj.cost || 0) : Number(it.price) * 0.7;
                 sProfit += (Number(it.price) - cost) * Number(it.qty);
             });
-        }
-
-        if(sMonth && sMonth !== "0/0") {
-            if(!monthlyData[sMonth]) monthlyData[sMonth] = { sales: 0, exp: 0, profit: 0 };
-            monthlyData[sMonth].sales += Number(s.grandTotal || s.itemsSum || 0);
-            monthlyData[sMonth].profit += sProfit;
         }
 
         if(sDateStr === todayStr && s.items) {
@@ -770,28 +763,26 @@ function renderReports(filterType = 'all', searchTerm = '') {
         }
     });
 
-    expenses.forEach(e => {
-        let amt = Number(e.amount || e.amt) || 0;
-        const eDate = e.date || "";
-        if(eDate === todayStr) eSum += amt;
-        const dP = eDate.split('/');
-        const eMonth = dP.length > 2 ? dP[0] + '/' + dP[2] : "";
-        if(monthlyData[eMonth]) monthlyData[eMonth].exp += amt;
-    });
+    // Expenses Calculation
+    expenses.forEach(e => { if(e.date === todayStr) eSum += Number(e.amount || e.amt || 0); });
+    
+    // Stock Asset Calculation
+    prods.forEach(p => { stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice || p.cost || 0)); });
 
-    prods.forEach(p => { 
-        stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice || p.cost || 0)); 
-    });
+    // Dashboard Profit Card (Sirf ye show hoga)
+    const profEl = document.getElementById('dailyProfitVal');
+    if(profEl) profEl.innerText = "Rs " + Math.round(totalProfit - eSum).toLocaleString();
 
-    // UI Rendering Call
+    // Baki UI update karein
     updateReportUI(stockAsset, totalProfit, eSum, dailyItems, monthlyData, sSum);
 }
 
-// --- REPORT UI UPDATE FUNCTION (PEHLE VALA LAYOUT) ---
+// --- MASTER UI UPDATE FUNCTION ---
 function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
     const statsDiv = document.getElementById('repStats');
     if(statsDiv) {
-        // Classes wahi rakhi hain jo aapke screenshot mein pehle thi
+        // 'hidden' class Reports ko billing screen ke upar aane se rokegi
+        statsDiv.className = "hidden md:grid grid-cols-1 md:grid-cols-3 gap-4 mb-6";
         statsDiv.innerHTML = `
             <div class="bg-blue-600 p-6 rounded-3xl text-white shadow-lg text-center"><p class="text-[9px] uppercase opacity-80">Stock Asset</p><span class="text-2xl font-black">Rs ${stock.toLocaleString()}</span></div>
             <div class="bg-indigo-600 p-6 rounded-3xl text-white shadow-lg text-center"><p class="text-[9px] uppercase opacity-80">Zakat (2.5%)</p><span class="text-2xl font-black">Rs ${(stock * 0.025).toLocaleString()}</span></div>
@@ -808,48 +799,15 @@ function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
                 <td class="p-3 text-right">Rs ${dItems[n].total.toLocaleString()}</td>
             </tr>`).join('') : '<tr><td colspan="3" class="p-10 text-center italic opacity-30 font-black">No items sold today</td></tr>';
     }
-
-    const monthlyDiv = document.getElementById('monthlySummary');
-    if(monthlyDiv) {
-        monthlyDiv.innerHTML = Object.keys(mData).map(m => `
-            <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl mb-2 border border-slate-100">
-                <span class="font-black uppercase italic text-xs">${m}</span>
-                <div class="text-right">
-                    <p class="text-[9px] opacity-60 font-bold">SALES: Rs ${mData[m].sales.toLocaleString()}</p>
-                    <p class="text-emerald-600 font-black text-xs">PROFIT: Rs ${(mData[m].profit - mData[m].exp).toLocaleString()}</p>
-                </div>
-            </div>`).join('');
-    }
 }
 
 // --- UPDATE STATS FUNCTION ---
 function updateStats() {
-    const now = new Date();
-    const todayStr = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
-    let profit = 0, todayExp = 0;
-
-    if (typeof expenses !== 'undefined') {
-        expenses.filter(e => e.date === todayStr).forEach(e => {
-            todayExp += Number(e.amount || e.amt || 0);
-        });
+    renderReports('daily');
     }
-
-    if (typeof sales !== 'undefined') {
-        sales.filter(s => (s.status === "COMPLETED" || s.status === "PENDING") && s.date === todayStr).forEach(s => {
-            if (s.items) {
-                s.items.forEach(i => {
-                    let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase());
-                    let cost = p ? Number(p.buyPrice || p.cost || 0) : Number(i.price) * 0.7;
-                    profit += (Number(i.price) - cost) * Number(i.qty || 0);
-                });
-            }
-        });
-    }
-
-    const profEl = document.getElementById('dailyProfitVal');
-    if (profEl) profEl.innerText = "Rs " + Math.round(profit - todayExp).toLocaleString();
-}
     
+
+
 
             
                     
