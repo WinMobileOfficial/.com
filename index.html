@@ -798,6 +798,8 @@ function renderReports(filterType = 'all', searchTerm = '') {
 function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
     const statsDiv = document.getElementById('repStats');
     if(statsDiv) {
+        // Yahan 'pt-24' dala hai taake content niche ho jaye aur upar wale features dikhein
+        statsDiv.className = "grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 pt-24";
         statsDiv.innerHTML = `
             <div class="bg-blue-600 p-6 rounded-3xl text-white shadow-lg text-center"><p class="text-[9px] uppercase opacity-80">Stock Asset</p><span class="text-2xl font-black">Rs ${stock.toLocaleString()}</span></div>
             <div class="bg-indigo-600 p-6 rounded-3xl text-white shadow-lg text-center"><p class="text-[9px] uppercase opacity-80">Zakat (2.5%)</p><span class="text-2xl font-black">Rs ${(stock * 0.025).toLocaleString()}</span></div>
@@ -827,6 +829,7 @@ function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
             </div>`).join('');
     }
 }
+    
 
 // --- SIMPLE STATS UPDATE ---
 function updateStats() {
