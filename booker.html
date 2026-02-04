@@ -197,12 +197,22 @@ async function saveAndSelectCustomer() {
 
 // ORDER & WA LOGIC
 async function finalSubmit() {
-    const shop = document.getElementById('shopName').value, phone = document.getElementById('shopPhone').value, photoFile = document.getElementById('shopPhoto').files[0], btn = document.getElementById('submitBtn');
+    const shop = document.getElementById('shopName').value, 
+          phone = document.getElementById('shopPhone').value, 
+          photoFile = document.getElementById('shopPhoto').files[0], 
+          btn = document.getElementById('submitBtn');
+          
     if(!shop || cart.length === 0) return alert("Select Shop & Add Items!");
     
-    btn.disabled = true; btn.innerHTML = "UPLOADING...";
-    let photoUrl = "No Photo", orderId = "ALH-" + Date.now().toString().slice(-5), total = cart.reduce((s, i) => s + i.subtotal, 0);
-    const mapLink = userLat ? `https://www.google.com/maps?q=${userLat},${userLong}` : "GPS: OFF";
+    // Double entry rokne ke liye
+    btn.disabled = true; 
+    btn.innerHTML = "UPLOADING...";
+
+    let photoUrl = "No Photo", 
+        orderId = "ALH-" + Date.now().toString().slice(-5), 
+        total = cart.reduce((s, i) => s + i.subtotal, 0);
+
+    const mapLink = userLat ? `http://maps.google.com/?q=${userLat},${userLong}` : "GPS: OFF";
 
     try {
         if(photoFile) {
@@ -211,27 +221,54 @@ async function finalSubmit() {
             const d = await res.json(); if(d.success) photoUrl = d.data.url;
         }
 
-        await db.collection("sales").doc(orderId).set({ 
-    id: orderId, 
-    customer: shop, 
-    mob: phone, 
-    date: getToday(), 
-    items: [...cart], 
-    grandTotal: total, 
-    img: photoUrl, 
-    gps: mapLink, 
-    status: "PENDING", 
-    role: "booker", 
-    timestamp: Date.now() 
-});
+        // 1. Database mein Sale save karein (Variables Match for Receipt)
+        const saleData = { 
+            id: orderId, 
+            customer: shop, 
+            mob: phone, 
+            date: getToday(), 
+            time: new Date().toLocaleTimeString(),
+            items: [...cart], 
+            itemsSum: total,        // Raseed ka total (Ab 0 nahi aayega)
+            grandTotal: total,      // Bill total
+            prevBal: 0,             // Booker ke liye filhal 0
+            paid: 0, 
+            finalBal: total,        // Ledger ke liye total
+            img: photoUrl, 
+            gps: mapLink, 
+            status: "PENDING", 
+            role: "booker", 
+            timestamp: Date.now() 
+        };
+
+        await db.collection("sales").doc(orderId).set(saleData);
+
+        // 2. Customer ka Ledger update karein (Taake udhaar barh jaye)
+        await db.collection("customers").doc(phone).set({ 
+            name: shop, 
+            balance: firebase.firestore.FieldValue.increment(total) 
+        }, { merge: true });
         
+        // 3. WhatsApp Message
         let itemsMsg = cart.map(i => `• ${i.name} (x${i.qty})`).join('%0A');
         let waMsg = `🏢 *ORDER RECEIVED*%0A━━━━━━━━━━━━━━━━━━━━%0A🆔 *ID:* ${orderId}%0A🏪 *Shop:* ${shop}%0A💰 *Total:* Rs ${total.toLocaleString()}%0A📸 *Photo:* ${photoUrl}%0A📍 *Location:* ${mapLink}%0A━━━━━━━━━━━━━━━━━━━━%0A🛒 *ITEMS:*%0A${itemsMsg}`;
 
         window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=${waMsg}`;
-        setTimeout(() => location.reload(), 2000);
-    } catch(e) { btn.disabled = false; alert("Upload Error!"); }
+        
+        // Form Reset
+        setTimeout(() => {
+            cart = [];
+            location.reload();
+        }, 2000);
+
+    } catch(e) { 
+        console.error(e);
+        btn.disabled = false; 
+        btn.innerHTML = "SUBMIT ORDER";
+        alert("Upload Error!"); 
+    }
 }
+    
 
 // SECURE CASH REQUEST
 async function requestCashApproval(id, name, inputId) {
