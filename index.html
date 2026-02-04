@@ -1063,16 +1063,15 @@ if (localData) {
 // HAJI SAHAB FINAL MUKAMMAL CODE (SYNCED)
 // ==========================================
 
-// 1. ORDER BOOKING: Database se 'sales' uthana aur 'pendingOrdersList' mein dikhana
+
+// 1. PENDING ORDERS: ID 'pendingOrdersList' aur Collection 'sales'
 db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
-    const orderArea = document.getElementById('pendingOrdersList'); 
+    const orderArea = document.getElementById('pendingOrdersList');
     
-    if (!orderArea) return; 
+    if (!orderArea) return; // Logic Fix
 
     if (snap.empty) {
-        orderArea.innerHTML = `<div class="col-span-full p-10 text-center border-4 border-dashed border-slate-100 rounded-[2rem]">
-            <p class="text-slate-400 font-bold uppercase text-[10px]">No New Orders (Waiting for Booker...)</p>
-        </div>`;
+        orderArea.innerHTML = `<div class="col-span-full p-10 text-center border-4 border-dashed border-slate-100 rounded-[2rem]"><p class="text-slate-400 font-bold uppercase text-[10px]">No New Orders</p></div>`;
         return;
     }
 
@@ -1082,27 +1081,17 @@ db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
         orderArea.innerHTML += `
             <div class="bg-white p-6 rounded-[2.5rem] border-2 border-green-100 shadow-lg mb-4 text-left">
                 <div class="flex justify-between items-start mb-4">
-                    <h3 class="font-black text-slate-800 uppercase text-sm">${o.customer || 'Shop Name'}</h3>
+                    <h3 class="font-black text-slate-800 uppercase text-sm">${o.customer || 'Shop'}</h3>
                     <span class="text-[9px] font-bold text-slate-400">${o.date || 'Today'}</span>
                 </div>
                 <div class="space-y-2 mb-6 bg-green-50 p-4 rounded-2xl">
-                    ${o.items ? o.items.map(i => `
-                        <div class="flex justify-between text-[11px] font-black border-b border-dashed border-green-200 pb-1">
-                            <span class="text-slate-600">${i.name}</span>
-                            <span class="text-green-600 font-bold">x${i.qty}</span>
-                        </div>
-                    `).join('') : '<p class="text-xs">No items found</p>'}
+                    ${o.items ? o.items.map(i => `<div class="flex justify-between text-[11px] font-black border-b border-dashed border-green-200 pb-1"><span>${i.name}</span><span>x${i.qty}</span></div>`).join('') : 'No Items'}
                 </div>
-                <div class="mb-4 text-center">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Grand Total</p>
-                    <p class="text-lg font-black text-slate-800">Rs ${Number(o.grandTotal || 0).toLocaleString()}</p>
-                </div>
-                <button onclick="completeOrder('${doc.id}')" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg">
-                    Mark as Dispatched
-                </button>
+                <button onclick="completeOrder('${doc.id}')" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg">Mark as Dispatched</button>
             </div>`;
     });
 });
+    
 
 // 2. CASH RECOVERY: Paison ki entry
 db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap => {
