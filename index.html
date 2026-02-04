@@ -502,8 +502,7 @@ async function processBill() {
 }
     
     
-
- function printReceipt(s, isLedger = false) {
+function printReceipt(s) {
     document.getElementById('rStoreName').innerText = settings.name; 
     document.getElementById('rStorePhone').innerText = settings.phone;
     document.getElementById('rDateTime').innerText = s.date + " " + (s.time || ""); 
@@ -515,28 +514,19 @@ async function processBill() {
             <span>${i.subtotal}</span>
         </div>`).join('');
         
-    document.getElementById('rItemsTotal').innerText = "Rs " + (Number(s.itemsSum) || Number(s.grandTotal) || 0).toLocaleString();
-document.getElementById('rPrevBal').innerText = "Rs " + (Number(s.prevBal) || 0).toLocaleString();
-document.getElementById('rGrandTotal').innerText = "Rs " + (Number(s.grandTotal) || 0).toLocaleString();
-document.getElementById('rPaid').innerText = "Rs " + (Number(s.paid) || 0).toLocaleString();
-     
+    let itemsT = Number(s.itemsSum) || 0;
+    let oldB = Number(s.prevBal) || 0;
+    let paidAmt = Number(s.paid) || 0;
 
-  // AGAR Ledger se reprint ho raha hai toh poora balance dikhao, warna sirf is bill ka total
-let oldB = Number(s.prevBal) || 0;
-let gTotal = Number(s.grandTotal) || 0;
-let paidAmt = Number(s.paid) || 0;
+    document.getElementById('rItemsTotal').innerText = "Rs " + itemsT.toLocaleString();
+    document.getElementById('rPrevBal').innerText = "Rs " + oldB.toLocaleString();
+    document.getElementById('rGrandTotal').innerText = "Rs " + itemsT.toLocaleString();
+    document.getElementById('rPaid').innerText = "Rs " + paidAmt.toLocaleString();
 
-if (isLedger) {
-    // Agar Ledger se reprint ho raha hai, toh seedha current balance (5,900) dikhao
-    let currentBalance = customers[s.mob]?.balance || 0;
-    document.getElementById('rNetBal').innerText = "Rs " + Number(currentBalance).toLocaleString();
-} else {
-    // Agar normal bill history se hai, toh sirf us bill ka net hisab dikhao
-    let billNet = oldB + gTotal - paidAmt;
-    document.getElementById('rNetBal').innerText = "Rs " + Number(billNet).toLocaleString();
-}
-    
-     
+    // Sahih Net Balance dikhane ka formula (Chahe Reprint ho ya Naya Bill)
+    // Agar database mein 'finalBal' para hai to wahi dikhao, warna math karo
+    let displayNet = (s.finalBal !== undefined) ? s.finalBal : (oldB + itemsT - paidAmt);
+    document.getElementById('rNetBal').innerText = "Rs " + Number(displayNet).toLocaleString();
 
     if(settings.logo) { 
         document.getElementById('rLogo').src = settings.logo; 
@@ -545,8 +535,11 @@ if (isLedger) {
         document.getElementById('rLogo').style.display="none"; 
     }
     
-    window.print();
- }
+    // Printer render hone ka thora intezar karega
+    setTimeout(() => { window.print(); }, 500);
+}
+    
+ 
     
     // --- REMAINING UTILS (KEEPING ORIGINAL LOGIC) ---
 function searchCustomer(q) {
