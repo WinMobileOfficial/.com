@@ -1063,16 +1063,17 @@ if (localData) {
 // HAJI SAHAB FINAL REPLACEMENT CODE
 // ==========================================
 
-// 1. ORDER BOOKING: Database mein collection 'sales' hai
+
+// 1. ORDER BOOKING: Database se 'sales' uthana
 db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
     const orderArea = document.getElementById('orderListArea');
     
-    // Sahi Logic: Agar orderArea NA mile to return karo
+    // GHALTI FIX: ! nishani lagayi taake code chale
     if (!orderArea) return; 
 
     if (snap.empty) {
         orderArea.innerHTML = `<div class="col-span-full p-10 text-center border-4 border-dashed border-slate-100 rounded-[2rem]">
-            <p class="text-slate-400 font-bold uppercase text-[10px]">No New Orders (Waiting for Booker...)</p>
+            <p class="text-slate-400 font-bold uppercase text-[10px]">No New Orders found in 'sales'</p>
         </div>`;
         return;
     }
@@ -1092,18 +1093,19 @@ db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
                             <span class="text-slate-600">${i.name}</span>
                             <span class="text-green-600 font-bold">x${i.qty}</span>
                         </div>
-                    `).join('') : '<p class="text-xs">Items not found</p>'}
+                    `).join('') : '<p class="text-xs">No items in this order</p>'}
                 </div>
                 <div class="mb-4 text-center">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Grand Total</p>
-                    <p class="text-lg font-black text-slate-800">Rs ${Number(o.grandTotal || 0).toLocaleString()}</p>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Grand Total</p>
+                    <p class="text-lg font-black text-slate-800 italic">Rs ${Number(o.grandTotal || 0).toLocaleString()}</p>
                 </div>
-                <button onclick="completeOrder('${doc.id}')" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95">
+                <button onclick="completeOrder('${doc.id}')" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all">
                     Mark as Dispatched
                 </button>
             </div>`;
     });
 });
+    
 
 // 2. CASH RECOVERY: Paison ki entry
 db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap => {
