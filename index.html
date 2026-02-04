@@ -957,43 +957,64 @@ async function clearBookerData() {
     // Step 2: Booker Excel Report Logic
 async function downloadBookerReport() {
     try {
-        const snap = await db.collection("booker_sales").orderBy("timestamp", "desc").get();
+        // 1. Naya Data (daily_reports) aur Purana Data (booker_sales) dono check karna
+        const newSnap = await db.collection("daily_reports").where("type", "==", "BOOKER_RECOVERY").get();
+        const oldSnap = await db.collection("booker_sales").get();
+        
         let reportData = [];
         let totalRec = 0;
-        let totalCom = 0;
 
-        snap.forEach(doc => {
-            let d = doc.data();
+        // Purane records ko list mein shamil karein
+        oldSnap.forEach(doc => {
+            const d = doc.data();
+            let amount = Number(d.recovery || d.amount || 0);
+            totalRec += amount;
+            reportData.push({
+                'Date': d.date || 'Old Record',
+                'Booker/Shop': d.name || d.customerName || 'Unknown',
+                'Recovery Cash': amount,
+                'Source': 'History'
+            });
+        });
+
+        // Naye records ko list mein shamil karein
+        newSnap.forEach(doc => {
+            const d = doc.data();
+            let amount = Number(d.amount || 0);
+            totalRec += amount;
             reportData.push({
                 'Date': d.date,
-                'Booker Name': d.name,
-                'Recovery Cash': d.recovery,
-                'Commission (0.5%)': d.commission
+                'Booker/Shop': d.customerName,
+                'Recovery Cash': amount,
+                'Source': 'New Live'
             });
-            totalRec += d.recovery;
-            totalCom += d.commission;
         });
 
-        if(reportData.length === 0) return alert("Bhai, filhal koi record maujood nahi hai!");
+        if (reportData.length === 0) {
+            return alert("Bhai, filhal koi record (Purana ya Naya) maujood nahi hai!");
+        }
 
-        // Total Summary Line
-        reportData.push({}); // Khali line gap ke liye
+        // Summary Line
+        reportData.push({}); 
         reportData.push({
-            'Booker Name': 'GRAND TOTAL:', 
-            'Recovery Cash': totalRec, 
-            'Commission (0.5%)': totalCom
+            'Date': '---',
+            'Booker/Shop': 'GRAND TOTAL:',
+            'Recovery Cash': totalRec,
+            'Source': '---'
         });
 
+        // Excel Download Logic
         const ws = XLSX.utils.json_to_sheet(reportData);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Booker Report");
-        XLSX.writeFile(wb, `Booker_Report_${new Date().toLocaleDateString()}.xlsx`);
+        XLSX.writeFile(wb, `Booker_Recovery_Report_${new Date().toLocaleDateString()}.xlsx`);
 
     } catch (e) {
         console.error(e);
-        alert("Report download nahi ho saki!");
+        alert("Report download nahi ho saki! Internet check karein.");
     }
 }
+    
     
 async function addNewCustomerFromPOS() {
     const nameInput = document.getElementById('cSearchInput');
