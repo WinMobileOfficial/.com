@@ -458,10 +458,15 @@ let gTotal = Number(s.grandTotal) || 0;
 let paidAmt = Number(s.paid) || 0;
 
 if (isLedger) {
-    document.getElementById('rNetBal').innerText = "Rs " + (customers[s.mob]?.balance || (oldB + gTotal - paidAmt)).toLocaleString();
+    // Agar Ledger se reprint ho raha hai, toh seedha current balance (5,900) dikhao
+    let currentBalance = customers[s.mob]?.balance || 0;
+    document.getElementById('rNetBal').innerText = "Rs " + Number(currentBalance).toLocaleString();
 } else {
-    document.getElementById('rNetBal').innerText = "Rs " + (oldB + gTotal - paidAmt).toLocaleString();
+    // Agar normal bill history se hai, toh sirf us bill ka net hisab dikhao
+    let billNet = oldB + gTotal - paidAmt;
+    document.getElementById('rNetBal').innerText = "Rs " + Number(billNet).toLocaleString();
 }
+    
      
 
     if(settings.logo) { 
