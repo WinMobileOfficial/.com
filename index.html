@@ -417,18 +417,39 @@ function calcTotal() {
     document.getElementById('balAmt').value = (prev + grand) - paid; 
 }
     
-
 async function processBill() {
     if(!cart.length) return;
-    let mob = document.getElementById('cMob').value || "0000", cName = document.getElementById('cName').value || "WALKING";
-    let total = parseFloat(document.getElementById('totalDisplay').innerText), paid = parseFloat(document.getElementById('paidAmt').value) || 0;
-    let itemsSum = cart.reduce((s,i)=>s+i.subtotal, 0), prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0;
-    let sale = { id: Date.now().toString(), status: "PENDING", date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), timestamp: Date.now(), customer: cName, mob, items: [...cart], itemsSum, prevBal: prev, grandTotal: total, paid: 0, finalBal: total };
+    let mob = document.getElementById('cMob').value || "0000", 
+        cName = document.getElementById('cName').value || "WALKING";
     
+    // 1. Asli total sirf items ka nikalein
+    let itemsSum = cart.reduce((s,i)=>s+i.subtotal, 0); 
+    let prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0;
+    let paid = parseFloat(document.getElementById('paidAmt').value) || 0;
+
+    // 2. Naya balance jo ledger mein jayega (Pichla + Aaj ka - Paid)
+    let nayaBalance = (prev + itemsSum) - paid;
+
+    let sale = { 
+        id: Date.now().toString(), 
+        status: "PENDING", 
+        date: new Date().toLocaleDateString(), 
+        time: new Date().toLocaleTimeString(), 
+        timestamp: Date.now(), 
+        customer: cName, 
+        mob, 
+        items: [...cart], 
+        itemsSum, 
+        prevBal: prev, 
+        grandTotal: itemsSum, // Yahan 'total' ki jagah 'itemsSum' dalo
+        paid: paid,           // Yahan 0 ki jagah asli 'paid' dalo
+        finalBal: nayaBalance 
+    };
+    
+    // 3. Sales mein save karein
     await db.collection("sales").doc(sale.id).set(sale);
-    await db.collection("customers").doc(mob).set({ name: cName, balance: total - paid }, { merge: true });
-    
-    
+    // 4. Ledger mein sahi calculation save karein
+    await db.collection("customers").doc(mob).set({ name: cName, balance: nayaBalance }, { merge: true });
     
     printReceipt(sale); 
     cart = []; renderCart();
@@ -436,8 +457,11 @@ async function processBill() {
         let el = document.getElementById(id);
         if(el) el.value = "";
     });
-    document.getElementById('prevBalVal').innerText = "0"; document.getElementById('prevBalShow').classList.add('hidden');
-}
+    document.getElementById('prevBalVal').innerText = "0"; 
+    document.getElementById('prevBalShow').classList.add('hidden');
+        }
+    
+
 
  function printReceipt(s, isLedger = false) {
     document.getElementById('rStoreName').innerText = settings.name; 
