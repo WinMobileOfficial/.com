@@ -707,8 +707,7 @@ async function reprintLastBill(phone) {
     } catch (e) { alert("Reprint error."); }
   }
     
-// --- COMPLETE MASTER REPORTS FUNCTION (FIXED VERSION) --
-    // --- MASTER REPORTS FUNCTION (LINE 710) ---
+// --- MASTER REPORTS FUNCTION (LINE 710) ---
 function renderReports(filterType = 'all', searchTerm = '') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let dailyItems = {};
@@ -723,7 +722,7 @@ function renderReports(filterType = 'all', searchTerm = '') {
         const sDateStr = s.date || ""; 
         let sProfit = Number(s.profit) || 0;
         
-        // Booker + Admin Profit Logic
+        // Booker + Admin Profit Logic (Agar profit 0 ho to calculate karein)
         if(sProfit === 0 && s.items) {
             s.items.forEach(it => {
                 let pObj = prods.find(x => x.name.toLowerCase() === it.name.toLowerCase());
@@ -732,6 +731,7 @@ function renderReports(filterType = 'all', searchTerm = '') {
             });
         }
 
+        // Booker aur Admin dono ke items "Today Sales" list mein dalna
         if(sDateStr === todayStr && s.items) {
             s.items.forEach(item => {
                 if(!dailyItems[item.name]) dailyItems[item.name] = { qty: 0, total: 0 };
@@ -769,19 +769,19 @@ function renderReports(filterType = 'all', searchTerm = '') {
     // Stock Asset Calculation
     prods.forEach(p => { stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice || p.cost || 0)); });
 
-    // Dashboard Profit Card (Sirf ye show hoga)
+    // Dashboard Profit Card Update (Sirf ye green dabba update ho)
     const profEl = document.getElementById('dailyProfitVal');
     if(profEl) profEl.innerText = "Rs " + Math.round(totalProfit - eSum).toLocaleString();
 
-    // Baki UI update karein
+    // UI Rendering
     updateReportUI(stockAsset, totalProfit, eSum, dailyItems, monthlyData, sSum);
 }
 
-// --- MASTER UI UPDATE FUNCTION ---
+// --- MASTER UI UPDATE FUNCTION (LAYOUT FIX) ---
 function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
     const statsDiv = document.getElementById('repStats');
     if(statsDiv) {
-        // 'hidden' class Reports ko billing screen ke upar aane se rokegi
+        // Yahan maine 'hidden' aur layout classes set ki hain
         statsDiv.className = "hidden md:grid grid-cols-1 md:grid-cols-3 gap-4 mb-6";
         statsDiv.innerHTML = `
             <div class="bg-blue-600 p-6 rounded-3xl text-white shadow-lg text-center"><p class="text-[9px] uppercase opacity-80">Stock Asset</p><span class="text-2xl font-black">Rs ${stock.toLocaleString()}</span></div>
@@ -804,7 +804,7 @@ function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
 // --- UPDATE STATS FUNCTION ---
 function updateStats() {
     renderReports('daily');
-    }
+}
     
 
 
