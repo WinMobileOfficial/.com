@@ -1060,22 +1060,18 @@ if (localData) {
 }
     // ==========================================
 // ==========================================
-// HAJI SAHAB FINAL SYNC (ID & COLLECTION FIX)
+// HAJI SAHAB FINAL MUKAMMAL CODE (SYNCED)
 // ==========================================
 
-// 1. ORDER BOOKING: Nayi ID 'pendingOrdersList' use ki hai
+// 1. ORDER BOOKING: Database se 'sales' uthana aur 'pendingOrdersList' mein dikhana
 db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
-    // Aapke naye HTML ke mutabiq ID change kar di hai
     const orderArea = document.getElementById('pendingOrdersList'); 
     
-    if (!orderArea) {
-        console.log("Error: pendingOrdersList ID nahi mili");
-        return;
-    }
+    if (!orderArea) return; 
 
     if (snap.empty) {
         orderArea.innerHTML = `<div class="col-span-full p-10 text-center border-4 border-dashed border-slate-100 rounded-[2rem]">
-            <p class="text-slate-400 font-bold uppercase text-[10px]">No New Orders (Waiting...)</p>
+            <p class="text-slate-400 font-bold uppercase text-[10px]">No New Orders (Waiting for Booker...)</p>
         </div>`;
         return;
     }
@@ -1086,10 +1082,10 @@ db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
         orderArea.innerHTML += `
             <div class="bg-white p-6 rounded-[2.5rem] border-2 border-green-100 shadow-lg mb-4 text-left">
                 <div class="flex justify-between items-start mb-4">
-                    <h3 class="font-black text-slate-800 uppercase text-sm">${o.customer || 'Unknown Shop'}</h3>
+                    <h3 class="font-black text-slate-800 uppercase text-sm">${o.customer || 'Shop Name'}</h3>
                     <span class="text-[9px] font-bold text-slate-400">${o.date || 'Today'}</span>
                 </div>
-                <div class="space-y-2 mb-6 bg-green-50 p-4 rounded-2xl text-left">
+                <div class="space-y-2 mb-6 bg-green-50 p-4 rounded-2xl">
                     ${o.items ? o.items.map(i => `
                         <div class="flex justify-between text-[11px] font-black border-b border-dashed border-green-200 pb-1">
                             <span class="text-slate-600">${i.name}</span>
@@ -1108,7 +1104,7 @@ db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
     });
 });
 
-// 2. RECOVERY: Isme humne 'bookerRequestList' hi rakha hai
+// 2. CASH RECOVERY: Paison ki entry
 db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap => {
     const list = document.getElementById('bookerRequestList');
     const badge = document.getElementById('recoveryBadge');
@@ -1119,6 +1115,11 @@ db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap 
     }
 
     if (!list) return;
+
+    if (snap.empty) {
+        list.innerHTML = "<p class='text-center py-10 text-slate-400 font-bold uppercase text-[10px]'>No pending recovery.</p>";
+        return;
+    }
 
     list.innerHTML = "";
     snap.forEach(doc => {
@@ -1131,18 +1132,16 @@ db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap 
                 </div>
                 <div class="flex gap-2">
                     <button onclick="approveNow('${doc.id}', '${d.customerId}', ${d.amount}, '${d.customerName}')" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold text-[10px] uppercase shadow-md">Approve</button>
-                    <button onclick="rejectReq('${doc.id}')" class="p-3 bg-slate-100 text-rose-500 rounded-xl border border-slate-200">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <button onclick="rejectReq('${doc.id}')" class="p-3 bg-slate-100 text-rose-500 rounded-xl border border-slate-200"><i class="fas fa-times"></i></button>
                 </div>
             </div>`;
     });
 });
 
-// ACTIONS
 async function completeOrder(id) {
     if(confirm("Order Dispatch kar dein?")) {
         await db.collection("sales").doc(id).update({ status: "DISPATCHED" });
+        alert("Success!");
     }
 }
 
@@ -1160,13 +1159,13 @@ async function approveNow(reqId, custId, amount, name) {
             date: new Date().toLocaleDateString('en-GB'), timestamp: Date.now()
         });
         await db.collection("cash_requests").doc(reqId).update({ status: "APPROVED" });
-        alert("✅ Success!");
+        alert("✅ Ledger Updated!");
     } catch(e) { console.error(e); }
 }
 
 async function rejectReq(id) {
     if(confirm("Reject?")) { await db.collection("cash_requests").doc(id).update({ status: "REJECTED" }); }
-            }
+}
     
 init(); 
     
