@@ -1060,29 +1060,45 @@ if (localData) {
 }
     // ==========================================
 // ==========================================
-// HAJI SAHAB FINAL REPAIR (TABS + DATA)
+// HAJI SAHAB FINAL MUKAMMAL FIXED CODE
 // ==========================================
 
-// 1. TABS SWITCHING LOGIC (Ye lazmi hai taake screen nazar aaye)
-function showTab(tabId) {
-    // Sab ko chhupao
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-    // Sirf chuni hui screen dikhao
-    const target = document.getElementById(tabId);
-    if(target) target.classList.remove('hidden');
+// 1. TABS LOGIC (FIXED FOR ALL BUTTONS)
+function switchTab(t) {
+    // Sab ko chhupao (Aapki CSS class hidden-tab use ho rahi hai)
+    document.querySelectorAll('.flex-1.p-6, .flex-1.p-10, .tab-content').forEach(el => {
+        el.classList.add('hidden-tab');
+        el.classList.add('hidden');
+    });
+
+    // Sahi Tab ko dikhao
+    let targetId = (t === 'booker') ? 'booker' : t + 'Tab';
+    const target = document.getElementById(targetId);
     
-    // Buttons ka color change karein
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('bg-emerald-600', 'text-white'));
+    if (target) {
+        target.classList.remove('hidden-tab');
+        target.classList.remove('hidden');
+    }
+
+    if (t === 'reports') renderReports();
+    if (t === 'cust') renderCustLedger();
 }
 
-// 2. PENDING ORDERS (Sales Collection)
+// 2. PENDING ORDERS SYNC (Aapki ID: pendingOrdersList)
 db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
     const orderArea = document.getElementById('pendingOrdersList');
+    const badge = document.getElementById('pendingBadge');
+    
+    if (badge) {
+        badge.innerText = snap.size;
+        badge.style.display = snap.size > 0 ? 'block' : 'none';
+    }
+
     if (!orderArea) return; 
 
     if (snap.empty) {
-        orderArea.innerHTML = `<div class="col-span-full p-10 text-center border-4 border-dashed border-slate-100 rounded-[2rem]">
-            <p class="text-slate-400 font-black uppercase text-[10px]">No New Orders found</p>
+        orderArea.innerHTML = `<div class="col-span-full p-20 text-center border-4 border-dashed border-slate-200 rounded-[3rem]">
+            <p class="text-slate-400 font-black uppercase text-[10px]">No New Orders from Booker</p>
         </div>`;
         return;
     }
@@ -1091,28 +1107,30 @@ db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
     snap.forEach(doc => {
         const o = doc.data();
         orderArea.innerHTML += `
-            <div class="bg-white p-6 rounded-[2.5rem] border-2 border-green-100 shadow-lg mb-4 text-left">
-                <div class="flex justify-between items-start mb-4">
+            <div class="bg-white p-6 rounded-[2.5rem] border-2 border-yellow-400 shadow-xl mb-4 text-left relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-yellow-400 text-[8px] font-black px-4 py-1 rounded-bl-xl uppercase italic">PENDING</div>
+                <div class="mb-4">
                     <h3 class="font-black text-slate-800 uppercase text-sm">${o.customer || 'Shop'}</h3>
-                    <span class="text-[9px] font-bold text-slate-400">${o.date || 'Today'}</span>
+                    <span class="text-[9px] font-bold text-slate-400">${o.date}</span>
                 </div>
-                <div class="space-y-2 mb-6 bg-green-50 p-4 rounded-2xl">
-                    ${o.items ? o.items.map(i => `<div class="flex justify-between text-[11px] font-black border-b border-dashed border-green-200 pb-1"><span>${i.name}</span><span>x${i.qty}</span></div>`).join('') : 'No Items'}
+                <div class="space-y-2 mb-6 bg-slate-50 p-4 rounded-2xl border border-dashed">
+                    ${o.items ? o.items.map(i => `<div class="flex justify-between text-[11px] font-black"><span>${i.name}</span><span class="text-blue-600">x${i.qty}</span></div>`).join('') : 'No Items'}
                 </div>
                 <div class="text-center mb-4">
-                   <p class="text-lg font-black text-slate-800">Rs ${Number(o.grandTotal || 0).toLocaleString()}</p>
+                   <p class="text-2xl font-black text-slate-800 tracking-tighter">Rs ${Number(o.grandTotal || 0).toLocaleString()}</p>
                 </div>
-                <button onclick="completeOrder('${doc.id}')" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg">
-                    Mark as Dispatched
+                <button onclick="dispatchOrder('${doc.id}')" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all">
+                    <i class="fas fa-truck mr-2"></i> Dispatch & Minus Stock
                 </button>
             </div>`;
     });
 });
 
-// 3. CASH RECOVERY
+// 3. CASH RECOVERY (Aapki ID: bookerRequestList)
 db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap => {
     const list = document.getElementById('bookerRequestList');
     const badge = document.getElementById('recoveryBadge');
+    
     if (badge) {
         badge.innerText = snap.size;
         badge.style.display = snap.size > 0 ? 'block' : 'none';
@@ -1120,27 +1138,46 @@ db.collection("cash_requests").where("status", "==", "PENDING").onSnapshot(snap 
     if (!list) return;
 
     list.innerHTML = "";
+    if (snap.empty) {
+        list.innerHTML = `<div class="col-span-full text-center py-10 opacity-30 font-black uppercase text-[10px]">Awaiting recovery requests...</div>`;
+        return;
+    }
+
     snap.forEach(doc => {
         const d = doc.data();
         list.innerHTML += `
-            <div class="bg-white p-6 rounded-[2.5rem] border-2 border-indigo-100 shadow-xl mb-4 text-left">
+            <div class="bg-white p-6 rounded-[2.5rem] border-2 border-indigo-200 shadow-xl mb-4 text-left">
                 <h4 class="font-black text-indigo-900 uppercase text-xs mb-3">${d.customerName}</h4>
                 <div class="bg-indigo-50 p-4 rounded-2xl mb-4 text-center">
                     <p class="text-2xl font-black text-indigo-700 tracking-tighter">Rs ${Number(d.amount || 0).toLocaleString()}</p>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="approveNow('${doc.id}', '${d.customerId}', ${d.amount}, '${d.customerName}')" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold text-[10px] uppercase shadow-md">Approve</button>
-                </div>
+                <button onclick="approveNow('${doc.id}', '${d.customerId}', ${d.amount}, '${d.customerName}')" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-md active:scale-95 transition-all">
+                    Approve Recovery
+                </button>
             </div>`;
     });
 });
 
-// FUNCTIONS
-async function completeOrder(id) {
-    if(confirm("Order Dispatch kar dein?")) {
-        await db.collection("sales").doc(id).update({ status: "DISPATCHED" });
-        alert("Success!");
+// FUNCTIONS (Complete)
+async function dispatchOrder(id) {
+    if(!confirm("Deduct stock and finalize?")) return;
+    const docRef = db.collection("sales").doc(id);
+    const order = (await docRef.get()).data();
+    
+    // Minus Stock Logic
+    for(let item of (order.items || [])) {
+        const pRef = db.collection("products").doc(item.name.toLowerCase());
+        const pDoc = await pRef.get();
+        if(pDoc.exists) await pRef.update({ stock: firebase.firestore.FieldValue.increment(-item.qty) });
     }
+    
+    // Update Customer Ledger
+    await db.collection("customers").doc(order.mob).set({ 
+        balance: firebase.firestore.FieldValue.increment(order.grandTotal) 
+    }, { merge: true });
+    
+    await docRef.update({ status: "COMPLETED", timestamp: Date.now() });
+    alert("Order Dispatched & Ledger Updated!");
 }
 
 async function approveNow(reqId, custId, amount, name) {
@@ -1157,10 +1194,10 @@ async function approveNow(reqId, custId, amount, name) {
             date: new Date().toLocaleDateString('en-GB'), timestamp: Date.now()
         });
         await db.collection("cash_requests").doc(reqId).update({ status: "APPROVED" });
-        alert("✅ Ledger Updated!");
-    } catch(e) { console.error(e); }
-            }
-    
+        alert("✅ Recovery Approved!");
+    } catch(e) { alert("Error: " + e.message); }
+}
+
 init(); 
     
 
