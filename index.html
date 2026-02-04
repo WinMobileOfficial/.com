@@ -862,8 +862,7 @@ function updateStats() {
                         profit += (Number(i.price) - cost) * Number(i.qty || 0);
                     });
                 }
-            });
-        }
+        
 
         const profEl = document.getElementById('dailyProfitVal');
         if (profEl) profEl.innerText = "Rs " + (profit - todayExp).toLocaleString();
