@@ -366,36 +366,10 @@ async function init() {
     db.collection("customers").onSnapshot(snap => { customers = {}; snap.forEach(doc => { customers[doc.id] = doc.data(); }); renderCustLedger(); });
     db.collection("sales").orderBy("timestamp", "desc").onSnapshot(snap => { sales = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); renderHistory(); updateStats(); });
     db.collection("expenses").orderBy("timestamp", "desc").onSnapshot(snap => { expenses = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); renderExpenses(); updateStats(); });
-    initPendingTracker();
+    startPendingSync(); 
 }
 // --- BOOKER SYSTEM ---
-function initPendingTracker() {
-    db.collection("sales").where("status", "==", "PENDING").onSnapshot(snap => {
-        const badge = document.getElementById('pendingBadge');
-        badge.innerText = snap.size; badge.classList.toggle('hidden', snap.size === 0);
-        let html = "";
-        snap.forEach(doc => {
-            let order = doc.data();
-            html += `<div class="bg-white p-6 rounded-[2.5rem] shadow-xl border-2 border-slate-100 flex flex-col justify-between"><div><div class="flex justify-between items-start mb-4"><span class="bg-yellow-100 text-yellow-700 text-[10px] font-black px-2 py-1 rounded-lg uppercase italic">Booker Order</span><span class="text-[10px] font-bold text-slate-400">${order.date}</span></div><h3 class="font-black text-blue-600 uppercase italic mb-1">${order.customer}</h3><div class="space-y-1 mb-4 border-t pt-2 mt-2">${order.items.map(i => `<div class="text-[10px] font-bold text-slate-600 flex justify-between"><span>${i.name} x${i.qty}</span><span>Rs ${i.subtotal}</span></div>`).join('')}</div></div><div class="border-t pt-4"><div class="flex justify-between font-black text-sm mb-4 italic uppercase"><span>Total:</span><span>Rs ${order.grandTotal}</span></div><button onclick="dispatchOrder('${doc.id}')" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase italic text-[11px] shadow-lg"><i class="fas fa-shipping-fast mr-2"></i> Dispatch & Minus Stock</button></div></div>`;
-        });
-        document.getElementById('pendingOrdersList').innerHTML = html || "<div class='col-span-full text-center py-20 opacity-30 italic font-black uppercase'>No Pending Orders</div>";
-    });
-}
 
-async function dispatchOrder(id) {
-    if(!confirm("Deduct stock and finalize?")) return;
-    const docRef = db.collection("sales").doc(id);
-    const order = (await docRef.get()).data();
-    for(let item of order.items) {
-        const pRef = db.collection("products").doc(item.name.toLowerCase());
-        const pDoc = await pRef.get();
-        if(pDoc.exists) await pRef.update({ stock: firebase.firestore.FieldValue.increment(-item.qty) });
-    }
-    let mob = order.mob || "0000";
-    await db.collection("customers").doc(mob).set({ name: order.customer.replace(" (BOOKER)", ""), balance: firebase.firestore.FieldValue.increment(order.grandTotal) }, { merge: true });
-    await docRef.update({ status: "COMPLETED", timestamp: Date.now() });
-    alert("Order Dispatched!");
-}
 // --- CASH RECEIVE LOGIC ---
 async function receivePayment() {
     const mob = prompt("Enter Customer Mobile:"); if(!mob) return;
