@@ -707,22 +707,22 @@ async function reprintLastBill(phone) {
     } catch (e) { alert("Reprint error."); }
   }
     
-// --- COMPLETE MASTER REPORTS FUNCTION ---
+// --- COMPLETE MASTER REPORTS FUNCTION (FIXED VERSION) ---
 function renderReports(filterType = 'all', searchTerm = '') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let dailyItems = {};
-    let monthlyData = {};
     const reportBody = document.getElementById('reportTableBody');
     if (reportBody) reportBody.innerHTML = "";
 
-    const todayStr = new Date().toLocaleDateString('en-GB'); 
+    // 1. Aapke system ka asli Date format (M/D/YYYY)
+    const now = new Date();
+    const todayStr = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
 
     sales.forEach(s => {
         const sDateStr = s.date || ""; 
-        const dateParts = sDateStr.split('/');
-        const sMonth = dateParts.length > 2 ? dateParts[1] + '/' + dateParts[2] : "0/0";
-        
         let sProfit = Number(s.profit) || 0;
+        
+        // Profit Calculation (Admin + Booker)
         if(sProfit === 0 && s.items) {
             s.items.forEach(it => {
                 let pObj = prods.find(x => x.name.toLowerCase() === it.name.toLowerCase());
@@ -731,12 +731,7 @@ function renderReports(filterType = 'all', searchTerm = '') {
             });
         }
 
-        if(sMonth && sMonth !== "0/0") {
-            if(!monthlyData[sMonth]) monthlyData[sMonth] = { sales: 0, exp: 0, profit: 0 };
-            monthlyData[sMonth].sales += Number(s.grandTotal || s.itemsSum || 0);
-            monthlyData[sMonth].profit += sProfit;
-        }
-
+        // Today's Items logic (Booker orders are PENDING but we show them here)
         if(sDateStr === todayStr && s.items) {
             s.items.forEach(item => {
                 if(!dailyItems[item.name]) dailyItems[item.name] = { qty: 0, total: 0 };
@@ -761,7 +756,7 @@ function renderReports(filterType = 'all', searchTerm = '') {
                 reportBody.innerHTML += `
                 <tr class="border-b text-[10px] font-bold uppercase">
                     <td class="p-2">${sDateStr}</td>
-                    <td class="p-2">${s.customer || "Walking"} ${s.status === 'PENDING' ? '<span class="text-orange-500">[B]</span>' : ''}</td>
+                    <td class="p-2">${s.customer || "Walking"} ${s.status === 'PENDING' ? '<span style="color:orange; font-size:8px;">[BOOKER]</span>' : ''}</td>
                     <td class="p-2 text-blue-600">${billAmt.toLocaleString()}</td>
                     <td class="p-2 text-emerald-600">${sProfit.toLocaleString()}</td>
                 </tr>`;
@@ -769,14 +764,12 @@ function renderReports(filterType = 'all', searchTerm = '') {
         }
     });
 
+    // Expenses Calculation
     expenses.forEach(e => {
-        let amt = Number(e.amount || e.amt) || 0;
-        eSum += amt;
-        const dateParts = (e.date || "").split('/');
-        const eMonth = dateParts.length > 2 ? dateParts[1] + '/' + dateParts[2] : "";
-        if(monthlyData[eMonth]) monthlyData[eMonth].exp += amt;
+        if(e.date === todayStr) eSum += Number(e.amount || e.amt || 0);
     });
 
+    // Stock Asset
     prods.forEach(p => { 
         stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice || p.cost || 0)); 
     });
@@ -784,17 +777,17 @@ function renderReports(filterType = 'all', searchTerm = '') {
     if(document.getElementById('totalStockAsset')) document.getElementById('totalStockAsset').innerText = "Rs " + stockAsset.toLocaleString();
     if(document.getElementById('totalNetProfit')) document.getElementById('totalNetProfit').innerText = "Rs " + (totalProfit - eSum).toLocaleString();
     
-    // MISSING FUNCTION FIXED HERE
+    // Niche wali table render karein
     renderDailyItemsTable(dailyItems);
 }
 
-// YE FUNCTION ADD KAREIN (Taki web error na de)
+// Today Items Table Render Function
 function renderDailyItemsTable(dailyItems) {
     const container = document.getElementById('todayItemsList');
     if(!container) return; 
 
     if(Object.keys(dailyItems).length === 0) {
-        container.innerHTML = "<tr><td colspan='3' class='text-center p-4'>No Items Today</td></tr>";
+        container.innerHTML = "<tr><td colspan='3' class='text-center p-4'>Aaj koi sale nahi hui</td></tr>";
         return;
     }
 
@@ -805,8 +798,8 @@ function renderDailyItemsTable(dailyItems) {
             <td class="p-2 text-right">Rs ${data.total.toLocaleString()}</td>
         </tr>
     `).join('');
-}
-    
+                        }
+
 
     // UI Rendering
     updateReportUI(stockAsset, totalProfit, eSum, dailyItems, monthlyData, sSum);
@@ -847,45 +840,36 @@ function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
     
 function updateStats() {
     try {
-        let today = new Date().toLocaleDateString('en-GB');
-        let profit = 0;
-        let todayExp = 0;
-        
-        // 1. Expenses safety ke sath
-        if (typeof expenses !== 'undefined' && expenses) {
-            expenses.filter(e => e.date === today).forEach(e => {
+        const now = new Date();
+        const todayStr = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
+        let profit = 0, todayExp = 0;
+
+        // Expenses filter
+        if (typeof expenses !== 'undefined') {
+            expenses.filter(e => e.date === todayStr).forEach(e => {
                 todayExp += Number(e.amount || e.amt || 0);
             });
         }
 
-        // 2. Sales filter (COMPLETED + PENDING)
-        if (typeof sales !== 'undefined' && sales) {
-            sales.filter(s => (s.status === "COMPLETED" || s.status === "PENDING") && s.date === today).forEach(s => {
-                if(s.items) {
+        // Sales filter (Admin + Booker)
+        if (typeof sales !== 'undefined') {
+            sales.filter(s => (s.status === "COMPLETED" || s.status === "PENDING") && s.date === todayStr).forEach(s => {
+                if (s.items) {
                     s.items.forEach(i => {
-                        // Yahan 'prods' ki jagah hum check kar rahe hain ke products ki list ka sahi naam kya hai
-                        let productList = (typeof prods !== 'undefined') ? prods : (typeof products !== 'undefined' ? products : []);
-                        let p = productList.find(x => x.name && x.name.toLowerCase() === i.name.toLowerCase());
-                        
-                        let salePrice = Number(i.price) || 0;
-                        let costPrice = p ? Number(p.buyPrice || p.cost || 0) : salePrice * 0.7; // Agar cost na mile to 30% profit assume kare
-                        
-                        profit += (salePrice - costPrice) * Number(i.qty || 0);
+                        // FIX: 'pList' ki jagah aapka asli 'prods' use kiya hai
+                        let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase());
+                        let cost = p ? Number(p.buyPrice || p.cost || 0) : Number(i.price) * 0.7;
+                        profit += (Number(i.price) - cost) * Number(i.qty || 0);
                     });
                 }
             });
         }
 
-        // 3. Dashboard Update
         const profEl = document.getElementById('dailyProfitVal');
-        if(profEl) {
-            profEl.innerText = "Rs " + (profit - todayExp).toLocaleString();
-        }
-    } catch (error) {
-        console.error("Stats Update Error: ", error);
-        // Error aaye bhi to web band nahi hogi, sirf console mein dikhayega
-    }
+        if (profEl) profEl.innerText = "Rs " + (profit - todayExp).toLocaleString();
+    } catch (e) { console.log("Stats Error skipped"); }
 }
+    
                     
     
 function handleLogo(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { settings.logo = e.target.result; applySettings(); }; reader.readAsDataURL(input.files[0]); } }
