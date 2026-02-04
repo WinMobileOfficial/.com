@@ -451,12 +451,17 @@ async function processBill() {
     document.getElementById('rGrandTotal').innerText = s.grandTotal;
     document.getElementById('rPaid').innerText = s.paid || 0; 
 
-    // AGAR Ledger se reprint ho raha hai toh 6500 dikhao, warna purana bill 600
-    if (isLedger) {
-        document.getElementById('rNetBal').innerText = customers[s.mob]?.balance || s.finalBal;
-    } else {
-        document.getElementById('rNetBal').innerText = s.finalBal;
-    }
+  // AGAR Ledger se reprint ho raha hai toh poora balance dikhao, warna sirf is bill ka total
+let oldB = Number(s.prevBal) || 0;
+let gTotal = Number(s.grandTotal) || 0;
+let paidAmt = Number(s.paid) || 0;
+
+if (isLedger) {
+    document.getElementById('rNetBal').innerText = "Rs " + (customers[s.mob]?.balance || (oldB + gTotal - paidAmt)).toLocaleString();
+} else {
+    document.getElementById('rNetBal').innerText = "Rs " + (oldB + gTotal - paidAmt).toLocaleString();
+}
+     
 
     if(settings.logo) { 
         document.getElementById('rLogo').src = settings.logo; 
