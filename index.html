@@ -416,70 +416,91 @@ function calcTotal() {
     document.getElementById('balAmt').value = (itemsSum + prev) - paid;
 }
     
-async function processBill() {
-    if (!cart.length) return;
+// Function se bahar ye lock lazmi rakhein
+let isProcessingBill = false;
 
-    // 1. Double entry rokne ke liye button ko disable karein
+async function processBill() {
+    // Agar pehle se process ho raha hai ya cart khali hai to ruk jao
+    if (isProcessingBill || !cart.length) return;
+
+    // Lock lagao aur button band karo
+    isProcessingBill = true;
     const saveBtn = document.querySelector("button[onclick='processBill()']");
-    if (saveBtn) saveBtn.disabled = true;
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerText = "Saving...";
+    }
 
     try {
         let mob = document.getElementById('cMob').value || "0000";
         let cName = document.getElementById('cName').value || "WALKING";
 
-        // 2. Calculation (Sirf items ka total aur purana udhaar)
+        // 1. Bilkul sahi calculations
         let itemsSum = cart.reduce((s, i) => s + i.subtotal, 0);
         let prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0;
         let paid = parseFloat(document.getElementById('paidAmt').value) || 0;
 
-        // Sahih Balance Formula
+        // Formula: Purana Udhaar + Aaj ka Maal - Aaj ki Raqam
         let nayaBalance = (prev + itemsSum) - paid;
 
         let sale = {
             id: Date.now().toString(),
-            status: "PENDING",
+            status: "COMPLETED",
             date: new Date().toLocaleDateString(),
             time: new Date().toLocaleTimeString(),
             timestamp: Date.now(),
             customer: cName,
             mob: mob,
             items: [...cart],
-            itemsSum: itemsSum,
-            prevBal: prev,
-            grandTotal: itemsSum, // Aaj ka bill
-            paid: paid,
-            finalBal: nayaBalance // Ledger balance
+            itemsSum: itemsSum,   // Sirf aaj ke items ka total
+            prevBal: prev,        // Pichla balance
+            grandTotal: itemsSum, // Bill ka main total
+            paid: paid,           // Jo user ne pay kiya
+            finalBal: nayaBalance // Ledger mein save hone wala final
         };
 
-        // 3. Database Updates
+        // 2. Database mein sirf aik aik baar entry
+        // Pehle Sale save karein
         await db.collection("sales").doc(sale.id).set(sale);
+        
+        // Phir Customer ka balance update karein
         await db.collection("customers").doc(mob).set({ 
             name: cName, 
             balance: nayaBalance 
         }, { merge: true });
 
-        // 4. Raseed print karein
+        // 3. Raseed print karein
         printReceipt(sale);
 
-        // 5. Form Reset (Sab khali kar dein)
+        // 4. Sab kuch khali (Reset) karein
         cart = [];
         renderCart();
+        
         ['cName', 'cMob', 'pSearch', 'paidAmt', 'cSearchInput'].forEach(id => {
             let el = document.getElementById(id);
             if (el) el.value = "";
         });
-        document.getElementById('prevBalVal').innerText = "0";
-        document.getElementById('prevBalShow').classList.add('hidden');
-        if(document.getElementById('totalDisplay')) document.getElementById('totalDisplay').innerText = "0";
 
-    } catch (e) {
-        console.error("Saving Error: ", e);
-        alert("Data save nahi ho saka!");
+        document.getElementById('prevBalVal').innerText = "0";
+        if(document.getElementById('prevBalShow')) document.getElementById('prevBalShow').classList.add('hidden');
+        if(document.getElementById('totalDisplay')) document.getElementById('totalDisplay').innerText = "0";
+        if(document.getElementById('balAmt')) document.getElementById('balAmt').value = "0";
+
+        alert("Bill Saved & Ledger Updated!");
+
+    } catch (error) {
+        console.error("Critical Error:", error);
+        alert("Server ka masla hai, dobara koshish karein.");
     } finally {
-        // Kaam khatam hone par button wapis khol dein
-        if (saveBtn) saveBtn.disabled = false;
+        // Sab khatam hone ke baad lock khol dein
+        isProcessingBill = false;
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerText = "SAVE & PRINT";
+        }
     }
 }
+    
     
 
  function printReceipt(s, isLedger = false) {
