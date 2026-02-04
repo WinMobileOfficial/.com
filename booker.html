@@ -203,72 +203,67 @@ async function finalSubmit() {
           btn = document.getElementById('submitBtn');
           
     if(!shop || cart.length === 0) return alert("Select Shop & Add Items!");
-    
-    // Double entry rokne ke liye
+    if(btn.disabled) return; // Agar pehle se chal raha hai to ruk jao
+
     btn.disabled = true; 
-    btn.innerHTML = "UPLOADING...";
+    btn.innerHTML = "CHECKING...";
 
-    let photoUrl = "No Photo", 
-        orderId = "ALH-" + Date.now().toString().slice(-5), 
-        total = cart.reduce((s, i) => s + i.subtotal, 0);
-
-    const mapLink = userLat ? `http://maps.google.com/?q=${userLat},${userLong}` : "GPS: OFF";
+    const orderId = "ALH-" + Date.now().toString().slice(-6);
+    const total = cart.reduce((s, i) => s + i.subtotal, 0);
 
     try {
+        // 1. Double Check: Kahin ye ID pehle se to nahi?
+        const doc = await db.collection("sales").doc(orderId).get();
+        if (doc.exists) return alert("Order already saved!");
+
+        btn.innerHTML = "UPLOADING PHOTO...";
+        let photoUrl = "No Photo";
         if(photoFile) {
             let fd = new FormData(); fd.append("image", photoFile);
             const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
             const d = await res.json(); if(d.success) photoUrl = d.data.url;
         }
 
-        // 1. Database mein Sale save karein (Variables Match for Receipt)
-        const saleData = { 
-            id: orderId, 
-            customer: shop, 
-            mob: phone, 
-            date: getToday(), 
-            time: new Date().toLocaleTimeString(),
-            items: [...cart], 
-            itemsSum: total,        // Raseed ka total (Ab 0 nahi aayega)
-            grandTotal: total,      // Bill total
-            prevBal: 0,             // Booker ke liye filhal 0
-            paid: 0, 
-            finalBal: total,        // Ledger ke liye total
-            img: photoUrl, 
-            gps: mapLink, 
-            status: "PENDING", 
-            role: "booker", 
-            timestamp: Date.now() 
-        };
+        const mapLink = userLat ? `https://www.google.com/maps?q=${userLat},${userLong}` : "GPS: OFF";
 
-        await db.collection("sales").doc(orderId).set(saleData);
-
-        // 2. Customer ka Ledger update karein (Taake udhaar barh jaye)
-        await db.collection("customers").doc(phone).set({ 
-            name: shop, 
-            balance: firebase.firestore.FieldValue.increment(total) 
-        }, { merge: true });
+        // 2. Transaction use karein taake double update na ho
+        const customerRef = db.collection("customers").doc(phone);
         
+        await db.runTransaction(async (transaction) => {
+            // Sale save karein
+            transaction.set(db.collection("sales").doc(orderId), {
+                id: orderId, customer: shop, mob: phone, 
+                date: getToday(), time: new Date().toLocaleTimeString(),
+                items: [...cart], itemsSum: total, grandTotal: total, 
+                prevBal: 0, paid: 0, finalBal: total, 
+                img: photoUrl, gps: mapLink, status: "PENDING", 
+                role: "booker", timestamp: Date.now()
+            });
+
+            // Ledger update karein
+            transaction.set(customerRef, { 
+                name: shop, 
+                balance: firebase.firestore.FieldValue.increment(total) 
+            }, { merge: true });
+        });
+
+        btn.innerHTML = "REDIRECTING...";
+
         // 3. WhatsApp Message
         let itemsMsg = cart.map(i => `• ${i.name} (x${i.qty})`).join('%0A');
-        let waMsg = `🏢 *ORDER RECEIVED*%0A━━━━━━━━━━━━━━━━━━━━%0A🆔 *ID:* ${orderId}%0A🏪 *Shop:* ${shop}%0A💰 *Total:* Rs ${total.toLocaleString()}%0A📸 *Photo:* ${photoUrl}%0A📍 *Location:* ${mapLink}%0A━━━━━━━━━━━━━━━━━━━━%0A🛒 *ITEMS:*%0A${itemsMsg}`;
+        let waMsg = `🏢 *ORDER RECEIVED*%0A🆔 *ID:* ${orderId}%0A🏪 *Shop:* ${shop}%0A💰 *Total:* Rs ${total.toLocaleString()}%0A📸 *Photo:* ${photoUrl}%0A📍 *Loc:* ${mapLink}%0A🛒 *ITEMS:*%0A${itemsMsg}`;
 
+        // Sab khatam karne ke baad redirect
         window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=${waMsg}`;
-        
-        // Form Reset
-        setTimeout(() => {
-            cart = [];
-            location.reload();
-        }, 2000);
 
     } catch(e) { 
         console.error(e);
         btn.disabled = false; 
         btn.innerHTML = "SUBMIT ORDER";
-        alert("Upload Error!"); 
+        alert("System Error! Please try again."); 
     }
 }
-    
+
 
 // SECURE CASH REQUEST
 async function requestCashApproval(id, name, inputId) {
