@@ -406,12 +406,17 @@ function renderCart() {
 
 function calcTotal() { 
     let itemsSum = cart.reduce((s, i) => s + i.subtotal, 0); 
-    let prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0; 
-    let grand = itemsSum + prev; 
+    // Grand Total sirf aaj ke saaman ki raqam honi chahiye
+    let grand = itemsSum; 
     document.getElementById('totalDisplay').innerText = grand; 
+
+    let prev = parseFloat(document.getElementById('prevBalVal').innerText) || 0; 
     let paid = parseFloat(document.getElementById('paidAmt').value) || 0; 
-    document.getElementById('balAmt').value = grand - paid; 
+    
+    // Balance mein (Purana Udhaar + Aaj ka Bill - Paid) dikhayein
+    document.getElementById('balAmt').value = (prev + grand) - paid; 
 }
+    
 
 async function processBill() {
     if(!cart.length) return;
