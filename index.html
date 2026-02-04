@@ -846,28 +846,47 @@ function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
 }
     
 function updateStats() {
-    let today = new Date().toLocaleDateString('en-GB'), profit = 0, todayExp = 0;
-    
-    // Expenses calculate karein
-    expenses.filter(e => e.date === today).forEach(e => todayExp += Number(e.amount || 0));
+    try {
+        let today = new Date().toLocaleDateString('en-GB');
+        let profit = 0;
+        let todayExp = 0;
+        
+        // 1. Expenses safety ke sath
+        if (typeof expenses !== 'undefined' && expenses) {
+            expenses.filter(e => e.date === today).forEach(e => {
+                todayExp += Number(e.amount || e.amt || 0);
+            });
+        }
 
-    // Sales filter karein: Ab hum COMPLETED aur PENDING (Booker orders) dono ko ginein ge
-    sales.filter(s => (s.status === "COMPLETED" || s.status === "PENDING") && s.date === today).forEach(s => {
-        if(s.items) {
-            s.items.forEach(i => {
-                let p = prods.find(x => x.name.toLowerCase() === i.name.toLowerCase());
-                if (p) {
-                    // Profit = (Sale Price - Cost Price) * Quantity
-                    profit += (Number(i.price) - (Number(p.cost) || 0)) * Number(i.qty);
+        // 2. Sales filter (COMPLETED + PENDING)
+        if (typeof sales !== 'undefined' && sales) {
+            sales.filter(s => (s.status === "COMPLETED" || s.status === "PENDING") && s.date === today).forEach(s => {
+                if(s.items) {
+                    s.items.forEach(i => {
+                        // Yahan 'prods' ki jagah hum check kar rahe hain ke products ki list ka sahi naam kya hai
+                        let productList = (typeof prods !== 'undefined') ? prods : (typeof products !== 'undefined' ? products : []);
+                        let p = productList.find(x => x.name && x.name.toLowerCase() === i.name.toLowerCase());
+                        
+                        let salePrice = Number(i.price) || 0;
+                        let costPrice = p ? Number(p.buyPrice || p.cost || 0) : salePrice * 0.7; // Agar cost na mile to 30% profit assume kare
+                        
+                        profit += (salePrice - costPrice) * Number(i.qty || 0);
+                    });
                 }
             });
         }
-    });
 
-    // Dashboard par update karein
-    const profEl = document.getElementById('dailyProfitVal');
-    if(profEl) profEl.innerText = "Rs " + (profit - todayExp).toLocaleString();
+        // 3. Dashboard Update
+        const profEl = document.getElementById('dailyProfitVal');
+        if(profEl) {
+            profEl.innerText = "Rs " + (profit - todayExp).toLocaleString();
+        }
+    } catch (error) {
+        console.error("Stats Update Error: ", error);
+        // Error aaye bhi to web band nahi hogi, sirf console mein dikhayega
+    }
 }
+                    
     
 function handleLogo(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { settings.logo = e.target.result; applySettings(); }; reader.readAsDataURL(input.files[0]); } }
 function removeLogo() { settings.logo = ""; applySettings(); }
