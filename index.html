@@ -708,8 +708,7 @@ async function reprintLastBill(phone) {
   }
     
 
-
-// --- MASTER REPORTS FUNCTION (LINE 710) ---
+// --- MASTER REPORTS FUNCTION (100% CORRECTED) ---
 function renderReports(filterType = 'all', searchTerm = '') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let dailyItems = {};
@@ -720,11 +719,12 @@ function renderReports(filterType = 'all', searchTerm = '') {
     const now = new Date();
     const todayStr = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
 
+    // Sales loop: Booker aur Admin dono ka data handle karta hai
     sales.forEach(s => {
         const sDateStr = s.date || ""; 
         let sProfit = Number(s.profit) || 0;
         
-        // Booker Profit Fix: Agar profit 0 hai to calculate karein
+        // Agar Booker (PENDING) order hai to profit khud calculate karein
         if(sProfit === 0 && s.items) {
             s.items.forEach(it => {
                 let pObj = prods.find(x => x.name.toLowerCase() === it.name.toLowerCase());
@@ -733,12 +733,22 @@ function renderReports(filterType = 'all', searchTerm = '') {
             });
         }
 
-        // Booker Orders (PENDING) ko Today Sales mein dikhane ke liye logic
+        // Monthly Summary Logic
+        if(sDateStr.includes('/')) {
+            const parts = sDateStr.split('/');
+            const mKey = parts[0] + '/' + parts[2]; // MM/YYYY
+            if(!monthlyData[mKey]) monthlyData[mKey] = { sales: 0, profit: 0, exp: 0 };
+            monthlyData[mKey].sales += Number(s.grandTotal || s.itemsSum || 0);
+            monthlyData[mKey].profit += sProfit;
+        }
+
+        // Today's Items list (Booker orders included)
         if(sDateStr === todayStr && s.items) {
             s.items.forEach(item => {
-                if(!dailyItems[item.name]) dailyItems[item.name] = { qty: 0, total: 0 };
-                dailyItems[item.name].qty += Number(item.qty) || 0;
-                dailyItems[item.name].total += (Number(item.price) * Number(item.qty)) || 0;
+                const n = item.name;
+                if(!dailyItems[n]) dailyItems[n] = { qty: 0, total: 0 };
+                dailyItems[n].qty += Number(item.qty) || 0;
+                dailyItems[n].total += (Number(item.price) * Number(item.qty)) || 0;
             });
         }
 
@@ -746,7 +756,9 @@ function renderReports(filterType = 'all', searchTerm = '') {
         if (filterType === 'daily') isVisible = (sDateStr === todayStr);
         if (searchTerm) {
             const sLower = searchTerm.toLowerCase();
-            if (!(s.customer || "").toLowerCase().includes(sLower)) isVisible = false;
+            const custMatch = (s.customer || "").toLowerCase().includes(sLower);
+            const itemMatch = s.items && s.items.some(i => i.name.toLowerCase().includes(sLower));
+            if (!custMatch && !itemMatch) isVisible = false;
         }
 
         if(isVisible) {
@@ -765,17 +777,41 @@ function renderReports(filterType = 'all', searchTerm = '') {
         }
     });
 
-    expenses.forEach(e => { if(e.date === todayStr) eSum += Number(e.amount || e.amt || 0); });
+    // Expenses logic
+    expenses.forEach(e => {
+        const eAmt = Number(e.amount || e.amt || 0);
+        if(e.date === todayStr) eSum += eAmt;
+        if(e.date && e.date.includes('/')) {
+            const eP = e.date.split('/');
+            const eM = eP[0] + '/' + eP[2];
+            if(monthlyData[eM]) monthlyData[eM].exp += eAmt;
+        }
+    });
+    
     prods.forEach(p => { stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice || p.cost || 0)); });
 
-    // UI Update (Profit Card)
+    // Dashboard Profit Fix (No double Rs)
     const profEl = document.getElementById('dailyProfitVal');
-    if(profEl) profEl.innerText = "Rs " + Math.round(totalProfit - eSum).toLocaleString();
+    if(profEl) {
+        // Sirf Today ka profit calculate karke dikhayen
+        let todayOnlyProfit = 0;
+        sales.filter(s => s.date === todayStr).forEach(s => {
+             let p = Number(s.profit) || 0;
+             if(p === 0 && s.items) {
+                 s.items.forEach(it => {
+                     let po = prods.find(x => x.name.toLowerCase() === it.name.toLowerCase());
+                     let c = po ? Number(po.buyPrice || po.cost || 0) : Number(it.price) * 0.7;
+                     p += (Number(it.price) - c) * Number(it.qty);
+                 });
+             }
+             todayOnlyProfit += p;
+        });
+        profEl.innerText = "Rs " + Math.round(todayOnlyProfit - eSum).toLocaleString();
+    }
 
     updateReportUI(stockAsset, totalProfit, eSum, dailyItems, monthlyData, sSum);
 }
 
-// --- MASTER UI UPDATE FUNCTION ---
 function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
     const statsDiv = document.getElementById('repStats');
     if(statsDiv) {
@@ -796,16 +832,22 @@ function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
                 <td class="p-3 text-right">Rs ${dItems[n].total.toLocaleString()}</td>
             </tr>`).join('') : '<tr><td colspan="3" class="p-10 text-center italic opacity-30 font-black">No items sold today</td></tr>';
     }
+
+    const monthlyDiv = document.getElementById('monthlySummary');
+    if(monthlyDiv) {
+        monthlyDiv.innerHTML = Object.keys(mData).map(m => `
+            <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl mb-2 border">
+                <span class="font-black uppercase italic text-xs">${m}</span>
+                <div class="text-right">
+                    <p class="text-[9px] opacity-60 font-bold">SALES: Rs ${mData[m].sales.toLocaleString()}</p>
+                    <p class="text-emerald-600 font-black text-xs">PROFIT: Rs ${(mData[m].profit - mData[m].exp).toLocaleString()}</p>
+                </div>
+            </div>`).join('');
+    }
 }
 
-// --- YE LINE ZAROORI HAI: Website khulte hi profit dikhayegi ---
-window.onload = function() {
-    renderReports('daily'); 
-};
-
-function updateStats() {
-    renderReports('daily');
-}
+function updateStats() { renderReports('daily'); }
+                
     
     
 function handleLogo(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { settings.logo = e.target.result; applySettings(); }; reader.readAsDataURL(input.files[0]); } }
