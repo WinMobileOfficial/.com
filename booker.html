@@ -195,7 +195,8 @@ async function saveAndSelectCustomer() {
     } catch(e) { alert("Error!"); }
 }
 
-// ORDER & WA LOGIC (FIXED FOR HISTORY & LEDGER)
+
+// ORDER & WA LOGIC (UPDATED FOR DASHBOARD SYNC)
 async function finalSubmit() {
     const shop = document.getElementById('shopName').value, 
           phone = document.getElementById('shopPhone').value, 
@@ -204,7 +205,6 @@ async function finalSubmit() {
           
     if(!shop || cart.length === 0) return alert("Select Shop & Add Items!");
     
-    // Double entry rokne ke liye
     btn.disabled = true; 
     btn.innerHTML = "UPLOADING...";
 
@@ -212,36 +212,47 @@ async function finalSubmit() {
         orderId = "ALH-" + Date.now().toString().slice(-5), 
         total = cart.reduce((s, i) => s + i.subtotal, 0);
 
+    // --- DASHBOARD DATE FIX (MM/DD/YYYY) ---
+    const now = new Date();
+    const dashboardDate = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
+
     const mapLink = userLat ? `https://www.google.com/maps?q=${userLat},${userLong}` : "GPS: OFF";
 
     try {
-        // 1. History ke liye Old Balance fetch karein
         let oldBalance = 0;
         const custDoc = await db.collection("customers").doc(phone).get();
         if(custDoc.exists) {
             oldBalance = Number(custDoc.data().balance) || 0;
         }
 
-        // 2. Photo upload logic
         if(photoFile) {
             let fd = new FormData(); fd.append("image", photoFile);
             const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
             const d = await res.json(); if(d.success) photoUrl = d.data.url;
         }
 
-        // 3. Database mein Sale save karein (Sari fields ke sath taake History sahi aaye)
+        // --- PROFIT CALCULATION FOR DASHBOARD ---
+        // Hum items ko format kar rahe hain taake Admin index.html isay samajh sakay
+        const formattedItems = cart.map(i => ({
+            name: i.name,
+            price: Number(i.price),
+            qty: Number(i.qty),
+            total: Number(i.subtotal)
+        }));
+
         const saleData = { 
             id: orderId, 
             customer: shop, 
             mob: phone, 
-            date: getToday(), 
+            date: dashboardDate, // Now matches index.html format
             time: new Date().toLocaleTimeString(),
-            items: [...cart], 
-            itemsSum: total,        // Aaj ka bill
+            items: formattedItems, 
+            itemsSum: total,        
             grandTotal: total,      
-            prevBal: oldBalance,    // YE HAI HISTORY KA FIX
+            prevBal: oldBalance,    
             paid: 0, 
-            finalBal: oldBalance + total, // Net total for Ledger
+            profit: 0, // Admin index.html will auto-calculate this
+            finalBal: oldBalance + total, 
             img: photoUrl, 
             gps: mapLink, 
             status: "PENDING", 
@@ -251,15 +262,12 @@ async function finalSubmit() {
 
         await db.collection("sales").doc(orderId).set(saleData);
 
-        // NOTE: Ledger update yahan nahi hoga (taake Admin Panel par patch karte waqt double na ho)
-        
-        // 4. WhatsApp Message
+        // WhatsApp Message
         let itemsMsg = cart.map(i => `• ${i.name} (x${i.qty})`).join('%0A');
         let waMsg = `🏢 *ORDER RECEIVED*%0A━━━━━━━━━━━━━━━━━━━━%0A🆔 *ID:* ${orderId}%0A🏪 *Shop:* ${shop}%0A💰 *Total:* Rs ${total.toLocaleString()}%0A📸 *Photo:* ${photoUrl}%0A📍 *Location:* ${mapLink}%0A━━━━━━━━━━━━━━━━━━━━%0A🛒 *ITEMS:*%0A${itemsMsg}`;
 
         window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=${waMsg}`;
         
-        // Form Reset
         setTimeout(() => {
             cart = [];
             location.reload();
@@ -272,6 +280,7 @@ async function finalSubmit() {
         alert("Upload Error!"); 
     }
 }
+    
     
     
 // SECURE CASH REQUEST
