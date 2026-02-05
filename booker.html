@@ -16,16 +16,19 @@
         .nav-active { color: #3b82f6 !important; border-top: 4px solid #3b82f6; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .search-results { position: absolute; width: 100%; background: white; z-index: 100; border-radius: 1rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); max-height: 200px; overflow-y: auto; color: #1e293b; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="pb-28">
 
 <div id="lockScreen" class="fixed inset-0 bg-[#0f172a] z-[9999] flex flex-col items-center justify-center p-6">
     <div class="bg-slate-800 p-8 rounded-[3rem] border-2 border-slate-700 w-full max-w-xs text-center shadow-2xl">
-        <div class="w-16 h-16 bg-blue-600 rounded-2xl mx-auto mb-6 flex items-center justify-center"><i class="fas fa-user-shield text-2xl text-white"></i></div>
+        <div class="w-16 h-16 bg-blue-600 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.5)]">
+            <i class="fas fa-user-shield text-2xl text-white"></i>
+        </div>
         <h1 class="text-white font-black mb-6 uppercase tracking-widest italic">Booker Login</h1>
-        <input id="bookerPin" type="password" inputmode="numeric" placeholder="••••" class="w-full p-4 rounded-2xl text-center text-3xl font-black mb-4 outline-none border-4 border-blue-500 shadow-lg">
-        <button onclick="checkPin()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase active:scale-95 transition-all">Unlock App</button>
+        <input id="bookerPin" type="password" inputmode="numeric" placeholder="••••" class="w-full p-4 rounded-2xl text-center text-3xl font-black mb-4 outline-none border-4 border-blue-500 shadow-lg text-slate-900">
+        <button onclick="checkPin()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase active:scale-95 transition-all shadow-lg shadow-blue-500/20">Unlock App</button>
     </div>
 </div>
 
@@ -36,7 +39,7 @@
                 <h1 class="text-xl font-black text-blue-400 italic">AL-HAFIZ TRADERS</h1>
                 <p id="gpsStatus" class="text-[9px] font-bold text-rose-400 uppercase tracking-widest animate-pulse">GPS: SEARCHING...</p>
             </div>
-            <button onclick="sendDaySummary()" class="bg-slate-700 p-2 px-3 rounded-xl border border-white/10 active:scale-90 shadow-lg">
+            <button onclick="sendDaySummary()" class="bg-slate-700 p-2 px-3 rounded-xl border border-white/10 active:scale-90">
                 <i class="fas fa-file-invoice text-emerald-400"></i>
             </button>
         </div>
@@ -57,13 +60,13 @@
         <div id="orderTab" class="tab-content active-tab space-y-4">
             <div class="bg-white rounded-[2.5rem] p-5 shadow-xl border-b-8 border-blue-500">
                 <div class="flex justify-between items-center mb-3 px-1">
-                    <p class="text-[10px] font-black uppercase text-slate-400 italic">Select or Add Shop</p>
+                    <p class="text-[10px] font-black uppercase text-slate-400 italic">Customer Selection</p>
                     <button onclick="toggleNewCustomer()" id="newCustBtn" class="bg-blue-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase shadow-md">+ New Shop</button>
                 </div>
                 
                 <div id="searchBoxContainer" class="relative mb-3">
                     <input id="shopSearch" oninput="searchLedger(this.value)" placeholder="SEARCH SHOP..." class="w-full p-4 border-2 border-slate-100 rounded-2xl font-black outline-none uppercase text-xs italic">
-                    <div id="ledgerResults" class="search-results hidden"></div>
+                    <div id="ledgerResults" class="search-results hidden no-scrollbar"></div>
                 </div>
 
                 <div id="newCustFields" class="hidden space-y-2 mb-3 bg-blue-50 p-4 rounded-2xl border-2 border-dashed border-blue-200">
@@ -73,15 +76,15 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
-                    <input id="shopName" readonly placeholder="SHOP NAME" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-[10px] uppercase border">
-                    <input id="shopPhone" readonly placeholder="PHONE NO" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-[10px] border">
+                    <input id="shopName" readonly placeholder="NAME" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-[10px] uppercase border">
+                    <input id="shopPhone" readonly placeholder="PHONE" class="w-full p-3 bg-slate-50 rounded-xl font-bold text-[10px] border">
                 </div>
             </div>
 
             <div class="bg-white rounded-[2.5rem] p-5 shadow-xl border-b-8 border-slate-200">
                 <div class="relative mb-3">
                     <input id="pSearch" oninput="filterProducts(this.value)" placeholder="FIND PRODUCT..." class="w-full p-4 border-2 border-slate-100 rounded-2xl font-black outline-none uppercase text-xs italic">
-                    <div id="searchList" class="search-results hidden"></div>
+                    <div id="searchList" class="search-results hidden no-scrollbar"></div>
                 </div>
                 <div class="grid grid-cols-2 gap-2 mb-3">
                     <input id="pPrice" type="number" readonly class="p-3 bg-slate-100 rounded-xl text-center font-black" placeholder="Rate">
@@ -93,7 +96,7 @@
 
             <div class="bg-white p-5 rounded-[2.5rem] shadow-xl border-b-8 border-slate-400">
                 <input type="file" id="shopPhoto" accept="image/*" capture="camera" class="hidden" onchange="previewPhoto(this)">
-                <div onclick="document.getElementById('shopPhoto').click()" class="w-full h-32 border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center bg-slate-50 relative overflow-hidden cursor-pointer active:scale-95 transition-all">
+                <div onclick="document.getElementById('shopPhoto').click()" class="w-full h-32 border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center bg-slate-50 relative overflow-hidden cursor-pointer active:scale-95">
                     <img id="pImg" class="hidden h-full w-full object-cover">
                     <div id="camIcon" class="text-center">
                         <i class="fas fa-camera text-3xl text-slate-300 mb-1"></i>
@@ -112,39 +115,50 @@
 
         <div id="ledgerTab" class="tab-content">
             <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border-b-8 border-indigo-500">
-                <h2 class="font-black text-center mb-2 uppercase italic text-slate-700">Cash Recovery</h2>
-                <p class="text-[9px] text-center text-slate-400 mb-6 font-bold uppercase italic">Admin Approval Required</p>
-                <input type="text" onkeyup="renderLedger(this.value)" placeholder="SEARCH CUSTOMER..." class="w-full p-4 rounded-2xl bg-slate-100 mb-6 font-black outline-none text-xs">
+                <h2 class="font-black text-center mb-2 uppercase italic text-slate-700">Recovery Request</h2>
+                <input type="text" onkeyup="renderLedger(this.value)" placeholder="SEARCH CUSTOMER..." class="w-full p-4 rounded-2xl bg-slate-100 mb-6 font-black outline-none text-xs italic">
                 <div id="ledgerScreenList" class="space-y-4"></div>
             </div>
         </div>
 
         <div id="stockTab" class="tab-content">
             <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border-b-8 border-blue-500">
-                <h2 class="font-black text-center mb-6 uppercase italic text-slate-700 border-b pb-3">Available Stock</h2>
+                <h2 class="font-black text-center mb-6 uppercase italic text-slate-700 border-b pb-3">Company Stock</h2>
                 <div id="stockList" class="space-y-3"></div>
             </div>
         </div>
     </div>
 
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 pb-8 z-[100] shadow-2xl">
-        <button onclick="showTab('orderTab', this)" class="flex flex-col items-center gap-1 text-slate-400 font-black uppercase text-[9px] px-6 nav-active"><i class="fas fa-shopping-bag text-xl"></i> Order</button>
-        <button onclick="showTab('ledgerTab', this)" class="flex flex-col items-center gap-1 text-slate-400 font-black uppercase text-[9px] px-6"><i class="fas fa-wallet text-xl"></i> Recovery</button>
-        <button onclick="showTab('stockTab', this)" class="flex flex-col items-center gap-1 text-slate-400 font-black uppercase text-[9px] px-6"><i class="fas fa-boxes text-xl"></i> Stock</button>
+        <button onclick="showTab('orderTab', this)" class="flex flex-col items-center gap-1 text-slate-400 font-black uppercase text-[9px] px-6 nav-active transition-all">
+            <i class="fas fa-shopping-bag text-xl"></i> Order
+        </button>
+        <button onclick="showTab('ledgerTab', this)" class="flex flex-col items-center gap-1 text-slate-400 font-black uppercase text-[9px] px-6 transition-all">
+            <i class="fas fa-wallet text-xl"></i> Recovery
+        </button>
+        <button onclick="showTab('stockTab', this)" class="flex flex-col items-center gap-1 text-slate-400 font-black uppercase text-[9px] px-6 transition-all">
+            <i class="fas fa-boxes text-xl"></i> Stock
+        </button>
     </nav>
 </div>
 
 <script>
-// CONFIG & INITIALIZATION
+// INITIAL CONFIG
 const firebaseConfig = { apiKey: "AIzaSyBP3VrLzUl5AIR2ca1v871cV-cJOMz-SX0", authDomain: "gm-agency-pos.firebaseapp.com", projectId: "gm-agency-pos", storageBucket: "gm-agency-pos.firebasestorage.app", messagingSenderId: "777771332628", appId: "1:777771332628:web:db60e19d9bdcee21f76301" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const BOSS_WA = "923066442004", IMGBB_KEY = "ac9e20cc7634087a31f0cc92096c23f4";
 let prods = [], ledger = [], cart = [], userLat = "", userLong = "";
-const getToday = () => new Date().toLocaleDateString('en-GB');
+
+// DATE FORMAT FIX FOR DASHBOARD (M/D/YYYY)
+const getDashboardDate = () => {
+    const d = new Date();
+    return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+};
 
 function checkPin() {
-    if(document.getElementById('bookerPin').value === "0001") {
+    const pin = document.getElementById('bookerPin').value;
+    if(pin === "0001") {
         document.getElementById('lockScreen').classList.add('hidden');
         document.getElementById('mainApp').classList.remove('hidden');
         init();
@@ -153,16 +167,25 @@ function checkPin() {
 
 function init() {
     getLocation();
-    db.collection("products").onSnapshot(snap => { prods = snap.docs.map(doc => doc.data()); renderStock(); });
-    db.collection("customers").onSnapshot(snap => { ledger = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderLedger(); });
+    // Live Fetch Products
+    db.collection("products").onSnapshot(snap => { 
+        prods = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); 
+        renderStock(); 
+    });
+    // Live Fetch Customers
+    db.collection("customers").onSnapshot(snap => { 
+        ledger = snap.docs.map(doc => ({id: doc.id, ...doc.data()})); 
+        renderLedger(); 
+    });
     
-    // SALES STATS
-    db.collection("sales").where("date", "==", getToday()).onSnapshot(snap => {
+    // Live Sales Update
+    db.collection("sales").where("date", "==", getDashboardDate()).onSnapshot(snap => {
         let t = 0; snap.forEach(d => t += Number(d.data().grandTotal || 0));
         document.getElementById('dayTotal').innerText = t.toLocaleString();
     });
-    // PENDING CASH STATS (Status: PENDING)
-    db.collection("cash_requests").where("date", "==", getToday()).where("status", "==", "PENDING").onSnapshot(snap => {
+
+    // Live Pending Recovery Update
+    db.collection("cash_requests").where("date", "==", getDashboardDate()).where("status", "==", "PENDING").onSnapshot(snap => {
         let c = 0; snap.forEach(d => c += Number(d.data().amount || 0));
         document.getElementById('cashTotal').innerText = c.toLocaleString();
     });
@@ -173,12 +196,203 @@ function getLocation() {
         navigator.geolocation.getCurrentPosition(pos => {
             userLat = pos.coords.latitude; userLong = pos.coords.longitude;
             const status = document.getElementById('gpsStatus');
-            status.innerText = "GPS: ACTIVE ✓"; status.classList.replace('text-rose-400', 'text-emerald-400'); status.classList.remove('animate-pulse');
+            status.innerText = "GPS: ACTIVE ✓"; 
+            status.classList.replace('text-rose-400', 'text-emerald-400');
+            status.classList.remove('animate-pulse');
         }, null, {enableHighAccuracy: true});
     }
 }
 
-// NEW CUSTOMER LOGIC
+// ORDER SUBMISSION (DASHBOARD COMPATIBLE)
+async function finalSubmit() {
+    const shop = document.getElementById('shopName').value, 
+          phone = document.getElementById('shopPhone').value, 
+          photoFile = document.getElementById('shopPhoto').files[0], 
+          btn = document.getElementById('submitBtn');
+          
+    if(!shop || cart.length === 0) return alert("Select Shop & Add Items!");
+    
+    btn.disabled = true; 
+    btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> UPLOADING...";
+
+    let photoUrl = "No Photo", 
+        orderId = "ORD-" + Date.now().toString().slice(-6), 
+        totalValue = cart.reduce((s, i) => s + i.subtotal, 0);
+
+    const mapLink = userLat ? `https://www.google.com/maps?q=${userLat},${userLong}` : "GPS: OFF";
+
+    try {
+        // Get Previous Balance
+        let prevBalance = 0;
+        const custRef = db.collection("customers").doc(phone);
+        const custDoc = await custRef.get();
+        if(custDoc.exists) prevBalance = Number(custDoc.data().balance) || 0;
+
+        // Image Upload to ImgBB
+        if(photoFile) {
+            let fd = new FormData(); fd.append("image", photoFile);
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
+            const d = await res.json(); if(d.success) photoUrl = d.data.url;
+        }
+
+        // Format Items for Admin Dashboard (index.html compatibility)
+        const itemsForAdmin = cart.map(i => ({
+            name: i.name,
+            price: Number(i.price),
+            qty: Number(i.qty),
+            total: Number(i.subtotal)
+        }));
+
+        const salePayload = {
+            id: orderId,
+            customer: shop,
+            mob: phone,
+            date: getDashboardDate(),
+            time: new Date().toLocaleTimeString(),
+            items: itemsForAdmin,
+            itemsSum: totalValue,
+            grandTotal: totalValue,
+            prevBal: prevBalance,
+            paid: 0,
+            finalBal: prevBalance + totalValue,
+            profit: 0, // Admin calculates this from cost
+            img: photoUrl,
+            gps: mapLink,
+            status: "PENDING",
+            role: "booker",
+            timestamp: Date.now()
+        };
+
+        // Save Sale
+        await db.collection("sales").doc(orderId).set(salePayload);
+        
+        // Update Customer Balance
+        await custRef.update({ balance: prevBalance + totalValue });
+
+        // WhatsApp Trigger
+        let itemsList = cart.map(i => `• ${i.name} (x${i.qty})`).join('%0A');
+        let waText = `🏢 *NEW ORDER*%0A🆔 *ID:* ${orderId}%0A🏪 *Shop:* ${shop}%0A💰 *Bill:* Rs ${totalValue.toLocaleString()}%0A📍 *Loc:* ${mapLink}%0A📸 *Photo:* ${photoUrl}%0A━━━━━━━━━━━━━━━━━━━━%0A🛒 *ITEMS:*%0A${itemsList}`;
+        
+        window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=${waText}`;
+
+        setTimeout(() => location.reload(), 2000);
+
+    } catch(e) { 
+        console.error(e);
+        btn.disabled = false; 
+        btn.innerHTML = "CONFIRM ORDER";
+        alert("Sync Error! Check Connection."); 
+    }
+}
+
+// RECOVERY LOGIC
+async function requestCashApproval(id, name, inputId) {
+    const amt = Number(document.getElementById(inputId).value);
+    if(!amt || amt <= 0) return alert("Enter Valid Amount!");
+    
+    if(confirm(`Requesting Rs ${amt} for ${name}?`)) {
+        try {
+            const reqId = "REC-" + Date.now().toString().slice(-6);
+            await db.collection("cash_requests").doc(reqId).set({
+                reqId, customerId: id, customerName: name, 
+                amount: amt, date: getDashboardDate(), 
+                status: "PENDING", timestamp: Date.now()
+            });
+            
+            let waMsg = `💰 *RECOVERY REQUEST*%0A🏪 *Shop:* ${name}%0A💵 *Amount:* Rs ${amt.toLocaleString()}%0A🆔 *ID:* ${reqId}%0A━━━━━━━━━━━━━━━━━━━━%0A_Pending Admin Approval_`;
+            window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=${waMsg}`;
+            document.getElementById(inputId).value = "";
+        } catch(e) { alert("Failed to send request."); }
+    }
+}
+
+// SEARCH & UI HELPERS
+function searchLedger(q) {
+    const res = document.getElementById('ledgerResults'); if(!q) { res.classList.add('hidden'); return; }
+    const m = ledger.filter(c => c.name.toLowerCase().includes(q.toLowerCase()));
+    res.innerHTML = m.map(c => `<div class="p-4 border-b font-black text-xs uppercase italic" onclick="selectLedger('${c.name}', '${c.id}')">${c.name}</div>`).join('');
+    res.classList.remove('hidden');
+}
+
+function selectLedger(n, p) {
+    document.getElementById('shopName').value = n; 
+    document.getElementById('shopPhone').value = p; 
+    document.getElementById('shopSearch').value = n;
+    document.getElementById('ledgerResults').classList.add('hidden');
+}
+
+function filterProducts(q) {
+    const l = document.getElementById('searchList'); if(!q) { l.classList.add('hidden'); return; }
+    const f = prods.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
+    l.innerHTML = f.map(p => `<div class="p-4 border-b font-black text-[10px] flex justify-between uppercase italic" onclick="selectProduct('${p.name}', ${p.price})"><span>${p.name}</span><span class="text-blue-500 font-black">Rs ${p.price}</span></div>`).join('');
+    l.classList.remove('hidden');
+}
+
+function selectProduct(n, p) {
+    document.getElementById('pSearch').value = n; 
+    document.getElementById('pPrice').value = p; 
+    document.getElementById('searchList').classList.add('hidden');
+}
+
+function addToCart() {
+    let n = document.getElementById('pSearch').value, p = Number(document.getElementById('pPrice').value), q = Number(document.getElementById('pQty').value);
+    if(n && q > 0) { 
+        cart.push({ name: n, price: p, qty: q, subtotal: p*q }); 
+        renderCart(); 
+        document.getElementById('pSearch').value = ""; 
+        document.getElementById('pPrice').value = "";
+    }
+}
+
+function renderCart() {
+    document.getElementById('cartItems').innerHTML = cart.map((i, idx) => `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-2xl border-l-4 border-blue-500 font-black text-[10px] italic"><span>${i.name} (x${i.qty})</span><span>Rs ${i.subtotal}</span></div>`).join('');
+    document.getElementById('billTotal').innerText = cart.reduce((s, i) => s + i.subtotal, 0).toLocaleString();
+}
+
+function renderLedger(f = "") {
+    const list = document.getElementById('ledgerScreenList'); list.innerHTML = "";
+    ledger.filter(c => c.name.toLowerCase().includes(f.toLowerCase())).forEach(c => {
+        const uId = `pay-${c.id.replace(/\s+/g, '')}`;
+        list.innerHTML += `
+        <div class="bg-slate-50 p-5 rounded-[2rem] border border-slate-100">
+            <div class="flex justify-between mb-3 px-1">
+                <div><p class="font-black text-xs uppercase italic">${c.name}</p></div>
+                <p class="text-rose-600 font-black italic text-xs">Bal: Rs ${Number(c.balance || 0).toLocaleString()}</p>
+            </div>
+            <div class="flex gap-2">
+                <input id="${uId}" type="number" placeholder="Enter Amount" class="flex-1 p-3 bg-white border rounded-xl text-xs font-black outline-none italic">
+                <button onclick="requestCashApproval('${c.id}', '${c.name}', '${uId}')" class="bg-indigo-600 text-white px-5 py-2 rounded-xl text-[9px] font-black uppercase shadow-lg shadow-indigo-200">Request</button>
+            </div>
+        </div>`;
+    });
+}
+
+function renderStock() {
+    document.getElementById('stockList').innerHTML = prods.map(p => `
+    <div class="flex justify-between p-4 bg-slate-50 rounded-2xl border font-black text-[10px] uppercase italic">
+        <span>${p.name}</span><span class="text-emerald-600">Qty: ${p.stock || 0}</span>
+    </div>`).join('');
+}
+
+function showTab(id, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active-tab'));
+    document.getElementById(id).classList.add('active-tab');
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active'));
+    btn.classList.add('nav-active');
+}
+
+function previewPhoto(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => { 
+            document.getElementById('pImg').src = e.target.result; 
+            document.getElementById('pImg').classList.remove('hidden'); 
+            document.getElementById('camIcon').classList.add('hidden'); 
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
 function toggleNewCustomer() {
     const f = document.getElementById('newCustFields'), s = document.getElementById('searchBoxContainer'), b = document.getElementById('newCustBtn');
     if(f.classList.contains('hidden')) { f.classList.remove('hidden'); s.classList.add('hidden'); b.innerText = "Cancel"; b.classList.replace('bg-blue-600', 'bg-rose-600'); }
@@ -195,174 +409,10 @@ async function saveAndSelectCustomer() {
     } catch(e) { alert("Error!"); }
 }
 
-
-// ORDER & WA LOGIC (UPDATED FOR DASHBOARD SYNC)
-async function finalSubmit() {
-    const shop = document.getElementById('shopName').value, 
-          phone = document.getElementById('shopPhone').value, 
-          photoFile = document.getElementById('shopPhoto').files[0], 
-          btn = document.getElementById('submitBtn');
-          
-    if(!shop || cart.length === 0) return alert("Select Shop & Add Items!");
-    
-    btn.disabled = true; 
-    btn.innerHTML = "UPLOADING...";
-
-    let photoUrl = "No Photo", 
-        orderId = "ALH-" + Date.now().toString().slice(-5), 
-        total = cart.reduce((s, i) => s + i.subtotal, 0);
-
-    // --- DASHBOARD DATE FIX (MM/DD/YYYY) ---
-    const now = new Date();
-    const dashboardDate = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
-
-    const mapLink = userLat ? `https://www.google.com/maps?q=${userLat},${userLong}` : "GPS: OFF";
-
-    try {
-        let oldBalance = 0;
-        const custDoc = await db.collection("customers").doc(phone).get();
-        if(custDoc.exists) {
-            oldBalance = Number(custDoc.data().balance) || 0;
-        }
-
-        if(photoFile) {
-            let fd = new FormData(); fd.append("image", photoFile);
-            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
-            const d = await res.json(); if(d.success) photoUrl = d.data.url;
-        }
-
-        // --- PROFIT CALCULATION FOR DASHBOARD ---
-        // Hum items ko format kar rahe hain taake Admin index.html isay samajh sakay
-        const formattedItems = cart.map(i => ({
-            name: i.name,
-            price: Number(i.price),
-            qty: Number(i.qty),
-            total: Number(i.subtotal)
-        }));
-
-        const saleData = { 
-            id: orderId, 
-            customer: shop, 
-            mob: phone, 
-            date: dashboardDate, // Now matches index.html format
-            time: new Date().toLocaleTimeString(),
-            items: formattedItems, 
-            itemsSum: total,        
-            grandTotal: total,      
-            prevBal: oldBalance,    
-            paid: 0, 
-            profit: 0, // Admin index.html will auto-calculate this
-            finalBal: oldBalance + total, 
-            img: photoUrl, 
-            gps: mapLink, 
-            status: "PENDING", 
-            role: "booker", 
-            timestamp: Date.now() 
-        };
-
-        await db.collection("sales").doc(orderId).set(saleData);
-
-        // WhatsApp Message
-        let itemsMsg = cart.map(i => `• ${i.name} (x${i.qty})`).join('%0A');
-        let waMsg = `🏢 *ORDER RECEIVED*%0A━━━━━━━━━━━━━━━━━━━━%0A🆔 *ID:* ${orderId}%0A🏪 *Shop:* ${shop}%0A💰 *Total:* Rs ${total.toLocaleString()}%0A📸 *Photo:* ${photoUrl}%0A📍 *Location:* ${mapLink}%0A━━━━━━━━━━━━━━━━━━━━%0A🛒 *ITEMS:*%0A${itemsMsg}`;
-
-        window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=${waMsg}`;
-        
-        setTimeout(() => {
-            cart = [];
-            location.reload();
-        }, 2000);
-
-    } catch(e) { 
-        console.error(e);
-        btn.disabled = false; 
-        btn.innerHTML = "SUBMIT ORDER";
-        alert("Upload Error!"); 
-    }
-}
-    
-    
-    
-// SECURE CASH REQUEST
-async function requestCashApproval(id, name, inputId) {
-    const amt = Number(document.getElementById(inputId).value);
-    if(!amt || amt <= 0) return alert("Enter Valid Amount!");
-    if(confirm(`Send Cash Approval Request of Rs ${amt} for ${name}?`)) {
-        try {
-            const reqId = "CASH-" + Date.now().toString().slice(-6);
-            await db.collection("cash_requests").doc(reqId).set({ reqId, customerId: id, customerName: name, amount: amt, date: getToday(), status: "PENDING", timestamp: Date.now() });
-            let waMsg = `💰 *CASH APPROVAL REQUEST*%0A━━━━━━━━━━━━━━━━━━━━%0A🏪 *Shop:* ${name}%0A💵 *Amount:* Rs ${amt.toLocaleString()}%0A🆔 *Req ID:* ${reqId}%0A━━━━━━━━━━━━━━━━━━━━%0A_Status: Waiting for Admin Approval_`;
-            window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=${waMsg}`;
-            document.getElementById(inputId).value = "";
-        } catch(e) { alert("Request Failed!"); }
-    }
-}
-
-// UTILITIES
-function searchLedger(q) {
-    const res = document.getElementById('ledgerResults'); if(!q) { res.classList.add('hidden'); return; }
-    const m = ledger.filter(c => c.name.toLowerCase().includes(q.toLowerCase()));
-    res.innerHTML = m.map(c => `<div class="p-4 border-b font-black text-xs uppercase italic" onclick="selectLedger('${c.name}', '${c.id}')">${c.name}</div>`).join('');
-    res.classList.remove('hidden');
-}
-
-function selectLedger(n, p) {
-    document.getElementById('shopName').value = n; document.getElementById('shopPhone').value = p; document.getElementById('shopSearch').value = n;
-    document.getElementById('ledgerResults').classList.add('hidden');
-}
-
-function filterProducts(q) {
-    const l = document.getElementById('searchList'); if(!q) { l.classList.add('hidden'); return; }
-    const f = prods.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
-    l.innerHTML = f.map(p => `<div class="p-4 border-b font-black text-[10px] flex justify-between uppercase" onclick="selectProduct('${p.name}', ${p.price})"><span>${p.name}</span><span class="text-blue-500">Rs ${p.price}</span></div>`).join('');
-    l.classList.remove('hidden');
-}
-
-function selectProduct(n, p) {
-    document.getElementById('pSearch').value = n; document.getElementById('pPrice').value = p; document.getElementById('searchList').classList.add('hidden');
-}
-
-function addToCart() {
-    let n = document.getElementById('pSearch').value, p = Number(document.getElementById('pPrice').value), q = Number(document.getElementById('pQty').value);
-    if(n && q > 0) { cart.push({ name: n, price: p, qty: q, subtotal: p*q }); renderCart(); document.getElementById('pSearch').value = ""; }
-}
-
-function renderCart() {
-    document.getElementById('cartItems').innerHTML = cart.map((i, idx) => `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-2xl border-l-4 border-blue-500 font-black text-[10px] italic"><span>${i.name} (x${i.qty})</span><span>Rs ${i.subtotal}</span></div>`).join('');
-    document.getElementById('billTotal').innerText = cart.reduce((s, i) => s + i.subtotal, 0).toLocaleString();
-}
-
-function renderLedger(f = "") {
-    const list = document.getElementById('ledgerScreenList'); list.innerHTML = "";
-    ledger.filter(c => c.name.toLowerCase().includes(f.toLowerCase())).forEach(c => {
-        const uId = `pay-${c.id.replace(/\s+/g, '')}`;
-        list.innerHTML += `<div class="bg-slate-50 p-5 rounded-[2rem] border border-slate-100"><div class="flex justify-between mb-3"><div><p class="font-black text-xs uppercase">${c.name}</p></div><p class="text-rose-600 font-black italic text-xs">Bal: Rs ${Number(c.balance || 0).toLocaleString()}</p></div><div class="flex gap-2"><input id="${uId}" type="number" placeholder="Amt" class="flex-1 p-3 bg-white border rounded-xl text-xs font-black outline-none"><button onclick="requestCashApproval('${c.id}', '${c.name}', '${uId}')" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase">Request</button></div></div>`;
-    });
-}
-
-function renderStock() {
-    document.getElementById('stockList').innerHTML = prods.map(p => `<div class="flex justify-between p-4 bg-slate-50 rounded-2xl border font-black text-[10px] uppercase italic"><span>${p.name}</span><span class="text-emerald-600">Stock: ${p.stock}</span></div>`).join('');
-}
-
-function showTab(id, btn) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active-tab'));
-    document.getElementById(id).classList.add('active-tab');
-    document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active'));
-    btn.classList.add('nav-active');
-}
-
-function previewPhoto(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => { document.getElementById('pImg').src = e.target.result; document.getElementById('pImg').classList.remove('hidden'); document.getElementById('camIcon').classList.add('hidden'); };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
 function sendDaySummary() {
     const oTotal = document.getElementById('dayTotal').innerText;
     const cTotal = document.getElementById('cashTotal').innerText;
-    let msg = `📊 *DAILY SUMMARY*%0A📅 *Date:* ${getToday()}%0A━━━━━━━━━━━━━━━━━━━━%0A📦 *Total Booking:* Rs ${oTotal}%0A💸 *Pending Recovery:* Rs ${cTotal}%0A━━━━━━━━━━━━━━━━━━━━%0A_Generated by GM Booker Pro_`;
+    let msg = `📊 *DAILY REPORT - AL HAFIZ*%0A📅 *Date:* ${getDashboardDate()}%0A━━━━━━━━━━━━━━━━━━━━%0A📦 *Total Sale:* Rs ${oTotal}%0A💸 *Pending Cash:* Rs ${cTotal}%0A━━━━━━━━━━━━━━━━━━━━%0A_Generated by Booker Pro_`;
     window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=${msg}`;
 }
 </script>
