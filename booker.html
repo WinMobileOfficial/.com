@@ -3,170 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AL-HAFIZ TRADERS | ERP BOOKER</title>
+    <title>AL-HAFIZ ERP | SECURE VERSION</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
-        body { font-family: 'Outfit', sans-serif; background-color: #f3f4f6; }
-        .tab-content { display: none; padding-bottom: 120px; }
-        .tab-content.active { display: block; animation: slideUp 0.4s ease; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .nav-active { color: #1d4ed8 !important; border-top: 4px solid #1d4ed8; background: #eff6ff; }
-        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap');
+        body { font-family: 'Outfit', sans-serif; background: #f1f5f9; overflow-x: hidden; }
+        .tab-content { display: none; padding-bottom: 100px; }
+        .active { display: block; animation: zoomIn 0.3s ease; }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        #lockScreen { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .pin-btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.1); color: white; font-size: 1.5rem; font-weight: 900; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .pin-btn:active { background: #3b82f6; }
     </style>
 </head>
 <body>
 
-<div id="mainApp" class="max-w-md mx-auto min-h-screen bg-slate-50 relative">
-    
-    <div class="bg-[#0f172a] p-7 text-white rounded-b-[3.5rem] shadow-2xl">
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-2xl font-extrabold italic tracking-tighter">AL-HAFIZ <span class="text-blue-500">TRADERS</span></h1>
-                <p id="currentDate" class="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-widest"></p>
-            </div>
-            <div class="text-right">
-                <span id="gpsDot" class="inline-block w-2 h-2 bg-rose-500 rounded-full animate-ping mr-1"></span>
-                <span class="text-[9px] font-black text-slate-300">GPS TRACKING</span>
-            </div>
+<div id="lockScreen">
+    <div class="mb-10 text-center">
+        <i class="fa-solid fa-shield-halved text-blue-500 text-5xl mb-4"></i>
+        <h2 class="text-white font-black tracking-widest uppercase">Enter Access PIN</h2>
+        <div id="pinDots" class="flex gap-4 mt-6">
+            <div class="w-4 h-4 rounded-full border-2 border-blue-500"></div>
+            <div class="w-4 h-4 rounded-full border-2 border-blue-500"></div>
+            <div class="w-4 h-4 rounded-full border-2 border-blue-500"></div>
+            <div class="w-4 h-4 rounded-full border-2 border-blue-500"></div>
         </div>
+    </div>
+    <div class="grid grid-cols-3 gap-6">
+        <div class="pin-btn" onclick="pressPin('1')">1</div>
+        <div class="pin-btn" onclick="pressPin('2')">2</div>
+        <div class="pin-btn" onclick="pressPin('3')">3</div>
+        <div class="pin-btn" onclick="pressPin('4')">4</div>
+        <div class="pin-btn" onclick="pressPin('5')">5</div>
+        <div class="pin-btn" onclick="pressPin('6')">6</div>
+        <div class="pin-btn" onclick="pressPin('7')">7</div>
+        <div class="pin-btn" onclick="pressPin('8')">8</div>
+        <div class="pin-btn" onclick="pressPin('9')">9</div>
+        <div></div>
+        <div class="pin-btn" onclick="pressPin('0')">0</div>
+        <div class="pin-btn text-rose-500" onclick="clearPin()"><i class="fa-solid fa-rotate-left"></i></div>
+    </div>
+</div>
 
-        <div class="bg-white/5 backdrop-blur-md rounded-[2.5rem] p-5 border border-white/10">
-            <div class="grid grid-cols-2 gap-4 border-b border-white/10 pb-4 mb-4">
-                <div>
-                    <p class="text-[9px] text-blue-400 font-bold uppercase">Inventory Asset</p>
-                    <p class="text-xl font-black">Rs <span id="assetVal">0</span></p>
-                </div>
-                <div class="text-right">
-                    <p class="text-[9px] text-yellow-500 font-bold uppercase">Zakat Payable</p>
-                    <p class="text-xl font-black text-yellow-500">Rs <span id="zakatVal">0</span></p>
-                </div>
+<div id="app" class="max-w-md mx-auto min-h-screen hidden">
+    <div class="bg-[#0f172a] p-6 text-white rounded-b-[3rem] shadow-xl">
+        <div class="flex justify-between items-center mb-6">
+            <p class="text-[10px] font-black text-blue-400 tracking-[0.3em]">ERP VERSION 4.0</p>
+            <div id="gpsBox" class="text-[9px] bg-white/10 px-3 py-1 rounded-full text-slate-300">GPS: <span id="gpsText" class="text-rose-500">OFF</span></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-white/5 p-4 rounded-3xl border border-white/10">
+                <p class="text-[8px] opacity-60">NET ASSET</p>
+                <p class="text-lg font-black text-yellow-400" id="assetVal">Rs 0</p>
             </div>
-            <div class="flex justify-between items-center">
-                <div>
-                    <p class="text-[9px] text-emerald-400 font-bold uppercase">Today's Booking</p>
-                    <p class="text-xl font-black text-emerald-400">Rs <span id="dayTotal">0</span></p>
-                </div>
-                <button onclick="window.print()" class="bg-blue-600 p-2 px-4 rounded-2xl text-[10px] font-bold shadow-lg shadow-blue-900/40">GENERATE REPORT</button>
+            <div class="bg-white/5 p-4 rounded-3xl border border-white/10 text-right">
+                <p class="text-[8px] opacity-60">ZAKAT (2.5%)</p>
+                <p class="text-lg font-black text-emerald-400" id="zakatVal">Rs 0</p>
             </div>
         </div>
     </div>
 
-    <div class="px-5 pt-6">
-        
-        <div id="homeTab" class="tab-content active">
-            <h2 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Operations Center</h2>
-            <div class="grid grid-cols-3 gap-6">
-                <div onclick="markAttendance()" class="flex flex-col items-center">
-                    <div class="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center text-blue-600 shadow-xl card-shadow border border-slate-100"><i class="fa-solid fa-user-check text-xl"></i></div>
-                    <span class="text-[10px] font-black text-slate-600 mt-3 uppercase">Attendance</span>
+    <div class="p-4">
+        <div id="homeTab" class="tab-content active space-y-6">
+            <div class="grid grid-cols-3 gap-4 mt-4">
+                <div onclick="markAttendance()" class="flex flex-col items-center bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
+                    <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-2"><i class="fa-solid fa-fingerprint text-xl"></i></div>
+                    <span class="text-[9px] font-black uppercase">Attendance</span>
                 </div>
-                <div onclick="openModal('expenseModal')" class="flex flex-col items-center">
-                    <div class="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center text-orange-600 shadow-xl card-shadow border border-slate-100"><i class="fa-solid fa-file-invoice-dollar text-xl"></i></div>
-                    <span class="text-[10px] font-black text-slate-600 mt-3 uppercase">Expense</span>
+                <div onclick="showTab('returnTab')" class="flex flex-col items-center bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
+                    <div class="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mb-2"><i class="fa-solid fa-box-open text-xl"></i></div>
+                    <span class="text-[9px] font-black uppercase">Returns</span>
                 </div>
-                <div onclick="showTab('stockTab')" class="flex flex-col items-center">
-                    <div class="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center text-purple-600 shadow-xl card-shadow border border-slate-100"><i class="fa-solid fa-cubes-stacked text-xl"></i></div>
-                    <span class="text-[10px] font-black text-slate-600 mt-3 uppercase">Stock</span>
+                <div onclick="showTab('orderTab')" class="flex flex-col items-center bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-2"><i class="fa-solid fa-plus-circle text-xl"></i></div>
+                    <span class="text-[9px] font-black uppercase">New Order</span>
                 </div>
-                <div onclick="showTab('recoveryTab')" class="flex flex-col items-center">
-                    <div class="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center text-emerald-600 shadow-xl card-shadow border border-slate-100"><i class="fa-solid fa-hand-holding-dollar text-xl"></i></div>
-                    <span class="text-[10px] font-black text-slate-600 mt-3 uppercase">Recovery</span>
+                <div onclick="showTab('stockTab')" class="flex flex-col items-center bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
+                    <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mb-2"><i class="fa-solid fa-boxes-stacked text-xl"></i></div>
+                    <span class="text-[9px] font-black uppercase">Stock</span>
                 </div>
-                <div onclick="openModal('broadcastModal')" class="flex flex-col items-center">
-                    <div class="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center text-pink-600 shadow-xl card-shadow border border-slate-100"><i class="fa-solid fa-bullhorn text-xl"></i></div>
-                    <span class="text-[10px] font-black text-slate-600 mt-3 uppercase">Broadcast</span>
+                <div onclick="showTab('recoveryTab')" class="flex flex-col items-center bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
+                    <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mb-2"><i class="fa-solid fa-hand-holding-dollar text-xl"></i></div>
+                    <span class="text-[9px] font-black uppercase">Recovery</span>
                 </div>
-                <div onclick="alert('Wapsi Form Opening...')" class="flex flex-col items-center">
-                    <div class="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center text-red-600 shadow-xl card-shadow border border-slate-100"><i class="fa-solid fa-rotate-left text-xl"></i></div>
-                    <span class="text-[10px] font-black text-slate-600 mt-3 uppercase">Returns</span>
+                <div onclick="alert('Broadcasting...')" class="flex flex-col items-center bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
+                    <div class="w-12 h-12 bg-pink-100 text-pink-600 rounded-2xl flex items-center justify-center mb-2"><i class="fa-solid fa-tower-broadcast text-xl"></i></div>
+                    <span class="text-[9px] font-black uppercase">Message</span>
                 </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100">
+                <h3 class="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Recent Broadcasts</h3>
+                <div id="bcList" class="space-y-3"></div>
             </div>
         </div>
 
-        <div id="bookingTab" class="tab-content space-y-6">
-            <div class="bg-white p-6 rounded-[2.5rem] card-shadow border border-slate-100">
-                <input id="shopSearch" oninput="searchShop(this.value)" placeholder="SEARCH CUSTOMER..." class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xs outline-none border-2 border-transparent focus:border-blue-500 uppercase italic">
-                <div id="shopResults" class="hidden mt-2 bg-white shadow-2xl rounded-2xl max-h-48 overflow-y-auto border-2 border-blue-50 z-50 relative"></div>
-            </div>
-
-            <div class="bg-white p-6 rounded-[2.5rem] card-shadow border border-slate-100">
-                <input id="pSearch" oninput="filterProds(this.value)" placeholder="SELECT PRODUCT..." class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xs outline-none border-2 border-transparent focus:border-emerald-500 uppercase italic">
-                <div id="pResults" class="hidden mt-2 bg-white shadow-2xl rounded-2xl max-h-48 overflow-y-auto border-2 border-emerald-50 z-50 relative"></div>
-                
-                <div class="flex gap-3 mt-4">
-                    <select id="unitType" class="bg-slate-100 rounded-xl p-3 font-black text-[10px] outline-none">
-                        <option value="PCS">PCS</option>
-                        <option value="CTN">CTN (12)</option>
-                    </select>
-                    <input id="pQty" type="number" value="1" class="flex-1 bg-slate-100 rounded-xl p-3 text-center font-black outline-none">
-                    <button onclick="addToCart()" class="bg-slate-900 text-white px-6 rounded-xl font-black text-[10px] uppercase">ADD</button>
+        <div id="orderTab" class="tab-content space-y-4">
+            <div class="bg-white p-5 rounded-[2.5rem] shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="text-[10px] font-black text-slate-400 uppercase">Customer Info</h4>
+                    <button onclick="toggleNewShop()" id="newShopBtn" class="bg-blue-600 text-white px-3 py-1 rounded-full text-[9px] font-black">+ New Customer</button>
                 </div>
                 
-                <div id="cartBox" class="mt-6 space-y-3"></div>
+                <div id="newShopInputs" class="hidden mb-4 p-4 bg-blue-50 rounded-2xl border-2 border-dashed border-blue-200">
+                    <input id="nSName" placeholder="SHOP NAME" class="w-full p-3 rounded-xl mb-2 text-xs font-black uppercase outline-none">
+                    <input id="nSPhone" placeholder="PHONE" class="w-full p-3 rounded-xl text-xs font-black outline-none">
+                </div>
+
+                <div id="searchShopBox">
+                    <input id="shopSearch" oninput="searchShop(this.value)" placeholder="SEARCH SHOP..." class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xs outline-none border focus:border-blue-500 uppercase italic">
+                    <div id="shopResults" class="hidden mt-2 bg-white shadow-xl rounded-xl max-h-40 overflow-y-auto border border-blue-50 z-50 relative"></div>
+                </div>
             </div>
 
-            <div class="bg-emerald-500 p-7 rounded-[3rem] text-white shadow-xl shadow-emerald-200">
-                <div class="flex justify-between items-end mb-6">
-                    <div><p class="text-[10px] font-black uppercase opacity-80">Total Payable</p><p class="text-3xl font-black">Rs <span id="billTotal">0</span></p></div>
-                    <div class="text-right text-[11px] font-black uppercase"><p>CTN: <span id="ctnTotal">0</span></p><p>PCS: <span id="pcsTotal">0</span></p></div>
+            <div class="bg-white p-5 rounded-[2.5rem] shadow-sm border border-slate-100">
+                <input id="pSearch" oninput="filterProds(this.value)" placeholder="SELECT ITEM..." class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xs outline-none border focus:border-emerald-500 uppercase italic">
+                <div id="pResults" class="hidden mt-2 bg-white shadow-xl rounded-xl max-h-40 overflow-y-auto border border-emerald-50 z-50 relative"></div>
+                
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div class="flex items-center bg-slate-100 rounded-2xl p-1">
+                        <input id="pQty" type="number" value="1" class="w-full bg-transparent text-center font-black text-xs outline-none" placeholder="QTY">
+                    </div>
+                    <button onclick="addToCart()" class="bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase">Add to List</button>
                 </div>
-                <button id="subBtn" onclick="submitOrder()" class="w-full bg-white text-emerald-600 py-5 rounded-[2rem] font-black uppercase italic shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all">
-                    <i class="fab fa-whatsapp text-xl"></i> CONFIRM ORDER
+                <div id="cartBox" class="mt-4 space-y-2"></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100">
+                <div onclick="takePhoto()" id="photoZone" class="w-full h-32 border-4 border-dashed border-slate-100 rounded-[2rem] flex flex-col items-center justify-center bg-slate-50 mb-6 relative overflow-hidden">
+                    <img id="prevImg" class="hidden w-full h-full object-cover">
+                    <div id="camText"><i class="fa-solid fa-camera text-2xl text-slate-300"></i><p class="text-[8px] font-black text-slate-400 mt-2 uppercase tracking-widest">Shop Photo Required</p></div>
+                </div>
+                <input type="file" id="camInp" accept="image/*" capture="camera" class="hidden" onchange="previewImg(this)">
+                
+                <div class="flex justify-between items-center mb-6">
+                    <div><p class="text-[9px] font-black text-slate-400 uppercase italic tracking-widest">Grand Total</p><p class="text-3xl font-black text-blue-600">Rs <span id="billTotal">0</span></p></div>
+                </div>
+                <button id="subBtn" onclick="submitOrder()" class="w-full bg-emerald-500 text-white py-5 rounded-[2rem] font-black uppercase italic shadow-lg shadow-emerald-100 flex items-center justify-center gap-3">
+                    <i class="fab fa-whatsapp text-xl"></i> Confirm & Send
                 </button>
             </div>
         </div>
 
-        <div id="stockTab" class="tab-content">
-            <h2 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Live Inventory</h2>
-            <div id="stockList" class="space-y-3"></div>
+        <div id="returnTab" class="tab-content space-y-4">
+            <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border">
+                <h3 class="text-xs font-black uppercase mb-4 text-red-600 italic">Damage/Expiry Return Form</h3>
+                <input id="retShop" placeholder="SELECT SHOP" class="w-full p-4 bg-slate-50 rounded-2xl mb-3 font-black text-xs outline-none uppercase">
+                <input id="retItem" placeholder="PRODUCT NAME" class="w-full p-4 bg-slate-50 rounded-2xl mb-3 font-black text-xs outline-none uppercase">
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <input id="retQty" type="number" placeholder="QTY" class="p-4 bg-slate-50 rounded-2xl font-black text-xs">
+                    <select id="retType" class="p-4 bg-slate-100 rounded-2xl font-black text-[10px] uppercase outline-none">
+                        <option>EXPIRY</option>
+                        <option>DAMAGE</option>
+                        <option>EXCHANGE</option>
+                    </select>
+                </div>
+                <button onclick="submitReturn()" class="w-full bg-red-500 text-white py-4 rounded-[2rem] font-black uppercase text-[10px] shadow-lg">Submit Return Request</button>
+            </div>
         </div>
 
         <div id="recoveryTab" class="tab-content space-y-4">
-            <h2 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Market Dues</h2>
+            <h3 class="text-xs font-black uppercase italic mb-4">Payment Collection</h3>
             <div id="recoveryList" class="space-y-4"></div>
         </div>
 
-    </div>
-
-    <div id="expenseModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-6">
-        <div class="bg-white w-full rounded-[3rem] p-8 shadow-2xl">
-            <h3 class="font-black text-xl mb-6 italic">ADD EXPENSE</h3>
-            <input id="expType" placeholder="PURPOSE (PETROL...)" class="w-full p-4 bg-slate-100 rounded-2xl mb-3 font-bold uppercase text-xs">
-            <input id="expAmt" type="number" placeholder="AMOUNT" class="w-full p-4 bg-slate-100 rounded-2xl mb-6 font-bold text-xs">
-            <div class="flex gap-4">
-                <button onclick="closeModal('expenseModal')" class="flex-1 py-4 font-black uppercase text-xs text-slate-400">Back</button>
-                <button onclick="saveExpense()" class="flex-1 bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase">Save</button>
-            </div>
+        <div id="stockTab" class="tab-content">
+            <h3 class="text-xs font-black uppercase italic mb-6">Warehouse Inventory</h3>
+            <div id="stockList" class="space-y-3"></div>
         </div>
     </div>
 
-    <div id="broadcastModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-6">
-        <div class="bg-white w-full rounded-[3rem] p-8">
-            <h3 class="font-black text-xl mb-6 italic">BROADCAST</h3>
-            <textarea id="bcMsg" placeholder="TYPE MESSAGE TO TEAM..." class="w-full p-4 bg-slate-100 rounded-2xl mb-6 font-bold text-xs h-32 outline-none"></textarea>
-            <div class="flex gap-4">
-                <button onclick="closeModal('broadcastModal')" class="flex-1 py-4 font-black text-xs text-slate-400 uppercase">Back</button>
-                <button onclick="sendBC()" class="flex-1 bg-pink-500 text-white py-4 rounded-2xl font-black text-xs uppercase">Send Now</button>
-            </div>
-        </div>
-    </div>
-
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-around items-center shadow-[0_-10px_40px_rgba(0,0,0,0.08)] z-[100]">
-        <button onclick="showTab('homeTab', this)" class="nav-item nav-active flex flex-col items-center gap-1 text-slate-400 w-16 py-2 rounded-2xl transition-all">
-            <i class="fa-solid fa-house-chimney text-lg"></i><span class="text-[8px] font-black uppercase">Home</span>
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t p-4 flex justify-around items-center shadow-2xl z-[100]">
+        <button onclick="showTab('homeTab', this)" class="nav-item nav-active p-3 px-5 flex flex-col items-center gap-1 text-slate-400 transition-all">
+            <i class="fa-solid fa-home"></i><span class="text-[8px] font-black uppercase">Home</span>
         </button>
-        <button onclick="showTab('bookingTab', this)" class="nav-item flex flex-col items-center gap-1 text-slate-400 w-16 py-2 rounded-2xl transition-all">
-            <i class="fa-solid fa-receipt text-lg"></i><span class="text-[8px] font-black uppercase">Booking</span>
+        <button onclick="showTab('orderTab', this)" class="nav-item p-3 px-5 flex flex-col items-center gap-1 text-slate-400 transition-all">
+            <i class="fa-solid fa-cart-plus"></i><span class="text-[8px] font-black uppercase">Order</span>
         </button>
-        <button onclick="showTab('recoveryTab', this)" class="nav-item flex flex-col items-center gap-1 text-slate-400 w-16 py-2 rounded-2xl transition-all">
-            <i class="fa-solid fa-wallet text-lg"></i><span class="text-[8px] font-black uppercase">Wasuli</span>
-        </button>
-        <button onclick="showTab('stockTab', this)" class="nav-item flex flex-col items-center gap-1 text-slate-400 w-16 py-2 rounded-2xl transition-all">
-            <i class="fa-solid fa-box-open text-lg"></i><span class="text-[8px] font-black uppercase">Stock</span>
+        <button onclick="showTab('recoveryTab', this)" class="nav-item p-3 px-5 flex flex-col items-center gap-1 text-slate-400 transition-all">
+            <i class="fa-solid fa-sack-dollar"></i><span class="text-[8px] font-black uppercase">Dues</span>
         </button>
     </nav>
 </div>
@@ -176,31 +194,49 @@
 const firebaseConfig = { apiKey: "AIzaSyBP3VrLzUl5AIR2ca1v871cV-cJOMz-SX0", authDomain: "gm-agency-pos.firebaseapp.com", projectId: "gm-agency-pos", storageBucket: "gm-agency-pos.firebasestorage.app", messagingSenderId: "777771332628", appId: "1:777771332628:web:db60e19d9bdcee21f76301" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const BOSS_WA = "923353131530";
-let shops = [], items = [], cart = [], uLat = "", uLong = "";
+const BOSS_WA = "923066442004", IMGBB = "ac9e20cc7634087a31f0cc92096c23f4";
 
-document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-GB', {weekday: 'long', day: 'numeric', month: 'short'});
+let shops = [], items = [], cart = [], lat = "", lon = "", isNew = false, currentPin = "";
+
+// PIN LOCK LOGIC
+function pressPin(n) {
+    if(currentPin.length < 4) {
+        currentPin += n;
+        updatePinDots();
+        if(currentPin === "0101") {
+            document.getElementById('lockScreen').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+        } else if(currentPin.length === 4) {
+            alert("Wrong PIN!"); clearPin();
+        }
+    }
+}
+function clearPin() { currentPin = ""; updatePinDots(); }
+function updatePinDots() {
+    const dots = document.querySelectorAll('#pinDots div');
+    dots.forEach((d, i) => d.style.background = i < currentPin.length ? '#3b82f6' : 'transparent');
+}
 
 // GPS
 if(navigator.geolocation) {
-    navigator.geolocation.watchPosition(p => { 
-        uLat = p.coords.latitude; uLong = p.coords.longitude;
-        document.getElementById('gpsDot').classList.replace('bg-rose-500', 'bg-emerald-500');
+    navigator.geolocation.watchPosition(p => {
+        lat = p.coords.latitude; lon = p.coords.longitude;
+        document.getElementById('gpsText').innerText = "ACTIVE ✓";
+        document.getElementById('gpsText').className = "text-emerald-500 font-black";
     });
 }
 
-// LIVE DATA
-db.collection("products").onSnapshot(s => { 
-    items = s.docs.map(d => ({id: d.id, ...d.data()})); 
+// DATA SYNC
+db.collection("products").onSnapshot(s => {
+    items = s.docs.map(d => ({id: d.id, ...d.data()}));
     let asset = items.reduce((a, i) => a + (Number(i.stock || 0) * Number(i.price || 0)), 0);
-    document.getElementById('assetVal').innerText = asset.toLocaleString();
-    document.getElementById('zakatVal').innerText = Math.floor(asset * 0.025).toLocaleString();
-    renderStock(); 
+    document.getElementById('assetVal').innerText = "Rs " + asset.toLocaleString();
+    document.getElementById('zakatVal').innerText = "Rs " + Math.floor(asset*0.025).toLocaleString();
+    renderStock();
 });
 db.collection("customers").onSnapshot(s => { shops = s.docs.map(d => ({id: d.id, ...d.data()})); renderRecovery(); });
-db.collection("sales").where("date", "==", new Date().toLocaleDateString()).onSnapshot(s => {
-    let t = 0; s.forEach(d => t += Number(d.data().grandTotal || 0));
-    document.getElementById('dayTotal').innerText = t.toLocaleString();
+db.collection("broadcasts").limit(3).onSnapshot(s => {
+    document.getElementById('bcList').innerHTML = s.docs.map(d => `<div class="p-3 bg-blue-50 rounded-2xl text-[10px] font-bold text-blue-700 border-l-4 border-blue-500">${d.data().msg}</div>`).join('');
 });
 
 // FUNCTIONS
@@ -213,42 +249,20 @@ function showTab(id, el) {
     }
 }
 
-function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-// ATTENDANCE & EXPENSE
-async function markAttendance() {
-    await db.collection("attendance").add({ booker: "Waqar Ahmed", time: new Date().toLocaleTimeString(), date: new Date().toLocaleDateString(), loc: uLat ? `${uLat},${uLong}` : "OFF" });
-    alert("ATTENDANCE MARKED ✓");
+function toggleNewShop() {
+    isNew = !isNew;
+    document.getElementById('newShopInputs').classList.toggle('hidden');
+    document.getElementById('searchShopBox').classList.toggle('hidden');
+    document.getElementById('newShopBtn').innerText = isNew ? "Use Search" : "+ New Customer";
 }
 
-async function saveExpense() {
-    const t = document.getElementById('expType').value, a = document.getElementById('expAmt').value;
-    if(!t || !a) return;
-    await db.collection("expenses").add({ type: t, amount: Number(a), date: new Date().toLocaleDateString(), booker: "Waqar Ahmed" });
-    alert("EXPENSE SAVED ✓"); closeModal('expenseModal');
-}
-
-async function sendBC() {
-    const m = document.getElementById('bcMsg').value;
-    if(!m) return;
-    await db.collection("broadcasts").add({ msg: m, time: new Date().toLocaleTimeString(), sender: "Waqar Ahmed" });
-    alert("MESSAGE BROADCASTED ✓"); closeModal('broadcastModal');
-}
-
-// BOOKING LOGIC
 function searchShop(q) {
     const res = document.getElementById('shopResults'); if(!q) return res.classList.add('hidden');
     const f = shops.filter(s => s.name.toLowerCase().includes(q.toLowerCase()));
-    res.innerHTML = f.map(s => `<div class="p-4 border-b font-black text-xs uppercase" onclick="pickShop('${s.name}','${s.id}')">${s.name}</div>`).join('');
+    res.innerHTML = f.map(s => `<div class="p-4 border-b font-black text-[11px] uppercase" onclick="pickShop('${s.name}')">${s.name}</div>`).join('');
     res.classList.remove('hidden');
 }
-function pickShop(n, id) { 
-    document.getElementById('shopSearch').value = n; 
-    document.getElementById('shopResults').classList.add('hidden'); 
-    document.getElementById('bookingTab').dataset.shop = n;
-    document.getElementById('bookingTab').dataset.sid = id;
-}
+function pickShop(n) { document.getElementById('shopSearch').value = n; document.getElementById('shopResults').classList.add('hidden'); }
 
 function filterProds(q) {
     const res = document.getElementById('pResults'); if(!q) return res.classList.add('hidden');
@@ -260,56 +274,91 @@ let selP = { name: '', price: 0 };
 function pickProd(n, p) { selP = { name: n, price: p }; document.getElementById('pSearch').value = n; document.getElementById('pResults').classList.add('hidden'); }
 
 function addToCart() {
-    const qty = Number(document.getElementById('pQty').value);
-    const unit = document.getElementById('unitType').value;
-    const finalQty = unit === "CTN" ? qty * 12 : qty;
-    if(selP.name && qty > 0) {
-        cart.push({ name: selP.name, price: selP.price, qty: finalQty, unit: unit, sub: selP.price * finalQty });
+    const q = Number(document.getElementById('pQty').value);
+    if(selP.name && q > 0) {
+        cart.push({ name: selP.name, price: selP.price, qty: q, sub: selP.price * q });
         renderCart();
-        document.getElementById('pSearch').value = ""; document.getElementById('pQty').value = 1;
+        document.getElementById('pSearch').value = "";
+    }
+}
+function renderCart() {
+    document.getElementById('cartBox').innerHTML = cart.map((i,x) => `<div class="flex justify-between p-3 bg-slate-50 rounded-2xl border-l-4 border-blue-500 font-black text-[10px] uppercase"><span>${i.name} (x${i.qty})</span><span>Rs ${i.sub}</span></div>`).join('');
+    document.getElementById('billTotal').innerText = cart.reduce((s,i) => s + i.sub, 0).toLocaleString();
+}
+
+function takePhoto() { document.getElementById('camInp').click(); }
+function previewImg(i) {
+    if (i.files && i.files[0]) {
+        const r = new FileReader();
+        r.onload = e => { 
+            document.getElementById('prevImg').src = e.target.result;
+            document.getElementById('prevImg').classList.remove('hidden');
+            document.getElementById('camText').classList.add('hidden');
+        };
+        r.readAsDataURL(i.files[0]);
     }
 }
 
-function renderCart() {
-    const box = document.getElementById('cartBox');
-    box.innerHTML = cart.map((i, x) => `<div class="flex justify-between p-4 bg-slate-50 rounded-2xl border-l-4 border-blue-600 font-black text-[10px] uppercase"><span>${i.name} (${i.qty} Pcs)</span><span>Rs ${i.sub} <i onclick="cart.splice(${x},1);renderCart()" class="fa-solid fa-trash text-red-400 ml-2"></i></span></div>`).join('');
-    let total = cart.reduce((s, i) => s + i.sub, 0);
-    let pcs = cart.reduce((s, i) => s + i.qty, 0);
-    document.getElementById('billTotal').innerText = total.toLocaleString();
-    document.getElementById('pcsTotal').innerText = pcs;
-    document.getElementById('ctnTotal').innerText = (pcs / 12).toFixed(1);
+async function submitOrder() {
+    const btn = document.getElementById('subBtn');
+    let shopName = isNew ? document.getElementById('nSName').value : document.getElementById('shopSearch').value;
+    if(!shopName || cart.length === 0) return alert("Missing Info!");
+
+    btn.disabled = true; btn.innerHTML = "Processing...";
+    let imgLink = "NO_IMG", oid = "ALH-"+Date.now().toString().slice(-5);
+
+    try {
+        const photo = document.getElementById('camInp').files[0];
+        if(photo) {
+            let fd = new FormData(); fd.append("image", photo);
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB}`, { method: "POST", body: fd });
+            const d = await res.json(); if(d.success) imgLink = d.data.url;
+        }
+
+        const data = {
+            id: oid, customer: shopName, items: cart, grandTotal: cart.reduce((s,i) => s+i.sub, 0),
+            status: "PENDING", img: imgLink, gps: `https://www.google.com/maps?q=${lat},${lon}`,
+            date: new Date().toLocaleDateString(), timestamp: Date.now()
+        };
+        await db.collection("sales").doc(oid).set(data);
+        if(isNew) await db.collection("customers").add({ name: shopName, phone: document.getElementById('nSPhone').value, balance: 0 });
+
+        window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=🏢 *ORDER: ${oid}*%0A🏪 *Shop:* ${shopName}%0A💰 *Bill:* Rs ${data.grandTotal}%0A📸 *Photo:* ${imgLink}%0A📍 *Location:* ${data.gps}`;
+    } catch(e) { btn.disabled = false; }
 }
 
-async function submitOrder() {
-    const shop = document.getElementById('bookingTab').dataset.shop;
-    if(!shop || cart.length === 0) return alert("SELECT SHOP & ITEMS!");
-    const orderId = "ALH-" + Date.now().toString().slice(-5);
-    const total = cart.reduce((s, i) => s + i.sub, 0);
-    
-    await db.collection("sales").doc(orderId).set({
-        id: orderId, customer: shop, date: new Date().toLocaleDateString(), items: cart, grandTotal: total, status: "PENDING", timestamp: Date.now()
-    });
+async function markAttendance() {
+    await db.collection("attendance").add({ booker: "Waqar", date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), gps: `${lat},${lon}` });
+    alert("Hazri Lag Gai!");
+}
 
-    let list = cart.map(i => `• ${i.name} (x${i.qty})`).join('%0A');
-    window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=🏢 *NEW ORDER: ${orderId}*%0A🏪 *Shop:* ${shop}%0A💰 *Total:* Rs ${total}%0A━━━━━━━━━━━━%0A🛒 *ITEMS:*%0A${list}`;
+async function submitReturn() {
+    const s = document.getElementById('retShop').value, i = document.getElementById('retItem').value, q = document.getElementById('retQty').value, t = document.getElementById('retType').value;
+    if(!s || !i || !q) return alert("Fill All!");
+    await db.collection("returns").add({ shop: s, item: i, qty: q, type: t, date: new Date().toLocaleDateString(), status: "PENDING" });
+    alert("Wapsi Request Sent!"); location.reload();
 }
 
 function renderStock() {
     document.getElementById('stockList').innerHTML = items.map(i => `
-        <div class="p-4 bg-white rounded-2xl flex justify-between items-center shadow-sm">
-            <span class="font-black text-[11px] uppercase text-slate-600">${i.name}</span>
-            <span class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-black text-[10px]">${i.stock || 0} PCS</span>
+        <div class="p-4 bg-white rounded-2xl flex justify-between items-center border-b-2 ${i.stock < 10 ? 'border-red-200 bg-red-50' : 'border-slate-50'} shadow-sm">
+            <span class="font-black text-[11px] uppercase text-slate-700">${i.name}</span>
+            <span class="font-black text-[10px] ${i.stock < 10 ? 'text-red-600' : 'text-blue-600'}">${i.stock || 0} PCS</span>
         </div>`).join('');
 }
 
 function renderRecovery() {
     document.getElementById('recoveryList').innerHTML = shops.map(s => `
-        <div class="bg-white p-5 rounded-[2rem] flex justify-between items-center card-shadow border">
-            <div><p class="font-black text-xs uppercase">${s.name}</p><p class="text-[10px] text-rose-500 font-black">DUES: Rs ${s.balance || 0}</p></div>
-            <button onclick="alert('Recovery Request Sent!')" class="bg-emerald-500 text-white p-3 px-5 rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-emerald-100">REC</button>
+        <div class="bg-white p-5 rounded-[2rem] flex justify-between items-center shadow-sm border border-slate-50">
+            <div><p class="font-black text-xs uppercase">${s.name}</p><p class="text-[9px] text-rose-500 font-bold italic uppercase">Udhari: Rs ${s.balance || 0}</p></div>
+            <div class="flex gap-1"><input id="rec-${s.id}" type="number" placeholder="Rs" class="w-16 p-2 bg-slate-50 rounded-xl text-xs font-bold border"><button onclick="reqRec('${s.id}','${s.name}')" class="bg-blue-600 text-white p-2 px-3 rounded-xl text-[8px] font-black uppercase">Rec</button></div>
         </div>`).join('');
+}
+async function reqRec(id, name) {
+    const a = document.getElementById(`rec-${id}`).value; if(!a) return;
+    await db.collection("cash_requests").add({ customerName: name, amount: Number(a), status: "PENDING", date: new Date().toLocaleDateString() });
+    alert("Recovery Request Sent!");
 }
 </script>
 </body>
-    </html>
-    
+</html>
