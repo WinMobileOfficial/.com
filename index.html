@@ -708,7 +708,6 @@ async function reprintLastBill(phone) {
   }
     
 // --- MASTER REPORTS FUNCTION (LINE 710) ---
-// --- MASTER REPORTS FUNCTION (LINE 710) ---
 function renderReports(filterType = 'all', searchTerm = '') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let dailyItems = {};
@@ -723,7 +722,7 @@ function renderReports(filterType = 'all', searchTerm = '') {
         const sDateStr = s.date || ""; 
         let sProfit = Number(s.profit) || 0;
         
-        // Booker + Admin Profit Logic
+        // Booker + Admin Profit Calculation
         if(sProfit === 0 && s.items) {
             s.items.forEach(it => {
                 let pObj = prods.find(x => x.name.toLowerCase() === it.name.toLowerCase());
@@ -732,6 +731,7 @@ function renderReports(filterType = 'all', searchTerm = '') {
             });
         }
 
+        // Daily Items list update (Booker + Admin)
         if(sDateStr === todayStr && s.items) {
             s.items.forEach(item => {
                 if(!dailyItems[item.name]) dailyItems[item.name] = { qty: 0, total: 0 };
@@ -766,18 +766,20 @@ function renderReports(filterType = 'all', searchTerm = '') {
     expenses.forEach(e => { if(e.date === todayStr) eSum += Number(e.amount || e.amt || 0); });
     prods.forEach(p => { stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice || p.cost || 0)); });
 
+    // 1. Dashboard Ka Green Profit Card (Sirf ye Billing Screen pe dikhayen)
     const profEl = document.getElementById('dailyProfitVal');
     if(profEl) profEl.innerText = "Rs " + Math.round(totalProfit - eSum).toLocaleString();
 
+    // 2. Baqi Reports Wale Boxes Update Karein
     updateReportUI(stockAsset, totalProfit, eSum, dailyItems, monthlyData, sSum);
-} // <--- Ye bracket renderReports khatam karta hai
+}
 
-// --- MASTER UI UPDATE FUNCTION ---
+// --- MASTER UI UPDATE FUNCTION (RESTORES SEPARATION) ---
 function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
     const statsDiv = document.getElementById('repStats');
     if(statsDiv) {
-        // Yahan 'hidden' rehne dein taake billing screen saaf rahe
-        statsDiv.className = "hidden md:grid grid-cols-1 md:grid-cols-3 gap-4 mb-6";
+        // 'hidden' class billing screen ko saaf rakhegi
+        statsDiv.className = "hidden md:grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"; 
         statsDiv.innerHTML = `
             <div class="bg-blue-600 p-6 rounded-3xl text-white shadow-lg text-center"><p class="text-[9px] uppercase opacity-80 font-bold">Stock Asset</p><span class="text-2xl font-black">Rs ${stock.toLocaleString()}</span></div>
             <div class="bg-indigo-600 p-6 rounded-3xl text-white shadow-lg text-center"><p class="text-[9px] uppercase opacity-80 font-bold">Zakat (2.5%)</p><span class="text-2xl font-black">Rs ${(stock * 0.025).toLocaleString()}</span></div>
@@ -794,12 +796,13 @@ function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
                 <td class="p-3 text-right">Rs ${dItems[n].total.toLocaleString()}</td>
             </tr>`).join('') : '<tr><td colspan="3" class="p-10 text-center italic opacity-30 font-black">No items sold today</td></tr>';
     }
-} // <--- Ye bracket updateReportUI khatam karta hai
+}
 
 // --- UPDATE STATS FUNCTION ---
 function updateStats() {
     renderReports('daily');
-}            
+}
+    
 function handleLogo(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { settings.logo = e.target.result; applySettings(); }; reader.readAsDataURL(input.files[0]); } }
 function removeLogo() { settings.logo = ""; applySettings(); }
 function applySettings() {
