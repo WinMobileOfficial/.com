@@ -708,7 +708,8 @@ async function reprintLastBill(phone) {
   }
     
 
-// --- MASTER REPORTS FUNCTION (FIXED BY GEMINI) ---
+
+// --- MASTER REPORTS FUNCTION (LINE 710) ---
 function renderReports(filterType = 'all', searchTerm = '') {
     let sSum = 0, eSum = 0, totalProfit = 0, stockAsset = 0;
     let dailyItems = {};
@@ -723,7 +724,7 @@ function renderReports(filterType = 'all', searchTerm = '') {
         const sDateStr = s.date || ""; 
         let sProfit = Number(s.profit) || 0;
         
-        // Booker + Admin Profit Logic
+        // Booker Profit Fix: Agar profit 0 hai to calculate karein
         if(sProfit === 0 && s.items) {
             s.items.forEach(it => {
                 let pObj = prods.find(x => x.name.toLowerCase() === it.name.toLowerCase());
@@ -732,6 +733,7 @@ function renderReports(filterType = 'all', searchTerm = '') {
             });
         }
 
+        // Booker Orders (PENDING) ko Today Sales mein dikhane ke liye logic
         if(sDateStr === todayStr && s.items) {
             s.items.forEach(item => {
                 if(!dailyItems[item.name]) dailyItems[item.name] = { qty: 0, total: 0 };
@@ -755,7 +757,7 @@ function renderReports(filterType = 'all', searchTerm = '') {
                 reportBody.innerHTML += `
                 <tr class="border-b text-[10px] font-bold uppercase">
                     <td class="p-2">${sDateStr}</td>
-                    <td class="p-2">${s.customer || "Walking"} ${s.status === 'PENDING' ? '<span class="text-orange-600">[B]</span>' : ''}</td>
+                    <td class="p-2">${s.customer || "Walking"} ${s.status === 'PENDING' ? '<span class="text-orange-500">[B]</span>' : ''}</td>
                     <td class="p-2 text-blue-600">${billAmt.toLocaleString()}</td>
                     <td class="p-2 text-emerald-600">${sProfit.toLocaleString()}</td>
                 </tr>`;
@@ -766,6 +768,7 @@ function renderReports(filterType = 'all', searchTerm = '') {
     expenses.forEach(e => { if(e.date === todayStr) eSum += Number(e.amount || e.amt || 0); });
     prods.forEach(p => { stockAsset += (Number(p.stock) || 0) * (Number(p.buyPrice || p.cost || 0)); });
 
+    // UI Update (Profit Card)
     const profEl = document.getElementById('dailyProfitVal');
     if(profEl) profEl.innerText = "Rs " + Math.round(totalProfit - eSum).toLocaleString();
 
@@ -776,7 +779,6 @@ function renderReports(filterType = 'all', searchTerm = '') {
 function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
     const statsDiv = document.getElementById('repStats');
     if(statsDiv) {
-        // Layout Fix: Hidden by default, only grid on md screens
         statsDiv.className = "hidden md:grid grid-cols-1 md:grid-cols-3 gap-4 mb-6";
         statsDiv.innerHTML = `
             <div class="bg-blue-600 p-6 rounded-3xl text-white shadow-lg text-center"><p class="text-[9px] uppercase opacity-80 font-bold">Stock Asset</p><span class="text-2xl font-black">Rs ${stock.toLocaleString()}</span></div>
@@ -796,7 +798,11 @@ function updateReportUI(stock, profit, exp, dItems, mData, sSum) {
     }
 }
 
-// --- UPDATE STATS FUNCTION ---
+// --- YE LINE ZAROORI HAI: Website khulte hi profit dikhayegi ---
+window.onload = function() {
+    renderReports('daily'); 
+};
+
 function updateStats() {
     renderReports('daily');
 }
