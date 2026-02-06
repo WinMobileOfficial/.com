@@ -267,9 +267,14 @@ function previewImg(i) {
 async function submitOrder() {
     const btn = document.getElementById('subBtn');
     let sName = isNew ? document.getElementById('nSName').value : document.getElementById('shopSearch').value;
+    let sPhone = isNew ? document.getElementById('nSPhone').value : "03066442004";
+    
     if(!sName || cart.length === 0) return alert("Select Shop & Items!");
-    btn.disabled = true; btn.innerText = "UPLOADING...";
-    let imgL = "NO_IMG";
+    
+    btn.disabled = true; 
+    btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> GENERATING...`;
+    
+    let imgL = "NO_PHOTO";
     try {
         const ph = document.getElementById('camInp').files[0];
         if(ph) {
@@ -277,12 +282,29 @@ async function submitOrder() {
             const r = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB}`, { method: "POST", body: fd });
             const d = await r.json(); if(d.success) imgL = d.data.url;
         }
-        const oid = "ALH-" + Date.now().toString().slice(-5);
-        await db.collection("sales").doc(oid).set({ id: oid, customer: sName, items: cart, grandTotal: cart.reduce((s,i) => s+i.sub, 0), img: imgL, gps: `${lat},${lon}`, date: new Date().toLocaleDateString() });
-        if(isNew) await db.collection("customers").add({ name: sName, phone: document.getElementById('nSPhone').value, balance: 0 });
-        window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=🏢 *ORDER: ${oid}*%0A🏪 *Shop:* ${sName}%0A📸 *Photo:* ${imgL}%0A📍 *GPS:* https://www.google.com/maps?q=${lat},${lon}`;
-    } catch(e) { btn.disabled = false; alert("Error!"); }
+
+        const oid = "GM-" + Math.floor(Math.random() * 900000 + 100000);
+        const totalBill = cart.reduce((s,i) => s + i.sub, 0);
+
+        let itemsList = "";
+        cart.forEach(item => { itemsList += `• ${item.name} (x${item.qty}) = ${item.sub}%0A`; });
+
+        const waMsg = `📦 *AL-HAFIZ TRADERS ORDER*%0A━━━━━━━━━━━━━━━%0A` +
+                      `🆔 *Order ID:* ${oid}%0A` +
+                      `🏪 *Shop:* ${sName.toUpperCase()}%0A` +
+                      `📞 *Phone:* ${sPhone}%0A` +
+                      `💰 *Bill Total:* Rs ${totalBill.toLocaleString()}%0A` +
+                      `📸 *Photo:* ${imgL}%0A` +
+                      `━━━━━━━━━━━━━━━%0A` +
+                      `*ITEMS:*%0A${itemsList}` +
+                      `━━━━━━━━━━━━━━━%0A` +
+                      `📍 *Map:* http://maps.google.com/maps?q=${lat},${lon}`;
+
+        window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=${waMsg}`;
+
+    } catch(e) { btn.disabled = false; btn.innerText = "Confirm & Send"; alert("System Error!"); }
 }
+
 
 async function submitReturn() {
     const s = document.getElementById('retShop').value, i = document.getElementById('retItem').value, q = document.getElementById('retQty').value, t = document.getElementById('retType').value;
