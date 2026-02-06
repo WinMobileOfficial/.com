@@ -14,7 +14,7 @@
         #lockScreen { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .pin-dot { width: 15px; height: 15px; border: 2px solid #3b82f6; border-radius: 50%; }
         .pin-dot.filled { background: #3b82f6; box-shadow: 0 0 10px #3b82f6; }
-        .num-btn { width: 70px; height: 70px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); color: white; }
+        .num-btn { width: 70px; height: 70px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; color: white; border: 1px solid rgba(255,255,255,0.1); }
         #mainApp { background: #f1f5f9; min-height: 100vh; display: none; }
         .tab-content { display: none; padding-bottom: 100px; padding-top: 20px; }
         .active { display: block; }
@@ -26,7 +26,7 @@
 <div id="lockScreen">
     <div class="text-center mb-8">
         <i class="fa-solid fa-shield-halved text-blue-500 text-5xl mb-4"></i>
-        <h2 class="text-white font-black uppercase text-xs mb-6 tracking-widest">AL-HAFIZ TRADERS</h2>
+        <h2 class="text-white font-black uppercase text-xs mb-6 tracking-widest">Enter Access PIN</h2>
         <div class="flex gap-4 justify-center" id="pinDisplay">
             <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
         </div>
@@ -45,15 +45,15 @@
     <div class="bg-[#0f172a] p-6 pb-12 text-white rounded-b-[3rem] shadow-xl">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-lg font-black italic tracking-tighter uppercase">AL-HAFIZ <span class="text-blue-500">TRADERS</span></h1>
-            <span id="gpsStat" class="text-[9px] font-bold text-rose-500 uppercase tracking-widest">GPS Searching...</span>
+            <span id="gpsStat" class="text-[9px] font-bold text-rose-500 uppercase">GPS Loading...</span>
         </div>
         <div class="grid grid-cols-2 gap-4">
             <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
-                <p class="text-[8px] opacity-60 font-black uppercase tracking-widest">Stock Assets</p>
+                <p class="text-[8px] opacity-60 font-black uppercase">Stock Value</p>
                 <p class="text-base font-black" id="hAsset">Rs 0</p>
             </div>
             <div class="bg-white/5 p-4 rounded-2xl border border-white/10 text-right">
-                <p class="text-[8px] opacity-60 font-black uppercase tracking-widest">Zakat Payable</p>
+                <p class="text-[8px] opacity-60 font-black uppercase">Zakat</p>
                 <p class="text-base font-black text-yellow-500" id="hZakat">Rs 0</p>
             </div>
         </div>
@@ -67,16 +67,16 @@
                     <span class="text-[9px] font-black uppercase text-slate-500">Booking</span>
                 </div>
                 <div onclick="showTab('pendingTab')" class="bg-white p-4 rounded-3xl shadow-sm flex flex-col items-center">
-                    <i class="fa-solid fa-clock-rotate-left text-orange-500 text-xl mb-2"></i>
-                    <span class="text-[9px] font-black uppercase text-slate-500">History</span>
+                    <i class="fa-solid fa-list-check text-orange-500 text-xl mb-2"></i>
+                    <span class="text-[9px] font-black uppercase text-slate-500">Orders</span>
+                </div>
+                <div onclick="showTab('recoveryTab')" class="bg-white p-4 rounded-3xl shadow-sm flex flex-col items-center">
+                    <i class="fa-solid fa-hand-holding-dollar text-emerald-600 text-xl mb-2"></i>
+                    <span class="text-[9px] font-black uppercase text-slate-500">Recovery</span>
                 </div>
                 <div onclick="showTab('returnTab')" class="bg-white p-4 rounded-3xl shadow-sm flex flex-col items-center">
                     <i class="fa-solid fa-box-open text-rose-500 text-xl mb-2"></i>
                     <span class="text-[9px] font-black uppercase text-slate-500">Returns</span>
-                </div>
-                <div onclick="showTab('recoveryTab')" class="bg-white p-4 rounded-3xl shadow-sm flex flex-col items-center">
-                    <i class="fa-solid fa-hand-holding-dollar text-emerald-600 text-xl mb-2"></i>
-                    <span class="text-[9px] font-black uppercase text-slate-500">Dues</span>
                 </div>
                 <div onclick="showTab('stockTab')" class="bg-white p-4 rounded-3xl shadow-sm flex flex-col items-center border">
                     <i class="fa-solid fa-boxes-stacked text-purple-600 text-xl mb-2"></i>
@@ -93,20 +93,19 @@
             <div class="bg-white p-5 rounded-[2rem] shadow-sm border">
                 <div class="flex gap-2 mb-4">
                     <button onclick="setMode(false)" id="btnOld" class="flex-1 bg-blue-600 text-white py-2 rounded-xl text-[10px] font-black">OLD SHOP</button>
-                    <button onclick="setMode(true)" id="btnNew" class="flex-1 bg-slate-100 text-slate-400 py-2 rounded-xl text-[10px] font-black">NEW SHOP</button>
+                    <button onclick="setMode(true)" id="btnNew" class="flex-1 bg-slate-100 text-slate-400 py-2 rounded-xl text-[10px] font-black">+ NEW</button>
                 </div>
                 <div id="oldShopDiv">
-                    <input id="shopSearch" oninput="searchShop(this.value)" placeholder="SEARCH SHOP..." class="w-full p-4 bg-slate-50 rounded-2xl text-xs font-black uppercase outline-none border">
+                    <input id="shopSearch" oninput="searchShop(this.value)" placeholder="SEARCH SHOP..." class="w-full p-4 bg-slate-50 rounded-2xl text-xs font-black uppercase border outline-none">
                     <div id="shopResults" class="hidden mt-2 bg-white shadow-xl rounded-xl max-h-40 overflow-y-auto border z-50"></div>
                 </div>
                 <div id="newShopDiv" class="hidden space-y-2">
-                    <input id="nSName" placeholder="SHOP NAME" class="w-full p-4 bg-blue-50 rounded-2xl text-xs font-black uppercase outline-none border">
-                    <input id="nSPhone" placeholder="PHONE NUMBER" class="w-full p-4 bg-blue-50 rounded-2xl text-xs font-black outline-none border">
+                    <input id="nSName" placeholder="SHOP NAME" class="w-full p-4 bg-blue-50 rounded-2xl text-xs font-black uppercase border outline-none">
                 </div>
             </div>
 
             <div class="bg-white p-5 rounded-[2rem] shadow-sm border">
-                <input id="pSearch" oninput="filterProds(this.value)" placeholder="SELECT PRODUCT..." class="w-full p-4 bg-slate-50 rounded-2xl text-xs font-black uppercase outline-none border">
+                <input id="pSearch" oninput="filterProds(this.value)" placeholder="SELECT ITEM..." class="w-full p-4 bg-slate-50 rounded-2xl text-xs font-black uppercase border outline-none">
                 <div id="pResults" class="hidden mt-2 bg-white shadow-xl rounded-xl max-h-40 overflow-y-auto border z-50"></div>
                 <div class="flex gap-3 mt-4">
                     <input id="pQty" type="number" value="1" class="w-20 p-4 bg-slate-100 rounded-2xl font-black text-center text-xs outline-none">
@@ -118,19 +117,17 @@
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border text-center">
                 <div onclick="document.getElementById('camInp').click()" class="w-full h-32 bg-slate-50 border-4 border-dashed rounded-3xl flex flex-col items-center justify-center mb-4 overflow-hidden relative">
                     <img id="prevImg" class="hidden w-full h-full object-cover">
-                    <div id="camText"><i class="fa-solid fa-camera text-2xl text-slate-200"></i><p class="text-[9px] font-black text-slate-400 mt-2">CAPTURE SHOP PHOTO</p></div>
+                    <div id="camText"><i class="fa-solid fa-camera text-2xl text-slate-200"></i><p class="text-[9px] font-black text-slate-400 mt-2">SHOP PHOTO</p></div>
                 </div>
                 <input type="file" id="camInp" accept="image/*" capture="camera" class="hidden" onchange="previewImg(this)">
                 <div class="flex justify-between items-center mb-4"><p class="text-xs font-black text-slate-400 uppercase">Total Bill</p><p class="text-2xl font-black text-blue-600">Rs <span id="billTotal">0</span></p></div>
-                <button onclick="submitOrder()" id="subBtn" class="w-full bg-emerald-500 text-white py-5 rounded-[2rem] font-black uppercase shadow-lg flex items-center justify-center gap-3">
-                    <i class="fab fa-whatsapp text-xl"></i> SEND ORDER
-                </button>
+                <button onclick="submitOrder()" id="subBtn" class="w-full bg-emerald-500 text-white py-5 rounded-[2rem] font-black uppercase shadow-lg">Confirm & Sync</button>
             </div>
         </div>
 
         <div id="returnTab" class="tab-content space-y-4">
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border">
-                <h3 class="text-xs font-black uppercase text-rose-500 mb-4 italic">Wapsi Entry (Damage/Expiry)</h3>
+                <h3 class="text-xs font-black uppercase text-rose-500 mb-4 italic">Return Entry</h3>
                 <input id="retShop" placeholder="SHOP NAME" class="w-full p-4 bg-slate-50 rounded-2xl mb-3 text-xs font-black uppercase border outline-none">
                 <input id="retItem" placeholder="PRODUCT NAME" class="w-full p-4 bg-slate-50 rounded-2xl mb-3 text-xs font-black uppercase border outline-none">
                 <div class="grid grid-cols-2 gap-3 mb-4">
@@ -139,24 +136,13 @@
                         <option>EXPIRY</option><option>DAMAGE</option>
                     </select>
                 </div>
-                <button onclick="submitReturn()" class="w-full bg-rose-500 text-white py-4 rounded-2xl font-black uppercase text-[10px]">Send Return Request</button>
+                <button onclick="submitReturn()" class="w-full bg-rose-500 text-white py-4 rounded-2xl font-black uppercase text-[10px]">Send Return</button>
             </div>
         </div>
 
-        <div id="pendingTab" class="tab-content">
-            <h3 class="text-xs font-black uppercase italic mb-4">Order History</h3>
-            <div id="pendingList" class="space-y-3"></div>
-        </div>
-
-        <div id="recoveryTab" class="tab-content">
-            <h3 class="text-xs font-black uppercase italic mb-4">Dues Recovery</h3>
-            <div id="recoveryList" class="space-y-3"></div>
-        </div>
-
-        <div id="stockTab" class="tab-content">
-            <h3 class="text-xs font-black uppercase italic mb-4">Warehouse Stock</h3>
-            <div id="stockList" class="space-y-2"></div>
-        </div>
+        <div id="pendingTab" class="tab-content pt-4"><div id="pendingList" class="space-y-3"></div></div>
+        <div id="recoveryTab" class="tab-content pt-4"><div id="recoveryList" class="space-y-3"></div></div>
+        <div id="stockTab" class="tab-content pt-4"><div id="stockList" class="space-y-2"></div></div>
     </div>
 
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-around items-center shadow-2xl z-[100]">
@@ -167,13 +153,12 @@
             <i class="fa-solid fa-plus-circle"></i><span class="text-[8px] font-black uppercase">Booking</span>
         </button>
         <button onclick="showTab('recoveryTab', this)" class="n-item p-2 flex flex-col items-center gap-1 text-slate-400">
-            <i class="fa-solid fa-money-bill"></i><span class="text-[8px] font-black uppercase">Dues</span>
+            <i class="fa-solid fa-money-bill"></i><span class="text-[8px] font-black uppercase">Recovery</span>
         </button>
     </nav>
 </div>
 
 <script>
-// FIREBASE CONFIG
 const firebaseConfig = { apiKey: "AIzaSyBP3VrLzUl5AIR2ca1v871cV-cJOMz-SX0", authDomain: "gm-agency-pos.firebaseapp.com", projectId: "gm-agency-pos", storageBucket: "gm-agency-pos.firebasestorage.app", messagingSenderId: "777771332628", appId: "1:777771332628:web:db60e19d9bdcee21f76301" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -181,21 +166,14 @@ const BOSS_WA = "923066442004", IMGBB = "ac9e20cc7634087a31f0cc92096c23f4";
 
 let pin = "", shops = [], items = [], cart = [], lat = "0", lon = "0", isNew = false;
 
-// LOCK LOGIC
+// AUTH & GPS
 function p(n) { if(pin.length < 4) { pin += n; updateDots(); } }
 function c() { pin = ""; updateDots(); }
 function updateDots() { const dots = document.querySelectorAll('.pin-dot'); dots.forEach((dot, i) => i < pin.length ? dot.classList.add('filled') : dot.classList.remove('filled')); }
 function v() { if(pin === "0101") { document.getElementById('lockScreen').style.display='none'; document.getElementById('mainApp').style.display='block'; } else { alert("WRONG PIN!"); c(); } }
+if(navigator.geolocation) { navigator.geolocation.watchPosition(p => { lat = p.coords.latitude; lon = p.coords.longitude; document.getElementById('gpsStat').innerText = "GPS ACTIVE"; document.getElementById('gpsStat').className = "text-[9px] font-bold text-emerald-500 uppercase"; }); }
 
-// DATA SYNC
-if(navigator.geolocation) { 
-    navigator.geolocation.watchPosition(p => { 
-        lat = p.coords.latitude; lon = p.coords.longitude; 
-        document.getElementById('gpsStat').innerText = "GPS ACTIVE"; 
-        document.getElementById('gpsStat').className = "text-[9px] font-bold text-emerald-500"; 
-    }); 
-}
-
+// REAL-TIME SYNC
 db.collection("products").onSnapshot(s => {
     items = s.docs.map(d => ({id: d.id, ...d.data()}));
     let val = items.reduce((a, i) => a + (Number(i.stock || 0) * Number(i.price || 0)), 0);
@@ -204,9 +182,14 @@ db.collection("products").onSnapshot(s => {
     renderStock();
 });
 db.collection("customers").onSnapshot(s => { shops = s.docs.map(d => ({id: d.id, ...d.data()})); renderRecovery(); });
-db.collection("sales").orderBy("date", "desc").limit(10).onSnapshot(s => { renderPending(s.docs.map(d => d.data())); });
+db.collection("booker_orders").orderBy("timestamp", "desc").limit(10).onSnapshot(s => {
+    document.getElementById('pendingList').innerHTML = s.docs.map(d => {
+        const o = d.data();
+        return `<div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-orange-500"><div class="flex justify-between font-black text-[10px] uppercase"><span>${o.customerName}</span><span class="text-blue-600">Rs ${o.totalAmount}</span></div><p class="text-[8px] text-slate-400 mt-1">${o.orderDate || ''}</p></div>`;
+    }).join('');
+});
 
-// TABS & UI
+// FUNCTIONS
 function showTab(id, el) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.getElementById(id).classList.add('active');
@@ -234,9 +217,9 @@ function pickProd(n, p) { selP = { name: n, price: p }; document.getElementById(
 function addToCart() {
     const q = Number(document.getElementById('pQty').value);
     if(selP.name && q > 0) {
-        cart.push({ name: selP.name, price: selP.price, qty: q, sub: selP.price * q });
-        document.getElementById('cartBox').innerHTML = cart.map((i) => `<div class="flex justify-between p-3 bg-white shadow-sm rounded-xl border-l-4 border-blue-500 font-black text-[10px] uppercase"><span>${i.name} (x${i.qty})</span><span>Rs ${i.sub}</span></div>`).join('');
-        document.getElementById('billTotal').innerText = cart.reduce((s,i) => s + i.sub, 0).toLocaleString();
+        cart.push({ itemName: selP.name, price: selP.price, quantity: q, subtotal: selP.price * q });
+        document.getElementById('cartBox').innerHTML = cart.map((i) => `<div class="flex justify-between p-3 bg-white shadow-sm rounded-xl border-l-4 border-blue-500 font-black text-[10px] uppercase"><span>${i.itemName} (x${i.quantity})</span><span>Rs ${i.subtotal}</span></div>`).join('');
+        document.getElementById('billTotal').innerText = cart.reduce((s,i) => s + i.subtotal, 0).toLocaleString();
         document.getElementById('pSearch').value = "";
     }
 }
@@ -249,12 +232,11 @@ function previewImg(i) {
     }
 }
 
-// ORDER SUBMIT
 async function submitOrder() {
     const btn = document.getElementById('subBtn');
     let sName = isNew ? document.getElementById('nSName').value : document.getElementById('shopSearch').value;
-    if(!sName || cart.length === 0) return alert("Fill All Fields!");
-    btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Sending...`;
+    if(!sName || cart.length === 0) return alert("Select Shop & Items!");
+    btn.disabled = true; btn.innerHTML = "Syncing...";
     
     let imgL = "NO_PHOTO";
     try {
@@ -264,33 +246,29 @@ async function submitOrder() {
             const r = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB}`, { method: "POST", body: fd });
             const d = await r.json(); if(d.success) imgL = d.data.url;
         }
-        const oid = "GM-" + Math.floor(Math.random() * 900000 + 100000);
-        const total = cart.reduce((s,i) => s + i.sub, 0);
-        let iL = ""; cart.forEach(i => { iL += `• ${i.name} (x${i.qty}) = ${i.sub}%0A`; });
+        const oid = "ORDER-" + Date.now();
+        const total = cart.reduce((s,i) => s + i.subtotal, 0);
         
-        await db.collection("sales").doc(oid).set({ id: oid, customer: sName, items: cart, grandTotal: total, img: imgL, gps: `${lat},${lon}`, date: new Date().toISOString() });
-        
-        const msg = `📦 *AL-HAFIZ TRADERS ORDER*%0A━━━━━━━━━━━━━━━%0A🆔 *ID:* ${oid}%0A🏪 *Shop:* ${sName.toUpperCase()}%0A💰 *Total:* Rs ${total.toLocaleString()}%0A📸 *Photo:* ${imgL}%0A━━━━━━━━━━━━━━━%0A*ITEMS:*%0A${iL}━━━━━━━━━━━━━━━%0A📍 *Map:* http://googleusercontent.com/maps.google.com/?q=${lat},${lon}`;
+        await db.collection("booker_orders").doc(oid).set({
+            orderID: oid, customerName: sName, items: cart, totalAmount: total, image: imgL,
+            location: `${lat},${lon}`, timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            orderDate: new Date().toLocaleString(), status: "PENDING"
+        });
+
+        let iL = ""; cart.forEach(i => { iL += `• ${i.itemName} (x${i.quantity}) = ${i.subtotal}%0A`; });
+        const msg = `📦 *AL-HAFIZ TRADERS ORDER*%0A🆔 *ID:* ${oid}%0A🏪 *Shop:* ${sName.toUpperCase()}%0A💰 *Total:* Rs ${total.toLocaleString()}%0A━━━━━━━━━━━━━━━%0A*ITEMS:*%0A${iL}━━━━━━━━━━━━━━━%0A📍 *Map:* http://googleusercontent.com/maps.google.com/?q=${lat},${lon}`;
         window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=${msg}`;
-    } catch(e) { btn.disabled = false; btn.innerText = "SEND ORDER"; alert("Error!"); }
+    } catch(e) { btn.disabled = false; btn.innerText = "Confirm & Sync"; alert("Error!"); }
 }
 
 async function submitReturn() {
     const s = document.getElementById('retShop').value, i = document.getElementById('retItem').value, q = document.getElementById('retQty').value, t = document.getElementById('retType').value;
-    if(!s || !i || !q) return alert("Fill All Details!");
-    await db.collection("returns").add({ shop: s, item: i, qty: q, type: t, status: "PENDING", date: new Date().toISOString() });
-    alert("Return Entry Submitted!"); location.reload();
+    if(!s || !i || !q) return alert("Fill All!");
+    await db.collection("returns").add({ shop: s, item: i, qty: q, type: t, status: "PENDING", timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+    alert("Return Request Sent!"); location.reload();
 }
 
-function renderPending(data) {
-    document.getElementById('pendingList').innerHTML = data.map(o => `
-        <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-orange-500">
-            <div class="flex justify-between font-black text-[10px] uppercase mb-1"><span>${o.customer}</span><span class="text-blue-600">Rs ${o.grandTotal}</span></div>
-            <p class="text-[8px] text-slate-400 font-bold tracking-tighter italic">ID: ${o.id}</p>
-        </div>`).join('');
-}
-
-    function renderRecovery() {
+function renderRecovery() {
     document.getElementById('recoveryList').innerHTML = shops.map(s => `
         <div class="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm">
             <div><p class="font-black text-[10px] uppercase">${s.name}</p><p class="text-[9px] text-rose-500 font-bold">Dues: Rs ${s.balance || 0}</p></div>
@@ -300,8 +278,8 @@ function renderPending(data) {
 
 async function reqRec(id, name) {
     const a = document.getElementById(`rec-${id}`).value; if(!a) return;
-    await db.collection("cash_requests").add({ customerId: id, customerName: name, amount: Number(a), status: "PENDING", date: new Date().toISOString() });
-    alert("Payment Request Sent!");
+    await db.collection("cash_requests").add({ customerId: id, customerName: name, amount: Number(a), status: "PENDING", timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+    alert("Request Sent!");
 }
 
 function renderStock() {
