@@ -100,7 +100,7 @@
                     <span class="text-xs font-black uppercase text-slate-400">Total Bill:</span>
                     <span class="text-2xl font-black text-blue-600 italic">Rs <span id="billTotal">0</span></span>
                 </div>
-                <button id="submitBtn" onclick="finalSubmit()" class="w-full bg-emerald-500 text-white py-5 rounded-3xl font-black uppercase italic shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
+                <button id="submitBtn" onclick="finalSubmit()" class="w-full bg-emerald-500 text-slate-900 py-5 rounded-3xl font-black uppercase italic shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
                     <i class="fab fa-whatsapp text-xl"></i> Confirm Order
                 </button>
             </div>
@@ -133,13 +133,9 @@
 const firebaseConfig = { apiKey: "AIzaSyBP3VrLzUl5AIR2ca1v871cV-cJOMz-SX0", authDomain: "gm-agency-pos.firebaseapp.com", projectId: "gm-agency-pos", storageBucket: "gm-agency-pos.firebasestorage.app", messagingSenderId: "777771332628", appId: "1:777771332628:web:db60e19d9bdcee21f76301" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const BOSS_WA = "923353131530", IMGBB_KEY = "ac9e20cc7634087a31f0cc92096c23f4";
+const BOSS_WA = "923066442004", IMGBB_KEY = "ac9e20cc7634087a31f0cc92096c23f4";
 let prods = [], ledger = [], cart = [], userLat = "", userLong = "";
-
-const getDashboardDate = () => {
-    let d = new Date();
-    return (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear();
-};
+const getToday = () => new Date().toLocaleDateString('en-GB');
 
 function checkPin() {
     if(document.getElementById('bookerPin').value === "0001") {
@@ -154,7 +150,10 @@ function init() {
     db.collection("products").onSnapshot(snap => { prods = snap.docs.map(doc => doc.data()); renderStock(); });
     db.collection("customers").onSnapshot(snap => { ledger = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderLedger(); });
     
-    db.collection("sales").where("date", "==", getDashboardDate()).onSnapshot(snap => {
+    const now = new Date();
+    const dashboardDate = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
+
+    db.collection("sales").where("date", "==", dashboardDate).onSnapshot(snap => {
         let t = 0; snap.forEach(d => t += Number(d.data().grandTotal || 0));
         document.getElementById('dayTotal').innerText = t.toLocaleString();
     });
@@ -200,7 +199,8 @@ async function finalSubmit() {
     
     btn.disabled = true; btn.innerHTML = "SYNCING...";
     let photoUrl = "No Photo", orderId = "ALH-" + Date.now().toString().slice(-5), total = cart.reduce((s, i) => s + i.subtotal, 0);
-    const dDate = getDashboardDate();
+    const now = new Date();
+    const dDate = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
     const mapLink = userLat ? `https://www.google.com/maps?q=${userLat},${userLong}` : "GPS: OFF";
 
     try {
@@ -214,6 +214,7 @@ async function finalSubmit() {
             const d = await res.json(); if(d.success) photoUrl = d.data.url;
         }
 
+        // --- FIXED: Use itemName for Admin Bill ---
         const formattedItems = cart.map(i => ({ 
             itemName: i.name, 
             price: Number(i.price), 
@@ -222,7 +223,7 @@ async function finalSubmit() {
         }));
 
         const saleData = { 
-            id: orderId, customer: shop, mob: phone, date: dDate, time: new Date().toLocaleTimeString(), 
+            id: orderId, customer: shop, mob: phone, date: dDate, time: now.toLocaleTimeString(), 
             items: formattedItems, itemsSum: total, grandTotal: total, prevBal: oldBalance, 
             paid: 0, profit: 0, finalBal: oldBalance + total, img: photoUrl, gps: mapLink, 
             status: "PENDING", role: "booker", timestamp: Date.now() 
@@ -240,12 +241,14 @@ async function finalSubmit() {
 async function requestCashApproval(id, name, inputId) {
     const amt = Number(document.getElementById(inputId).value);
     if(!amt || amt <= 0) return alert("Enter Valid Amount!");
-    try {
-        const reqId = "CASH-" + Date.now().toString().slice(-6);
-        await db.collection("cash_requests").doc(reqId).set({ reqId, customerId: id, customerName: name, amount: amt, date: getDashboardDate(), status: "PENDING", timestamp: Date.now() });
-        alert("Recovery Request Sent!");
-        document.getElementById(inputId).value = "";
-    } catch(e) { alert("Request Failed!"); }
+    if(confirm(`Send Recovery Request for ${name}?`)) {
+        try {
+            const reqId = "CASH-" + Date.now().toString().slice(-6);
+            await db.collection("cash_requests").doc(reqId).set({ reqId, customerId: id, customerName: name, amount: amt, date: getToday(), status: "PENDING", timestamp: Date.now() });
+            alert("Request Sent!");
+            document.getElementById(inputId).value = "";
+        } catch(e) { alert("Request Failed!"); }
+    }
 }
 
 function searchLedger(q) {
@@ -279,11 +282,13 @@ function renderLedger(f = "") {
 }
 function renderStock() { document.getElementById('stockList').innerHTML = prods.map(p => `<div class="flex justify-between p-4 bg-slate-50 rounded-2xl border font-black text-[10px] uppercase italic"><span>${p.name}</span><span class="text-emerald-600">Stock: ${p.stock}</span></div>`).join(''); }
 function showTab(id, btn) { document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active-tab')); document.getElementById(id).classList.add('active-tab'); document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active')); btn.classList.add('nav-active'); }
-  function previewPhoto(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { document.getElementById('pImg').src = e.target.result; document.getElementById('pImg').classList.remove('hidden'); document.getElementById('camIcon').classList.add('hidden'); }; reader.readAsDataURL(input.files[0]); } }
+function previewPhoto(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = e => { document.getElementById('pImg').src = e.target.result; document.getElementById('pImg').classList.remove('hidden'); document.getElementById('camIcon').classList.add('hidden'); }; reader.readAsDataURL(input.files[0]); } }
 function sendDaySummary() {
-    let msg = `📊 *DAILY SUMMARY*%0A📅 *Date:* ${getDashboardDate()}%0A📦 *Booking:* Rs ${document.getElementById('dayTotal').innerText}%0A💸 *Recovery:* Rs ${document.getElementById('cashTotal').innerText}`;
+    const now = new Date();
+    const dDate = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
+    let msg = `📊 *DAILY SUMMARY*%0A📅 *Date:* ${dDate}%0A📦 *Booking:* Rs ${document.getElementById('dayTotal').innerText}%0A💸 *Recovery:* Rs ${document.getElementById('cashTotal').innerText}`;
     window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=${msg}`;
 }
 </script>
 </body>
-</html>                                                                                                                                                                                                                                  
+</html                                                                                                                                                                                                                                                                                         
