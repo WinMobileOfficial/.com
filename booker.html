@@ -232,26 +232,58 @@ async function finalSubmit() {
         }
 
         // --- PROFIT CALCULATION FOR DASHBOARD ---
-        // Hum items ko format kar rahe hain taake Admin index.html isay samajh sakay
+        async function finalSubmit() {
+    const shop = document.getElementById('shopName').value, 
+          phone = document.getElementById('shopPhone').value, 
+          photoFile = document.getElementById('shopPhoto').files[0], 
+          btn = document.getElementById('submitBtn');
+          
+    if(!shop || cart.length === 0) return alert("Select Shop & Add Items!");
+    
+    btn.disabled = true; 
+    btn.innerHTML = "UPLOADING...";
+
+    let photoUrl = "No Photo", 
+        orderId = "ALH-" + Date.now().toString().slice(-5), 
+        total = cart.reduce((s, i) => s + i.subtotal, 0);
+
+    const now = new Date();
+    const dashboardDate = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
+    const mapLink = userLat ? `https://www.google.com/maps?q=${userLat},${userLong}` : "GPS: OFF";
+
+    try {
+        let oldBalance = 0;
+        const custDoc = await db.collection("customers").doc(phone).get();
+        if(custDoc.exists) {
+            oldBalance = Number(custDoc.data().balance) || 0;
+        }
+
+        if(photoFile) {
+            let fd = new FormData(); fd.append("image", photoFile);
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
+            const d = await res.json(); if(d.success) photoUrl = d.data.url;
+        }
+
+        // --- FIXED: Admin Panel Compatibility ---
         const formattedItems = cart.map(i => ({
-    itemName: i.name,  // Yeh 'itemName' hona zaroori hai
-    price: Number(i.price),
-    qty: Number(i.qty),
-    total: Number(i.subtotal)
-}));
-        
+            itemName: i.name,  // Yeh 'itemName' hona zaroori hai Dispatch ke liye
+            price: Number(i.price),
+            qty: Number(i.qty),
+            total: Number(i.subtotal)
+        }));
+
         const saleData = { 
             id: orderId, 
             customer: shop, 
             mob: phone, 
-            date: dashboardDate, // Now matches index.html format
+            date: dashboardDate, 
             time: new Date().toLocaleTimeString(),
             items: formattedItems, 
             itemsSum: total,        
             grandTotal: total,      
             prevBal: oldBalance,    
             paid: 0, 
-            profit: 0, // Admin index.html will auto-calculate this
+            profit: 0, 
             finalBal: oldBalance + total, 
             img: photoUrl, 
             gps: mapLink, 
@@ -260,9 +292,10 @@ async function finalSubmit() {
             timestamp: Date.now() 
         };
 
+        // Data ko 'sales' collection mein bheja ja raha hai
         await db.collection("sales").doc(orderId).set(saleData);
 
-        // WhatsApp Message
+        // WhatsApp Message Fix
         let itemsMsg = cart.map(i => `• ${i.name} (x${i.qty})`).join('%0A');
         let waMsg = `🏢 *ORDER RECEIVED*%0A━━━━━━━━━━━━━━━━━━━━%0A🆔 *ID:* ${orderId}%0A🏪 *Shop:* ${shop}%0A💰 *Total:* Rs ${total.toLocaleString()}%0A📸 *Photo:* ${photoUrl}%0A📍 *Location:* ${mapLink}%0A━━━━━━━━━━━━━━━━━━━━%0A🛒 *ITEMS:*%0A${itemsMsg}`;
 
@@ -276,12 +309,11 @@ async function finalSubmit() {
     } catch(e) { 
         console.error(e);
         btn.disabled = false; 
-        btn.innerHTML = "SUBMIT ORDER";
-        alert("Upload Error!"); 
+        btn.innerHTML = "CONFIRM ORDER";
+        alert("System Sync Error!"); 
     }
-}
-    
-    
+                                         }
+              
     
 // SECURE CASH REQUEST
 async function requestCashApproval(id, name, inputId) {
