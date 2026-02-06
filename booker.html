@@ -234,11 +234,12 @@ async function finalSubmit() {
         // --- PROFIT CALCULATION FOR DASHBOARD ---
         // Hum items ko format kar rahe hain taake Admin index.html isay samajh sakay
         const formattedItems = cart.map(i => ({
-    itemName: i.name,   // Yahan 'name' ko 'itemName' kar diya
+    itemName: i.name,  // Yeh 'itemName' hona zaroori hai
     price: Number(i.price),
     qty: Number(i.qty),
     total: Number(i.subtotal)
 }));
+        
         const saleData = { 
             id: orderId, 
             customer: shop, 
