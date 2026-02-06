@@ -159,9 +159,25 @@ function init() {
     
     // SALES STATS
     db.collection("sales").where("date", "==", getToday()).onSnapshot(snap => {
-        let t = 0; snap.forEach(d => t += Number(d.data().grandTotal || 0));
-        document.getElementById('dayTotal').innerText = t.toLocaleString();
+    let tSales = 0;
+    let tProfit = 0;
+    snap.forEach(doc => {
+        const d = doc.data();
+        tSales += Number(d.grandTotal || 0);
+        // Profit Calculation
+        if(d.items) {
+            d.items.forEach(i => {
+                let sale = Number(i.price || 0);
+                let cost = Number(i.purchasePrice || 0); 
+                tProfit += (sale - cost) * Number(i.qty || 0);
+            });
+        }
     });
+    document.getElementById('dayTotal').innerText = tSales.toLocaleString();
+    if(document.getElementById('dayProfit')) {
+        document.getElementById('dayProfit').innerText = tProfit.toLocaleString();
+    }
+});
     // PENDING CASH STATS (Status: PENDING)
     db.collection("cash_requests").where("date", "==", getToday()).where("status", "==", "PENDING").onSnapshot(snap => {
         let c = 0; snap.forEach(d => c += Number(d.data().amount || 0));
@@ -214,9 +230,7 @@ async function finalSubmit() {
         total = cart.reduce((s, i) => s + i.subtotal, 0);
 
     // --- DASHBOARD DATE FIX (MM/DD/YYYY) ---
-    const now = new Date();
-    const dashboardDate = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
-
+    const dashboardDate = getToday();
     const mapLink = userLat ? `https://www.google.com/maps?q=${userLat},${userLong}` : "GPS: OFF";
 
     try {
