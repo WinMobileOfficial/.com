@@ -139,7 +139,7 @@
 const firebaseConfig = { apiKey: "AIzaSyBP3VrLzUl5AIR2ca1v871cV-cJOMz-SX0", authDomain: "gm-agency-pos.firebaseapp.com", projectId: "gm-agency-pos", storageBucket: "gm-agency-pos.firebasestorage.app", messagingSenderId: "777771332628", appId: "1:777771332628:web:db60e19d9bdcee21f76301" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const BOSS_WA = "923066442004", IMGBB_KEY = "ac9e20cc7634087a31f0cc92096c23f4";
+const BOSS_WA = "923353131530", IMGBB_KEY = "ac9e20cc7634087a31f0cc92096c23f4";
 let prods = [], ledger = [], cart = [], userLat = "", userLong = "";
 const getToday = () => new Date().toLocaleDateString('en-GB');
 
@@ -234,12 +234,11 @@ async function finalSubmit() {
         // --- PROFIT CALCULATION FOR DASHBOARD ---
         // Hum items ko format kar rahe hain taake Admin index.html isay samajh sakay
         const formattedItems = cart.map(i => ({
-            name: i.name,
-            price: Number(i.price),
-            qty: Number(i.qty),
-            total: Number(i.subtotal)
-        }));
-
+    itemName: i.name,   // Yahan 'name' ko 'itemName' kar diya
+    price: Number(i.price),
+    qty: Number(i.qty),
+    total: Number(i.subtotal)
+}));
         const saleData = { 
             id: orderId, 
             customer: shop, 
