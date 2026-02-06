@@ -509,10 +509,11 @@ function printReceipt(s, isLedger = false) {
     document.getElementById('rCustDetails').innerText = `${s.customer} (${s.mob})`;
     
     document.getElementById('rItemsList').innerHTML = (s.items || []).map(i => `
-        <div style="display:flex; justify-content:space-between; font-size: 11px; text-transform: uppercase; margin-bottom: 2px;">
-            <span>${i.itemName || i.name} x${i.qty}</span>
-             <span>${i.subtotal}</span>
-        </div>`).join('');
+    <div style="display:flex; justify-content:space-between; font-size: 11px; text-transform: uppercase; margin-bottom: 2px;">
+        <span>${i.itemName || i.name} x${i.qty}</span>
+        <span>Rs ${Number(i.subtotal || (i.price * i.qty)).toLocaleString()}</span>
+    </div>`).join('');
+
         
     // Amounts uthayein (Database se ya Calculations se)
     let currentBillTotal = Number(s.itemsSum) || Number(s.grandTotal) || 0;
