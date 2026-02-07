@@ -126,12 +126,37 @@
             </div>
         </div>
     </div>
+    <div id="trackingTab" class="tab-content hidden">
+    <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border-b-8 border-indigo-600 mb-6">
+        <div class="bg-gradient-to-r from-indigo-500 to-blue-700 p-6 rounded-[2rem] text-white text-center mb-6">
+            <p class="text-[10px] uppercase font-black tracking-widest opacity-80">Today's Shop Visits</p>
+            <h1 id="totalVisits" class="text-5xl font-black mt-2">0</h1>
+        </div>
+        
+        <h2 class="font-black text-center mb-4 uppercase italic text-slate-700 border-b pb-2">Visit History</h2>
+        
+        <div id="visitList" class="space-y-3">
+            <p class="text-center text-slate-400 text-[10px] py-10 italic">Waiting for visits data...</p>
+        </div>
+    </div>
+    </div>
+    
 
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 pb-8 z-[100] shadow-2xl">
-        <button onclick="showTab('orderTab', this)" class="flex flex-col items-center gap-1 text-slate-400 font-black uppercase text-[9px] px-6 nav-active"><i class="fas fa-shopping-bag text-xl"></i> Order</button>
-        <button onclick="showTab('ledgerTab', this)" class="flex flex-col items-center gap-1 text-slate-400 font-black uppercase text-[9px] px-6"><i class="fas fa-wallet text-xl"></i> Recovery</button>
-        <button onclick="showTab('stockTab', this)" class="flex flex-col items-center gap-1 text-slate-400 font-black uppercase text-[9px] px-6"><i class="fas fa-boxes text-xl"></i> Stock</button>
-    </nav>
+    <button onclick="showTab('orderTab', this)" class="flex flex-col items-center gap-1 text-slate-400 font-black uppercase text-[9px] px-2 nav-active">
+        <i class="fas fa-shopping-bag text-xl"></i> Order
+    </button>
+    <button onclick="showTab('ledgerTab', this)" class="flex flex-col items-center gap-1 text-slate-400 font-black uppercase text-[9px] px-2">
+        <i class="fas fa-wallet text-xl"></i> Recovery
+    </button>
+    <button onclick="showTab('stockTab', this)" class="flex flex-col items-center gap-1 text-slate-400 font-black uppercase text-[9px] px-2">
+        <i class="fas fa-boxes text-xl"></i> Stock
+    </button>
+    <button onclick="showTab('trackingTab', this)" class="flex flex-col items-center gap-1 text-slate-400 font-black uppercase text-[9px] px-2">
+        <i class="fas fa-map-marker-alt text-xl"></i> Tracking
+    </button>
+</nav>
+
 </div>
 
 <script>
@@ -254,28 +279,50 @@ async function finalSubmit() {
             qty: Number(i.qty),
             total: Number(i.subtotal)
         }));
+// Line 282 ke baad ye add karein:
+let distText = "New Shop Location";
+if (custDoc.exists && custDoc.data().lat) {
+    let d = getDistance(userLat, userLong, custDoc.data().lat, custDoc.data().lng);
+    distText = d + " Meters Away";
+}
 
-        const saleData = { 
-            id: orderId, 
-            customer: shop, 
-            mob: phone, 
-            date: dashboardDate, // Now matches index.html format
-            time: new Date().toLocaleTimeString(),
-            items: formattedItems, 
-            itemsSum: total,        
-            grandTotal: total,      
-            prevBal: oldBalance,    
-            paid: 0, 
-            profit: 0, // Admin index.html will auto-calculate this
-            finalBal: oldBalance + total, 
-            img: photoUrl, 
-            gps: mapLink, 
-            status: "PENDING", 
-            role: "booker", 
-            timestamp: Date.now() 
-        };
+        // Line 296 ke aas paas (img field ke neechay) ye check karein:
+locationStatus: distText, 
+lat: userLat,
+lng: userLong,
+    
+        // Pehle distance nikalen (Is se Admin Panel ko koi masla nahi hoga)
+let distText = "New Shop Location";
+if (typeof custDoc !== 'undefined' && custDoc.exists && custDoc.data().lat) {
+    let d = getDistance(userLat, userLong, custDoc.data().lat, custDoc.data().lng);
+    distText = d + " Meters Away";
+}
 
-        await db.collection("sales").doc(orderId).set(saleData);
+const saleData = { 
+    id: orderId, 
+    customer: shop, 
+    mob: phone, 
+    date: dashboardDate, 
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), // Chota format (e.g. 02:30 PM)
+    items: formattedItems, 
+    itemsSum: total,        
+    grandTotal: total,      
+    prevBal: oldBalance,    
+    paid: 0, 
+    profit: 0, 
+    finalBal: oldBalance + total, 
+    img: photoUrl, 
+    gps: mapLink, 
+    locationStatus: distText, // <--- Naya Field (Tracking ke liye)
+    lat: userLat,             // <--- Naya Field (Tracking ke liye)
+    lng: userLong,            // <--- Naya Field (Tracking ke liye)
+    status: "PENDING", 
+    role: "booker", 
+    timestamp: Date.now() 
+};
+
+await db.collection("sales").doc(orderId).set(saleData);
+        
 
         // WhatsApp Message
         let itemsMsg = cart.map(i => `• ${i.name} (x${i.qty})`).join('%0A');
@@ -380,6 +427,66 @@ function sendDaySummary() {
     let msg = `📊 *DAILY SUMMARY*%0A📅 *Date:* ${getToday()}%0A━━━━━━━━━━━━━━━━━━━━%0A📦 *Total Booking:* Rs ${oTotal}%0A💸 *Pending Recovery:* Rs ${cTotal}%0A━━━━━━━━━━━━━━━━━━━━%0A_Generated by GM Booker Pro_`;
     window.location.href = `https://api.whatsapp.com/send?phone=${BOSS_WA}&text=${msg}`;
 }
+
+   // 1. Distance Calculation Formula
+function getDistance(lat1, lon1, lat2, lon2) {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return "N/A";
+    const R = 6371e3; // Meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c);
+}
+
+// 2. Tracking List Update Logic
+function updateTrackingList() {
+    db.collection("sales").where("date", "==", getToday()).onSnapshot(snap => {
+        let visitedShops = new Set();
+        let listHtml = '';
+        
+        snap.forEach(doc => {
+            const d = doc.data();
+            visitedShops.add(d.customerName || d.customer);
+            
+            // Distance ke hisab se color set karna
+            let distVal = parseInt(d.locationStatus) || 0;
+            let isFar = distVal > 150; // Agar 150 meter se door hai toh Red
+            let statusColor = isFar ? 'text-red-600' : 'text-emerald-600';
+            let bgColor = isFar ? 'bg-red-50' : 'bg-emerald-50';
+
+            listHtml += `
+            <div class="flex justify-between items-center p-4 ${bgColor} rounded-2xl border-l-4 ${isFar ? 'border-red-500' : 'border-emerald-500'}">
+                <div style="flex: 1;">
+                    <p class="font-black text-slate-800 text-[11px] uppercase">${d.customerName || d.customer}</p>
+                    <p class="text-[9px] text-slate-500 font-bold"><i class="far fa-clock"></i> ${d.time || 'Today'}</p>
+                </div>
+                <div class="text-right">
+                    <p class="font-black text-[10px] ${statusColor}">
+                        <i class="fas ${isFar ? 'fa-map-marker-alt' : 'fa-check-circle'}"></i> 
+                        ${d.locationStatus || 'Verified'}
+                    </p>
+                </div>
+            </div>`;
+        });
+        
+        // Dashboard par Total Visits update karna
+        const totalVisitsEl = document.getElementById('totalVisits');
+        if(totalVisitsEl) totalVisitsEl.innerText = visitedShops.size;
+        
+        // List update karna
+        const visitListEl = document.getElementById('visitList');
+        if(visitListEl) {
+            visitListEl.innerHTML = listHtml || '<p class="text-center text-slate-400 text-[10px] py-10 italic font-bold">No orders booked yet today.</p>';
+        }
+    });
+}
+
+// 3. Isay foran chalayein
+updateTrackingList();
+    
 </script>
 </body>
 </html>
