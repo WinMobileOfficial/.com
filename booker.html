@@ -165,7 +165,7 @@
 const firebaseConfig = { apiKey: "AIzaSyBP3VrLzUl5AIR2ca1v871cV-cJOMz-SX0", authDomain: "gm-agency-pos.firebaseapp.com", projectId: "gm-agency-pos", storageBucket: "gm-agency-pos.firebasestorage.app", messagingSenderId: "777771332628", appId: "1:777771332628:web:db60e19d9bdcee21f76301" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const BOSS_WA = "923066442004", IMGBB_KEY = "ac9e20cc7634087a31f0cc92096c23f4";
+const BOSS_WA = "923353131530", IMGBB_KEY = "ac9e20cc7634087a31f0cc92096c23f4";
 let prods = [], ledger = [], cart = [], userLat = "", userLong = "";
 const getToday = () => new Date().toLocaleDateString('en-GB');
 
@@ -440,7 +440,7 @@ function updateTrackingList() {
         
         snap.forEach(doc => {
             const d = doc.data();
-            visitedShops.add(d.customerName || d.customer);
+            visitedShops.add(d.customer);
             
             // Distance ke hisab se color set karna
             let distVal = parseInt(d.locationStatus) || 0;
@@ -451,7 +451,7 @@ function updateTrackingList() {
             listHtml += `
             <div class="flex justify-between items-center p-4 ${bgColor} rounded-2xl border-l-4 ${isFar ? 'border-red-500' : 'border-emerald-500'}">
                 <div style="flex: 1;">
-                    <p class="font-black text-slate-800 text-[11px] uppercase">${d.customerName || d.customer}</p>
+                    <p class="font-black text-slate-800 text-[11px] uppercase">${d.customer}</p>
                     <p class="text-[9px] text-slate-500 font-bold"><i class="far fa-clock"></i> ${d.time || 'Today'}</p>
                 </div>
                 <div class="text-right">
