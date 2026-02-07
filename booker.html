@@ -280,48 +280,39 @@ async function finalSubmit() {
             total: Number(i.subtotal)
         }));
 // Line 282 ke baad ye add karein:
-let distText = "New Shop Location";
-if (custDoc.exists && custDoc.data().lat) {
-    let d = getDistance(userLat, userLong, custDoc.data().lat, custDoc.data().lng);
-    distText = d + " Meters Away";
-}
+        // 1. Distance check karein (Sirf aik dafa)
+        let distText = "New Shop Location";
+        if (typeof custDoc !== 'undefined' && custDoc.exists && custDoc.data().lat) {
+            let d = getDistance(userLat, userLong, custDoc.data().lat, custDoc.data().lng);
+            distText = d + " Meters Away";
+        }
 
-        // Line 296 ke aas paas (img field ke neechay) ye check karein:
-locationStatus: distText, 
-lat: userLat,
-lng: userLong,
-    
-        // Pehle distance nikalen (Is se Admin Panel ko koi masla nahi hoga)
-let distText = "New Shop Location";
-if (typeof custDoc !== 'undefined' && custDoc.exists && custDoc.data().lat) {
-    let d = getDistance(userLat, userLong, custDoc.data().lat, custDoc.data().lng);
-    distText = d + " Meters Away";
-}
+        // 2. Sale Data ka naya structure
+        const saleData = { 
+            id: orderId, 
+            customer: shop, 
+            mob: phone, 
+            date: dashboardDate, 
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            items: formattedItems, 
+            itemsSum: total,        
+            grandTotal: total,      
+            prevBal: oldBalance,    
+            paid: 0, 
+            profit: 0, 
+            finalBal: oldBalance + total, 
+            img: photoUrl, 
+            gps: mapLink, 
+            locationStatus: distText, 
+            lat: userLat,
+            lng: userLong,
+            status: "PENDING", 
+            role: "booker", 
+            timestamp: Date.now() 
+        };
 
-const saleData = { 
-    id: orderId, 
-    customer: shop, 
-    mob: phone, 
-    date: dashboardDate, 
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), // Chota format (e.g. 02:30 PM)
-    items: formattedItems, 
-    itemsSum: total,        
-    grandTotal: total,      
-    prevBal: oldBalance,    
-    paid: 0, 
-    profit: 0, 
-    finalBal: oldBalance + total, 
-    img: photoUrl, 
-    gps: mapLink, 
-    locationStatus: distText, // <--- Naya Field (Tracking ke liye)
-    lat: userLat,             // <--- Naya Field (Tracking ke liye)
-    lng: userLong,            // <--- Naya Field (Tracking ke liye)
-    status: "PENDING", 
-    role: "booker", 
-    timestamp: Date.now() 
-};
-
-await db.collection("sales").doc(orderId).set(saleData);
+        // 3. Database mein save karein
+        await db.collection("sales").doc(orderId).set(saleData);
         
 
         // WhatsApp Message
