@@ -437,8 +437,9 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
 // 2. Tracking List Update Logic
 function updateTrackingList() {
-    .where("date", "==", dashboardDate)
-     let visitedShops = new Set();
+    db.collection("sales").where("date", "==", dashboardDate).onSnapshot(snap => {
+        let visitedShops = new Set();
+
         let listHtml = '';
         
         snap.forEach(doc => {
