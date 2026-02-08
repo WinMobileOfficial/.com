@@ -255,7 +255,8 @@ async function finalSubmit() {
         total = cart.reduce((s, i) => s + i.subtotal, 0);
 
     // --- DASHBOARD DATE FIX (MM/DD/YYYY) ---
-    const dashboardDate = getToday();
+    const dashboardDate = new Date().toLocaleDateString('en-US');
+    
     const mapLink = userLat ? `https://www.google.com/maps?q=${userLat},${userLong}` : "GPS: OFF";
 
     try {
