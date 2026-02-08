@@ -454,6 +454,7 @@ const dates = getToday();
 
 // Line 454 (where wali line) ko badal kar ye karein:
 db.collection("sales").where("date", "in", [dates.format1, dates.format2]).onSnapshot(snap => {
+
     let html = '';
     let uniqueShops = new Set();
 
