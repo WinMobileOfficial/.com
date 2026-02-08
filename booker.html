@@ -169,7 +169,9 @@ const BOSS_WA = "923353131530", IMGBB_KEY = "ac9e20cc7634087a31f0cc92096c23f4";
 let prods = [], ledger = [], cart = [], userLat = "", userLong = "";
 const getToday = () => new Date().toLocaleDateString('en-GB');
 // Line 171 par ye likhein
-const dashboardDate = getToday(); 
+const todayDate = getToday(); // Ye purani booking ke liye hai
+const dashboardDate = getToday(); // Ye tracking ke liye hai
+
     
 function checkPin() {
     if(document.getElementById('bookerPin').value === "0001") {
@@ -436,51 +438,62 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 // 2. Tracking List Update Logic
-function updateTrackingList() {
-    db.collection("sales").where("date", "==", dashboardDate).onSnapshot(snap => {
-        let visitedShops = new Set();
+ function updateTrackingList() {
+    const visitList = document.getElementById('visitList');
+    const totalVisits = document.getElementById('totalVisits');
 
-        let listHtml = '';
-        
-        snap.forEach(doc => {
+    if (!visitList || !totalVisits) return;
+
+    // Month/Date/Year format (e.g., 2/8/2026)
+    const now = new Date();
+    const formattedDate = `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
+
+    db.collection("sales")
+      .where("date", "==", formattedDate)
+      .onSnapshot((snap) => {
+        let html = '';
+        let count = 0;
+        let uniqueShops = new Set();
+
+        snap.forEach((doc) => {
             const d = doc.data();
-            visitedShops.add(d.customer);
-            
-            // Distance ke hisab se color set karna
-            let distVal = parseInt(d.locationStatus) || 0;
-            let isFar = distVal > 150; // Agar 150 meter se door hai toh Red
-            let statusColor = isFar ? 'text-red-600' : 'text-emerald-600';
-            let bgColor = isFar ? 'bg-red-50' : 'bg-emerald-50';
-
-            listHtml += `
-            <div class="flex justify-between items-center p-4 ${bgColor} rounded-2xl border-l-4 ${isFar ? 'border-red-500' : 'border-emerald-500'}">
-                <div style="flex: 1;">
-                    <p class="font-black text-slate-800 text-[11px] uppercase">${d.customer}</p>
-                    <p class="text-[9px] text-slate-500 font-bold"><i class="far fa-clock"></i> ${d.time || 'Today'}</p>
-                </div>
-                <div class="text-right">
-                    <p class="font-black text-[10px] ${statusColor}">
-                        <i class="fas ${isFar ? 'fa-map-marker-alt' : 'fa-check-circle'}"></i> 
-                        ${d.locationStatus || 'Verified'}
-                    </p>
-                </div>
-            </div>`;
+            // Agar shop ka naam mojood hai
+            if (d.customer) {
+                uniqueShops.add(d.customer);
+                count++;
+                
+                html += `
+                <div class="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm mb-3 border border-slate-100">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-green-100 p-2 rounded-xl text-green-600">
+                            <i class="fa-solid fa-shop text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-800 text-[11px] uppercase">${d.customer}</p>
+                            <p class="text-[9px] text-slate-400 font-bold italic">${d.time || 'Recorded'}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="bg-indigo-50 text-indigo-600 text-[8px] font-black px-3 py-1 rounded-full uppercase border border-indigo-100">
+                            ${d.locationStatus || 'Verified'}
+                        </span>
+                    </div>
+                </div>`;
+            }
         });
-        
-        // Dashboard par Total Visits update karna
-        const totalVisitsEl = document.getElementById('totalVisits');
-        if(totalVisitsEl) totalVisitsEl.innerText = visitedShops.size;
-        
-        // List update karna
-        const visitListEl = document.getElementById('visitList');
-        if(visitListEl) {
-            visitListEl.innerHTML = listHtml || '<p class="text-center text-slate-400 text-[10px] py-10 italic font-bold">No orders booked yet today.</p>';
+
+        if (count === 0) {
+            html = '<div class="text-center py-10 text-slate-400 text-[10px] italic">No visits found for ' + formattedDate + '</div>';
         }
+
+        visitList.innerHTML = html;
+        totalVisits.innerText = uniqueShops.size; // Total unique shops ki counting
     });
 }
 
-// 3. Isay foran chalayein
+// Function ko activate karne ke liye call karein
 updateTrackingList();
+    
     
 </script>
 </body>
