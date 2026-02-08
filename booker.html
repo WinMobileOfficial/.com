@@ -170,9 +170,8 @@ let prods = [], ledger = [], cart = [], userLat = "", userLong = "";
 const getToday = () => new Date().toLocaleDateString('en-GB');
 
 // Line 172-173 par ye likhein
-const todayDate = getToday(); 
-const dashboardDate = new Date().toLocaleDateString('en-US'); // Ye Tracking ke liye US format hai
-    
+const todayDate = getToday();
+const dashboardDate = getToday();
     
 function checkPin() {
     if(document.getElementById('bookerPin').value === "0001") {
