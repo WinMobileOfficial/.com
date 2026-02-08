@@ -456,19 +456,12 @@ function updateTrackingList() {
     // Firebase format M/D/YYYY ke liye (e.g., 2/8/2026)
     const now = new Date();
     // Line 452 par ye likhein:
-const dates = getToday();
-
-// Line 454 (where wali line) ko badal kar ye karein:
-db.collection("sales").where("date", "in", [dates.format1, dates.format2]).onSnapshot(snap => {
-
-    let html = '';
-    let uniqueShops = new Set();
-
-    
-
-
-
+    const dates = getToday();
+    db.collection("sales").where("date", "in", [dates.format1, dates.format2]).onSnapshot(snap => {
+        let html = '';
+        let uniqueShops = new Set();
         snap.forEach(doc => {
+
             const d = doc.data();
             if (d.name) {
                 uniqueShops.add(d.name);
