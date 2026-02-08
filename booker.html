@@ -448,10 +448,12 @@ function updateTrackingList() {
     const now = new Date();
     const fbDate = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
 
-    // Line 451 se shuru karein (Purana sab mita kar)
+
 db.collection("sales").where("date", "==", fbDate).onSnapshot(snap => {
     let html = '';
     let uniqueShops = new Set();
+
+    
 
 
 
