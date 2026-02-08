@@ -168,8 +168,9 @@ const db = firebase.firestore();
 const BOSS_WA = "923353131530", IMGBB_KEY = "ac9e20cc7634087a31f0cc92096c23f4";
 let prods = [], ledger = [], cart = [], userLat = "", userLong = "";
 const getToday = () => new Date().toLocaleDateString('en-GB');
-const dashboardDate = new Date().toLocaleDateString('en-US');
-    
+// Line 171 par ye likhein
+const dashboardDate = getToday();
+
 function checkPin() {
     if(document.getElementById('bookerPin').value === "0001") {
         document.getElementById('lockScreen').classList.add('hidden');
