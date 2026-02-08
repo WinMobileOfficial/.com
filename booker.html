@@ -438,30 +438,23 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 // 2. Tracking List Update Logic
- function updateTrackingList() {
+function updateTrackingList() {
     const visitList = document.getElementById('visitList');
     const totalVisits = document.getElementById('totalVisits');
-
     if (!visitList || !totalVisits) return;
 
-    // Month/Date/Year format (e.g., 2/8/2026)
+    // Firebase format M/D/YYYY ke liye (e.g., 2/8/2026)
     const now = new Date();
-    const formattedDate = `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
+    const fbDate = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
 
-    db.collection("sales")
-      .where("date", "==", formattedDate)
-      .onSnapshot((snap) => {
+    db.collection("sales").where("date", "==", fbDate).onSnapshot(snap => {
         let html = '';
-        let count = 0;
         let uniqueShops = new Set();
 
-        snap.forEach((doc) => {
+        snap.forEach(doc => {
             const d = doc.data();
-            // Agar shop ka naam mojood hai
             if (d.customer) {
                 uniqueShops.add(d.customer);
-                count++;
-                
                 html += `
                 <div class="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm mb-3 border border-slate-100">
                     <div class="flex items-center gap-3">
@@ -482,18 +475,15 @@ function getDistance(lat1, lon1, lat2, lon2) {
             }
         });
 
-        if (count === 0) {
-            html = '<div class="text-center py-10 text-slate-400 text-[10px] italic">No visits found for ' + formattedDate + '</div>';
-        }
-
-        visitList.innerHTML = html;
-        totalVisits.innerText = uniqueShops.size; // Total unique shops ki counting
+        visitList.innerHTML = html || '<div class="text-center py-10 text-slate-400 text-[10px] italic">No visits found today.</div>';
+        totalVisits.innerText = uniqueShops.size;
     });
 }
 
-// Function ko activate karne ke liye call karein
+// System ko start karein
 updateTrackingList();
     
+
     
 </script>
 </body>
