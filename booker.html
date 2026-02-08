@@ -167,11 +167,13 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const BOSS_WA = "923353131530", IMGBB_KEY = "ac9e20cc7634087a31f0cc92096c23f4";
 let prods = [], ledger = [], cart = [], userLat = "", userLong = "";
-const getToday = () => new Date().toLocaleDateString('en-GB');
-
-// Line 172-173 par ye likhein
-const todayDate = getToday();
-const dashboardDate = getToday();
+const getToday = () => {
+    const d = new Date();
+    const format1 = d.toLocaleDateString('en-GB'); // 08/02/2026
+    const format2 = (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear(); // 2/8/2026
+    return { format1, format2 };
+};
+    
     
 function checkPin() {
     if(document.getElementById('bookerPin').value === "0001") {
@@ -187,7 +189,9 @@ function init() {
     db.collection("customers").onSnapshot(snap => { ledger = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderLedger(); });
     
     // SALES STATS
-    db.collection("sales").where("date", "==", getToday()).onSnapshot(snap => {
+    const dates = getToday();
+db.collection("sales").where("date", "in", [dates.format1, dates.format2]).onSnapshot(snap => {
+
     let tSales = 0;
     let tProfit = 0;
     snap.forEach(doc => {
@@ -445,9 +449,11 @@ function updateTrackingList() {
 
     // Firebase format M/D/YYYY ke liye (e.g., 2/8/2026)
     const now = new Date();
-    const fbDate = getToday(); 
+    // Line 452 par ye likhein:
+const dates = getToday();
 
-db.collection("sales").where("date", "==", fbDate).onSnapshot(snap => {
+// Line 454 (where wali line) ko badal kar ye karein:
+db.collection("sales").where("date", "in", [dates.format1, dates.format2]).onSnapshot(snap => {
     let html = '';
     let uniqueShops = new Set();
 
