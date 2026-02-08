@@ -168,10 +168,11 @@ const db = firebase.firestore();
 const BOSS_WA = "923353131530", IMGBB_KEY = "ac9e20cc7634087a31f0cc92096c23f4";
 let prods = [], ledger = [], cart = [], userLat = "", userLong = "";
 const getToday = () => new Date().toLocaleDateString('en-GB');
-// Line 171 par ye likhein
-const todayDate = getToday(); // Ye purani booking ke liye hai
-const dashboardDate = getToday(); // Ye tracking ke liye hai
 
+// Line 172-173 par ye likhein
+const todayDate = getToday(); 
+const dashboardDate = new Date().toLocaleDateString('en-US'); // Ye Tracking ke liye US format hai
+    
     
 function checkPin() {
     if(document.getElementById('bookerPin').value === "0001") {
@@ -447,9 +448,12 @@ function updateTrackingList() {
     const now = new Date();
     const fbDate = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
 
-    db.collection("sales").where("date", "==", fbDate).onSnapshot(snap => {
-        let html = '';
-        let uniqueShops = new Set();
+    // Line 451 se shuru karein (Purana sab mita kar)
+db.collection("sales").where("date", "==", fbDate).onSnapshot(snap => {
+    let html = '';
+    let uniqueShops = new Set();
+
+
 
         snap.forEach(doc => {
             const d = doc.data();
