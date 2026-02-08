@@ -445,8 +445,7 @@ function updateTrackingList() {
 
     // Firebase format M/D/YYYY ke liye (e.g., 2/8/2026)
     const now = new Date();
-    const fbDate = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
-
+    const fbDate = getToday(); 
 
 db.collection("sales").where("date", "==", fbDate).onSnapshot(snap => {
     let html = '';
