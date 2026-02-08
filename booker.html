@@ -169,8 +169,8 @@ const BOSS_WA = "923353131530", IMGBB_KEY = "ac9e20cc7634087a31f0cc92096c23f4";
 let prods = [], ledger = [], cart = [], userLat = "", userLong = "";
 const getToday = () => new Date().toLocaleDateString('en-GB');
 // Line 171 par ye likhein
-const dashboardDate = getToday();
-
+const dashboardDate = getToday(); 
+    
 function checkPin() {
     if(document.getElementById('bookerPin').value === "0001") {
         document.getElementById('lockScreen').classList.add('hidden');
@@ -437,9 +437,8 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
 // 2. Tracking List Update Logic
 function updateTrackingList() {
-    db.collection("sales").where("date", "==", dashboardDate).onSnapshot(snap => {
-
-        let visitedShops = new Set();
+    .where("date", "==", dashboardDate)
+     let visitedShops = new Set();
         let listHtml = '';
         
         snap.forEach(doc => {
