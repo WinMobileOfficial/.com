@@ -460,8 +460,8 @@ function updateTrackingList() {
         snap.forEach(doc => {
 
             const d = doc.data();
-            if (d.name) {
-                uniqueShops.add(d.name);
+             if (d.customer) { 
+                uniqueShops.add(d.customer);
                 html += `
                 <div class="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm mb-3 border border-slate-100">
                     <div class="flex items-center gap-3">
@@ -469,7 +469,7 @@ function updateTrackingList() {
                             <i class="fa-solid fa-shop text-sm"></i>
                         </div>
                         <div>
-                            <p class="font-bold text-slate-800 text-[11px] uppercase">${d.name}</p>
+                            <p class="font-bold text-slate-800 text-[11px] uppercase">${d.customer}</p>
                             <p class="text-[9px] text-slate-400 font-bold italic">${d.time || 'Recorded'}</p>
                         </div>
                     </div>
