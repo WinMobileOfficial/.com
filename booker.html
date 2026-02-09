@@ -211,17 +211,14 @@ db.collection("sales").where("date", "in", [dates.format1, dates.format2]).onSna
         document.getElementById('dayProfit').innerText = tProfit.toLocaleString();
     }
 });
-        // PENDING CASH STATS (Status: PENDING)
-    const cashDates = getToday();
-    db.collection("cash_requests")
-        .where("date", "in", [cashDates.format1, cashDates.format2])
-        .where("status", "==", "PENDING")
-        .onSnapshot(snap => {
-            let c = 0; 
-            snap.forEach(d => c += Number(d.data().amount || 0));
-            document.getElementById('cashTotal').innerText = c.toLocaleString();
+    // PENDING CASH STATS (Status: PENDING)
+    db.collection("cash_requests").where("date", "==", getToday()).where("status", "==", "PENDING").onSnapshot(snap => {
+        let c = 0; snap.forEach(d => c += Number(d.data().amount || 0));
+        document.getElementById('cashTotal').innerText = c.toLocaleString();
     });
 }
+
+
 
 
 function getLocation() {
