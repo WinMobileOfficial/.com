@@ -445,52 +445,51 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 
+
 // 2. Tracking List Update Logic
 function updateTrackingList() {
     const visitList = document.getElementById('visitList');
     const totalVisits = document.getElementById('totalVisits');
     if (!visitList || !totalVisits) return;
 
-    // Sab se asaan hal: Sirf Sales ka poora data mangwao
     db.collection("sales").onSnapshot(snap => {
         let html = '';
         let uniqueShops = new Set();
         
-        // Aaj ki date format: 9/2/2026
-        const now = new Date();
-        const ajkiDate = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
-
         snap.forEach(doc => {
             const d = doc.data();
-            // Agar date match kare ya na kare, hum sirf data check karte hain
             const shopName = d.customer || d.name || d.shop;
 
             if (shopName) {
                 uniqueShops.add(shopName);
+                // RANG BADAL DIYE HAIN (text-white aur bg-slate-800)
                 html += `
-                <div class="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm mb-3 border border-slate-100">
+                <div class="flex items-center justify-between bg-slate-800/40 p-4 rounded-2xl shadow-sm mb-3 border border-slate-700">
                     <div class="flex items-center gap-3">
-                        <div class="bg-green-100 p-2 rounded-xl text-green-600">
+                        <div class="bg-green-500/20 p-2 rounded-xl text-green-400">
                             <i class="fa-solid fa-shop text-sm"></i>
                         </div>
                         <div>
-                            <p class="font-bold text-slate-800 text-[11px] uppercase">${shopName}</p>
-                            <p class="text-[9px] text-slate-400 font-bold italic">${d.date || 'Today'}</p>
+                            <p class="font-bold text-white text-[12px] uppercase">${shopName}</p>
+                            <p class="text-[10px] text-slate-400 font-bold italic">${d.date || 'Today'}</p>
                         </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="bg-emerald-500/20 text-emerald-400 text-[8px] font-black px-3 py-1 rounded-full uppercase border border-emerald-500/30">
+                            Visited
+                        </span>
                     </div>
                 </div>`;
             }
         });
 
-        visitList.innerHTML = html || '<div class="text-center py-10 text-slate-400 text-[10px]">No Data in Firebase</div>';
+        visitList.innerHTML = html || '<div class="text-center py-10 text-slate-500 text-[10px] italic">No Data in Firebase</div>';
         totalVisits.innerText = uniqueShops.size;
     });
 }
 
 // System ko start karein
 updateTrackingList();
-    
-
     
 </script>
 </body>
