@@ -86,7 +86,12 @@
         <button onclick="switchTab('expenses')" class="w-full text-left p-4 hover:bg-rose-600 rounded-2xl flex items-center gap-3"><i class="fas fa-wallet w-5"></i> Expenses</button>
         <button onclick="switchTab('reports')" class="w-full text-left p-4 hover:bg-emerald-600 rounded-2xl flex items-center gap-3"><i class="fas fa-chart-line w-5"></i> Reports</button>
         <button onclick="switchTab('settings')" class="w-full text-left p-4 hover:bg-indigo-600 rounded-2xl flex items-center gap-3"><i class="fas fa-cog w-5"></i> Settings</button>
-  <button onclick="switchTab('booker')" class="w-full text-left p-4 hover:bg-indigo-600 rounded-2xl flex items-center justify-between shadow-md transition-all mb-2 group border border-transparent hover:border-indigo-400">
+<button onclick="switchTab('tracking')" class="w-full text-left p-4 hover:bg-blue-600 rounded-xl mb-1 flex items-center gap-3 transition-all">
+    <i class="fa-solid fa-map-location-dot w-6 text-blue-400"></i>
+    <span class="font-bold">Booker Tracking</span>
+</button>
+        
+        <button onclick="switchTab('booker')" class="w-full text-left p-4 hover:bg-indigo-600 rounded-2xl flex items-center justify-between shadow-md transition-all mb-2 group border border-transparent hover:border-indigo-400">
     <div class="flex items-center">
         <div class="w-8 h-8 bg-yellow-400/20 rounded-lg flex items-center justify-center mr-3 group-hover:bg-white/20 transition-all">
             <i class="fas fa-hand-holding-usd text-yellow-500 group-hover:text-white"></i>
@@ -296,6 +301,32 @@
         </div>
     </div>
     </div>
+
+    <div id="trackingTab" class="tab-content hidden p-6 animate__animated animate__fadeIn">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1 bg-white p-6 rounded-[2rem] shadow-xl border-b-8 border-blue-500">
+            <h3 class="font-black text-slate-800 uppercase italic mb-4 text-xs">Today's Route Progress</h3>
+            <div class="relative pt-1">
+                <div class="flex mb-4 items-center justify-between">
+                    <div><span id="routePercent" class="text-[12px] font-black inline-block py-1 px-3 uppercase rounded-full text-blue-600 bg-blue-50 border border-blue-100">0%</span></div>
+                    <div class="text-right"><span id="routeCount" class="text-[12px] font-black inline-block text-blue-600 italic">0 / 0</span></div>
+                </div>
+                <div class="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-slate-100 border-2 p-0.5">
+                    <div id="routeBar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-600 rounded-full transition-all duration-1000"></div>
+                </div>
+            </div>
+            <p id="adminTodayName" class="text-[11px] font-black text-slate-400 uppercase italic border-t pt-4"></p>
+        </div>
+
+        <div class="lg:col-span-2 bg-white p-6 rounded-[2rem] shadow-xl border-b-8 border-slate-200">
+            <h3 class="font-black text-slate-800 uppercase italic mb-4 text-xs text-center border-b pb-3">Real-time Shop Feed</h3>
+            <div id="adminVisitList" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[500px] overflow-y-auto pr-2">
+                <p class="text-center text-slate-300 text-[10px] col-span-2 italic py-20 uppercase font-bold tracking-widest">Awaiting Booker Connection...</p>
+            </div>
+        </div>
+    </div>
+    </div>
+    
     
     <div id="settingsTab" class="flex-1 p-10 hidden-tab overflow-y-auto">
         <h2 class="text-3xl font-black mb-8 italic border-b-4 border-indigo-600 inline-block uppercase">Settings</h2>
@@ -1333,6 +1364,65 @@ async function deleteOrder(id) {
 }
     
 
+// --- BOOKER LIVE TRACKING LOGIC FOR ADMIN ---
+function updateAdminTracking() {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const today = days[new Date().getDay()];
+    
+    if(document.getElementById('adminTodayName')) {
+        document.getElementById('adminTodayName').innerText = "📍 ACTIVE ROUTE: " + today;
+    }
+
+    // 1. Sales check karo (Aaj kitne orders hue)
+    db.collection("sales").onSnapshot(salesSnap => {
+        let doneShops = new Set();
+        salesSnap.forEach(doc => {
+            const sd = doc.data();
+            const dts = getToday ? getToday() : { format1: new Date().toLocaleDateString('en-GB') }; 
+            if(sd.date === dts.format1 || sd.date === dts.format2) {
+                doneShops.add(sd.customer);
+            }
+        });
+
+        // 2. Customers check karo (Jo aaj ke route par hain)
+        db.collection("customers").where("visitDay", "==", today).onSnapshot(custSnap => {
+            let html = '';
+            let total = 0;
+            let finished = 0;
+
+            custSnap.forEach(doc => {
+                const c = doc.data();
+                const isDone = doneShops.has(c.name);
+                total++;
+                if(isDone) finished++;
+
+                html += `
+                <div class="p-4 rounded-2xl border-2 ${isDone ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-100'} flex justify-between items-center shadow-sm">
+                    <div>
+                        <p class="font-black text-[11px] text-slate-800 uppercase tracking-tighter">${c.name}</p>
+                        <p class="text-[9px] font-bold ${isDone ? 'text-emerald-600' : 'text-slate-400 italic'}">${isDone ? '✅ VISITED' : '⏳ PENDING'}</p>
+                    </div>
+                    <i class="fa-solid ${isDone ? 'fa-circle-check text-emerald-500' : 'fa-clock text-slate-300'} text-xl"></i>
+                </div>`;
+            });
+
+            const listDiv = document.getElementById('adminVisitList');
+            if(listDiv) {
+                listDiv.innerHTML = html || '<div class="col-span-2 text-center py-20 text-slate-400 font-bold uppercase italic text-[10px]">No shops found for ' + today + '</div>';
+                
+                const percent = total > 0 ? Math.round((finished / total) * 100) : 0;
+                document.getElementById('routeBar').style.width = percent + '%';
+                document.getElementById('routePercent').innerText = percent + '%';
+                document.getElementById('routeCount').innerText = finished + ' / ' + total;
+            }
+        });
+    });
+}
+
+// System start karne ke liye call karein
+updateAdminTracking();
+    
+    
 init(); 
     
 
