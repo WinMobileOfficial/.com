@@ -140,6 +140,21 @@
     </div>
    <div id="trackingTab" class="tab-content">
     <div class="bg-slate-800 p-6 rounded-[2.5rem] shadow-xl border-b-8 border-indigo-600 mb-6">
+    <div class="bg-slate-900 text-white p-5 rounded-[2rem] mb-4 shadow-xl border-b-4 border-blue-500">
+    <div class="flex justify-between items-center">
+        <div>
+            <p class="text-[9px] font-black uppercase opacity-50 tracking-widest text-white">Haji Sahab's Target</p>
+            <h2 id="bookerTargetText" class="text-xl font-black italic text-blue-400 tracking-tighter text-white">Goal: --</h2>
+        </div>
+        <div class="text-right">
+            <p id="remainingShops" class="text-[10px] font-bold bg-blue-500/20 px-3 py-1 rounded-full text-blue-200">Pending: --</p>
+        </div>
+    </div>
+    <div class="w-full bg-white/10 h-2 rounded-full mt-3 overflow-hidden border border-white/5">
+        <div id="bookerTargetBar" class="bg-gradient-to-r from-blue-500 to-emerald-400 h-full transition-all duration-1000" style="width: 0%"></div>
+    </div>
+    </div>
+        
         <div class="bg-gradient-to-r from-indigo-600 to-blue-700 p-6 rounded-[2rem] text-white text-center mb-6">
             <p class="text-[10px] uppercase font-black tracking-widest opacity-80">Today's Shop Visits</p>
             <h1 id="totalVisits" class="text-5xl font-black mt-2 text-white">0</h1>
@@ -528,7 +543,47 @@ function updateTrackingList() {
         });
     });
 }
+// Haji Sahab, ye code Admin ka Target Booker ki screen par dikhaye ga
+function syncTargetFromAdmin() {
+    // 1. Database se Admin ka set kiya hua target uthao
+    db.collection("settings").doc("dailyTarget").onSnapshot(doc => {
+        const target = doc.exists ? doc.data().value : 0;
+        const targetText = document.getElementById('bookerTargetText');
+        if(targetText) targetText.innerText = "Goal: " + target;
 
+        // 2. Aaj ke orders count karo
+        const today = new Date().toLocaleDateString('en-GB');
+        db.collection("sales").onSnapshot(snap => {
+            let finished = 0;
+            snap.forEach(sDoc => {
+                const sData = sDoc.data();
+                // Check both possible date formats
+                const dts = getToday();
+                if(sData.date === dts.format1 || sData.date === dts.format2) {
+                    finished++;
+                }
+            });
+
+            const remaining = target - finished;
+            const prcnt = target > 0 ? Math.round((finished / target) * 100) : 0;
+            
+            // Screen par results update karein
+            if(document.getElementById('remainingShops')) {
+                document.getElementById('remainingShops').innerText = remaining > 0 ? remaining + " Left" : "GOAL DONE! ✅";
+            }
+            if(document.getElementById('bookerTargetBar')) {
+                const bar = document.getElementById('bookerTargetBar');
+                bar.style.width = (prcnt > 100 ? 100 : prcnt) + "%";
+                // Agar target poora ho jaye to color hara kar do
+                if(prcnt >= 100) bar.classList.replace('from-blue-500', 'from-emerald-500');
+            }
+        });
+    });
+}
+
+// Function ko chala dein
+syncTargetFromAdmin();
+                
 // System ko start karein
 updateTrackingList();
     
