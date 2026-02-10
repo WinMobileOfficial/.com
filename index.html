@@ -129,6 +129,20 @@
                         <input id="cName" readonly placeholder="NAME" class="w-full border-2 p-3 rounded-xl bg-slate-100 font-bold uppercase text-[10px]">
                         <input id="cMob" readonly placeholder="PHONE" class="w-full border-2 p-3 rounded-xl bg-slate-100 font-bold text-[10px]">
                     </div>
+              <div class="space-y-2">
+    <label class="text-xs font-bold text-gray-500 ml-1">VISIT DAY</label>
+    <select id="visitDay" class="w-full p-3 bg-gray-50 rounded-xl border-none font-bold text-xs" required>
+        <option value="">SELECT ROUTE DAY</option>
+        <option value="Sunday">SUNDAY</option>
+        <option value="Monday">MONDAY</option>
+        <option value="Tuesday">TUESDAY</option>
+        <option value="Wednesday">WEDNESDAY</option>
+        <option value="Thursday">THURSDAY</option>
+        <option value="Friday">FRIDAY</option>
+        <option value="Saturday">SATURDAY</option>
+    </select>
+              </div>
+                    
                     <div id="prevBalShow" class="bg-amber-100 text-amber-700 p-3 rounded-2xl mb-4 hidden border-2 border-amber-300">
                         <p class="text-[9px] font-black uppercase text-center">Old Balance: Rs <span id="prevBalVal">0</span></p>
                     </div>
@@ -915,6 +929,20 @@ async function viewCustomerDetails(mob, name) {
     document.getElementById('modalCustName').innerText = name;
     document.getElementById('modalCustPhone').innerText = mob;
     document.getElementById('detailModal').classList.remove('hidden');
+    <div class="space-y-2 mt-2">
+    <label class="text-xs font-bold text-gray-500 ml-1">VISIT DAY</label>
+    <select id="editVisitDay" class="w-full p-3 bg-gray-50 rounded-xl border-none font-bold text-xs" required>
+        <option value="">SELECT ROUTE DAY</option>
+        <option value="Sunday">SUNDAY</option>
+        <option value="Monday">MONDAY</option>
+        <option value="Tuesday">TUESDAY</option>
+        <option value="Wednesday">WEDNESDAY</option>
+        <option value="Thursday">THURSDAY</option>
+        <option value="Friday">FRIDAY</option>
+        <option value="Saturday">SATURDAY</option>
+    </select>
+</div>
+    
     const hList = document.getElementById('modalHistoryList');
     hList.innerHTML = "Loading...";
 
