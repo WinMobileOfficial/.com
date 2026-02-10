@@ -305,6 +305,19 @@
     <div id="trackingTab" class="tab-content hidden p-6 animate__animated animate__fadeIn">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-1 bg-white p-6 rounded-[2rem] shadow-xl border-b-8 border-blue-500">
+       <div class="bg-slate-900 text-white p-4 rounded-3xl mb-6 shadow-xl flex justify-between items-center border-l-8 border-blue-500">
+    <div>
+        <p class="text-[9px] font-black uppercase opacity-50 tracking-widest text-white">Daily Shop Target</p>
+        <p class="text-sm font-bold italic text-blue-400 font-black">Set Goal</p>
+    </div>
+    <div class="flex gap-2 items-center">
+        <input type="number" id="targetInput" placeholder="20" class="w-14 p-2 rounded-xl text-black font-black text-center border-2 border-blue-500 focus:ring-2 focus:ring-blue-400">
+        <button onclick="saveTarget()" class="bg-blue-600 px-4 py-2 rounded-xl font-black text-[9px] hover:bg-emerald-500 transition-all shadow-lg active:scale-90 text-white">
+            SAVE
+        </button>
+    </div>
+       </div>
+            
             <h3 class="font-black text-slate-800 uppercase italic mb-4 text-xs">Today's Route Progress</h3>
             <div class="relative pt-1">
                 <div class="flex mb-4 items-center justify-between">
@@ -1365,6 +1378,7 @@ async function deleteOrder(id) {
     
 
 // --- BOOKER LIVE TRACKING LOGIC FOR ADMIN ---
+// --- HAJI SAHAB LIVE TRACKING & TARGET SYSTEM ---
 function updateAdminTracking() {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const today = days[new Date().getDay()];
@@ -1373,55 +1387,84 @@ function updateAdminTracking() {
         document.getElementById('adminTodayName').innerText = "📍 ACTIVE ROUTE: " + today;
     }
 
-    // 1. Sales check karo (Aaj kitne orders hue)
-    db.collection("sales").onSnapshot(salesSnap => {
-        let doneShops = new Set();
-        salesSnap.forEach(doc => {
-            const sd = doc.data();
-            const dts = getToday ? getToday() : { format1: new Date().toLocaleDateString('en-GB') }; 
-            if(sd.date === dts.format1 || sd.date === dts.format2) {
-                doneShops.add(sd.customer);
-            }
-        });
+    // 1. Pehle Database se Admin ka set kiya hua Target uthao
+    db.collection("settings").doc("dailyTarget").onSnapshot(targetDoc => {
+        const adminTarget = targetDoc.exists ? targetDoc.data().value : 0;
 
-        // 2. Customers check karo (Jo aaj ke route par hain)
-        db.collection("customers").where("visitDay", "==", today).onSnapshot(custSnap => {
-            let html = '';
-            let total = 0;
-            let finished = 0;
+        // 2. Aaj ki Sales aur Locations uthao
+        db.collection("sales").onSnapshot(salesSnap => {
+            let doneShops = new Set();
+            let shopLocations = {};
+            let finishedCount = 0;
 
-            custSnap.forEach(doc => {
-                const c = doc.data();
-                const isDone = doneShops.has(c.name);
-                total++;
-                if(isDone) finished++;
-
-                html += `
-                <div class="p-4 rounded-2xl border-2 ${isDone ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-100'} flex justify-between items-center shadow-sm">
-                    <div>
-                        <p class="font-black text-[11px] text-slate-800 uppercase tracking-tighter">${c.name}</p>
-                        <p class="text-[9px] font-bold ${isDone ? 'text-emerald-600' : 'text-slate-400 italic'}">${isDone ? '✅ VISITED' : '⏳ PENDING'}</p>
-                    </div>
-                    <i class="fa-solid ${isDone ? 'fa-circle-check text-emerald-500' : 'fa-clock text-slate-300'} text-xl"></i>
-                </div>`;
+            salesSnap.forEach(doc => {
+                const sd = doc.data();
+                const dts = getToday(); 
+                if(sd.date === dts.format1 || sd.date === dts.format2) {
+                    doneShops.add(sd.customer);
+                    finishedCount++;
+                    if(sd.lat && sd.lng) {
+                        shopLocations[sd.customer] = `https://www.google.com/maps?q=${sd.lat},${sd.lng}`;
+                    }
+                }
             });
 
-            const listDiv = document.getElementById('adminVisitList');
-            if(listDiv) {
-                listDiv.innerHTML = html || '<div class="col-span-2 text-center py-20 text-slate-400 font-bold uppercase italic text-[10px]">No shops found for ' + today + '</div>';
-                
-                const percent = total > 0 ? Math.round((finished / total) * 100) : 0;
-                document.getElementById('routeBar').style.width = percent + '%';
-                document.getElementById('routePercent').innerText = percent + '%';
-                document.getElementById('routeCount').innerText = finished + ' / ' + total;
-            }
+            // 3. Aaj ki Shops ki List dikhao
+            db.collection("customers").where("visitDay", "==", today).onSnapshot(custSnap => {
+                let html = '';
+                custSnap.forEach(doc => {
+                    const c = doc.data();
+                    const isDone = doneShops.has(c.name);
+                    const mapLink = shopLocations[c.name];
+
+                    html += `
+                    <div class="p-4 rounded-2xl border-2 ${isDone ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-100'} flex justify-between items-center shadow-sm mb-2 transition-all">
+                        <div>
+                            <p class="font-black text-[11px] text-slate-800 uppercase tracking-tighter">${c.name}</p>
+                            <p class="text-[9px] font-bold ${isDone ? 'text-emerald-600' : 'text-slate-400 italic'}">${isDone ? '✅ MUKAMMAL (VISITED)' : '⏳ BAAKI HAI (PENDING)'}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${isDone && mapLink ? 
+                                `<a href="${mapLink}" target="_blank" class="bg-blue-600 text-white p-2 rounded-lg text-[10px] hover:bg-blue-800 shadow-md">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                </a>` : ''
+                            }
+                            <i class="fa-solid ${isDone ? 'fa-circle-check text-emerald-500' : 'fa-clock text-slate-300'} text-xl"></i>
+                        </div>
+                    </div>`;
+                });
+
+                // UI Update: Progress Bar Target ke mutabiq
+                const listDiv = document.getElementById('adminVisitList');
+                if(listDiv) {
+                    listDiv.innerHTML = html || '<div class="col-span-2 text-center py-20 text-slate-400 font-bold uppercase italic text-[10px]">No shops for ' + today + '</div>';
+                    
+                    // Target Logic: Progress Target ke hisab se calculate hogi
+                    const percent = adminTarget > 0 ? Math.round((finishedCount / adminTarget) * 100) : 0;
+                    const bar = document.getElementById('routeBar');
+                    if(bar) {
+                        bar.style.width = (percent > 100 ? 100 : percent) + '%';
+                        // Agar target poora ho jaye to bar green kar do
+                        percent >= 100 ? bar.classList.replace('bg-blue-600', 'bg-emerald-500') : bar.classList.replace('bg-emerald-500', 'bg-blue-600');
+                    }
+                    document.getElementById('routePercent').innerText = percent + '%';
+                    document.getElementById('routeCount').innerText = finishedCount + ' / ' + adminTarget;
+                }
+            });
         });
     });
 }
 
-// System start karne ke liye call karein
+function saveTarget() {
+    const t = document.getElementById('targetInput').value;
+    if(!t) return alert("Haji Sahab, pehle target likhen!");
+    db.collection("settings").doc("dailyTarget").set({ value: parseInt(t) })
+    .then(() => alert("Target Set: " + t + " Shops"));
+}
+
 updateAdminTracking();
-    
+                            
+
     
 init(); 
     
