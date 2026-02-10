@@ -72,7 +72,8 @@
     
     <select id="newShopDay" class="w-full p-3 bg-white rounded-xl font-bold text-[10px] uppercase outline-none border-2 border-blue-100">
         <option value="">SELECT ROUTE DAY</option>
-        <option value="Monday">Monday</option>
+        <option value="Sunday">Sunday</option>
+         <option value="Monday">Monday</option>
         <option value="Tuesday">Tuesday</option>
         <option value="Wednesday">Wednesday</option>
         <option value="Thursday">Thursday</option>
@@ -493,7 +494,7 @@ function updateTrackingList() {
     const visitList = document.getElementById('visitList');
     const totalVisits = document.getElementById('totalVisits');
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const todayName = days[new Date().getDay()]; 
+  const todayName = days[new Date().getDay()]; 
 
     if (!visitList || !totalVisits) return;
 
